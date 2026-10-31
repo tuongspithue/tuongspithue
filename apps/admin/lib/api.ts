@@ -130,3 +130,43 @@ export const PROBLEM_LABELS: Record<string, string> = {
   SCHEDULED_UNCLAIMED: 'Đơn hẹn chưa ai giữ',
   RIDER_STATIONARY: 'Shipper đứng yên',
 };
+
+export const CATEGORY_LABELS: Record<string, { label: string; icon: string; color: string }> = {
+  FOOD: { label: 'Đồ ăn', icon: '🍜', color: '#ff6b2c' },
+  DRINK: { label: 'Đồ uống', icon: '🧋', color: '#8b5cf6' },
+  GROCERY: { label: 'Tạp hoá', icon: '🛒', color: '#0ea5e9' },
+  WATER_ICE: { label: 'Nước, đá', icon: '💧', color: '#14b8a6' },
+  MOM_BABY: { label: 'Mẹ & bé', icon: '🍼', color: '#ec4899' },
+};
+
+export const TIER_LABELS: Record<string, { label: string; tone: string }> = {
+  DIAMOND: { label: '💎 Kim cương', tone: 'info' },
+  GOLD: { label: '🥇 Vàng', tone: 'wait' },
+  SILVER: { label: '🥈 Bạc', tone: 'muted' },
+  BRONZE: { label: '🥉 Đồng', tone: 'muted' },
+  ROOKIE: { label: '🌱 Tân binh', tone: 'ok' },
+  IMPROVE: { label: '⚠️ Cần cải thiện', tone: 'bad' },
+};
+
+export const PARTNER_STATUS: Record<string, { label: string; tone: string }> = {
+  APPROVED: { label: 'Đang hoạt động', tone: 'ok' },
+  PENDING: { label: 'Chờ duyệt', tone: 'wait' },
+  SUSPENDED: { label: 'Tạm khoá', tone: 'bad' },
+  REJECTED: { label: 'Đã từ chối', tone: 'muted' },
+  ACTIVE: { label: 'Hoạt động', tone: 'ok' },
+  LOCKED: { label: 'Đã khoá', tone: 'bad' },
+};
+
+export const VEHICLE_LABELS: Record<string, string> = { MOTORBIKE: '🏍️ Xe máy', EMOTORBIKE: '🛵 Xe điện', CARGO: '🛺 Ba gác' };
+
+/** "5 phút trước" — cho vị trí shipper, lần đặt đơn gần nhất. */
+export function ago(s: string | null | undefined): string {
+  if (!s) return '—';
+  const sec = Math.max(0, Math.round((Date.now() - new Date(s).getTime()) / 1000));
+  if (sec < 60) return `${sec} giây trước`;
+  if (sec < 3600) return `${Math.round(sec / 60)} phút trước`;
+  if (sec < 86_400) return `${Math.round(sec / 3600)} giờ trước`;
+  return `${Math.round(sec / 86_400)} ngày trước`;
+}
+
+export const maskPhone = (p: string | null | undefined) => (p ? p.replace(/^(\d{3})\d{4}(\d{3})$/, '$1****$2') : '—');

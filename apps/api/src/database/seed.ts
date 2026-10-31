@@ -124,6 +124,11 @@ const CATEGORIES: readonly Category[] = [
 ];
 
 const RIDERS = ['0933000001', '0933000002', '0933000003', '0933000004', '0933000005'];
+const RIDER_NAMES = ['Trần Văn Hùng', 'Lê Minh Tâm', 'Nguyễn Đức Phong', 'Phạm Quốc Bảo', 'Hoàng Thị Lan'];
+const OWNER_FAMILY = ['Nguyễn', 'Trần', 'Lê', 'Phạm', 'Hoàng', 'Võ', 'Phan', 'Đặng', 'Bùi', 'Đỗ'];
+const OWNER_GIVEN = ['Thị Hoa', 'Văn Tư', 'Thị Lành', 'Thị Hạnh', 'Thị Thu', 'Anh Tuấn', 'Thị Na', 'Thị Sáu', 'Văn Khanh', 'Thị Ba'];
+/** Tên chủ quán mẫu, cố định theo thứ tự để chạy lại seed vẫn ra cùng tên. */
+const ownerName = (ci: number, i: number) => `${OWNER_FAMILY[(ci * 3 + i) % OWNER_FAMILY.length]} ${OWNER_GIVEN[i % OWNER_GIVEN.length]}`;
 
 /** Rải quán đều quanh tâm theo hình xoắn ốc (150 m – 2,5 km), không quán nào trùng chỗ. */
 function spread(k: number, total: number): { lat: number; lng: number } {
@@ -135,10 +140,10 @@ function spread(k: number, total: number): { lat: number; lng: number } {
   };
 }
 
-async function user(pool: Pool, phone: string, role: string, scope = 0): Promise<number> {
+async function user(pool: Pool, phone: string, role: string, scope = 0, name: string | null = null): Promise<number> {
   const { rows } = await pool.query(
-    `INSERT INTO users (phone) VALUES ($1) ON CONFLICT (phone) DO UPDATE SET phone = EXCLUDED.phone RETURNING id`,
-    [phone],
+    `INSERT INTO users (phone, full_name) VALUES ($1, $2) ON CONFLICT (phone) DO UPDATE SET full_name = COALESCE(users.full_name, EXCLUDED.full_name) RETURNING id`,
+    [phone, name],
   );
   const id = Number(rows[0].id);
   await pool.query(`INSERT INTO user_roles (user_id, role, scope_id) VALUES ($1, 'CUSTOMER', 0), ($1, $2, $3) ON CONFLICT DO NOTHING`, [id, role, scope]);
@@ -166,7 +171,7 @@ async function main() {
         continue;
       }
       owners.push([owner, `${c.label}: ${name}`]);
-      const ownerId = await user(pool, owner, 'CUSTOMER');
+      const ownerId = await user(pool, owner, 'CUSTOMER', 0, ownerName(ci, i));
       const { rows } = await pool.query(
         `INSERT INTO stores (owner_user_id, name, category, location, address_text, phone, status, is_open)
          VALUES ($1, $2, $3, ST_SetSRID(ST_MakePoint($4, $5), 4326)::geography, $6, $7, 'APPROVED', true) RETURNING id`,
@@ -187,7 +192,7 @@ async function main() {
     }
   }
   for (const phone of RIDERS) {
-    const id = await user(pool, phone, 'RIDER');
+    const id = await user(pool, phone, 'RIDER', 0, RIDER_NAMES[RIDERS.indexOf(phone)]);
     const at = spread(RIDERS.indexOf(phone) * 9, total); // shipper đứng rải rác giữa các quán
     await pool.query(
       `INSERT INTO riders (user_id, vehicle_type, status, location, location_at)

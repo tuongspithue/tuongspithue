@@ -1,6 +1,7 @@
 import { Body, Controller, Get, HttpCode, Inject, Module, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
 import { IsBoolean, IsOptional, Length, Matches } from 'class-validator';
 import { AuthModule, AuthService } from '../auth/auth';
+import { AdminManageController } from './manage';
 import { AuthUser, CurrentUser, Roles } from '../common/auth';
 import { BusinessError } from '../common/errors';
 import { audit } from '../config-center/config.service';
@@ -53,7 +54,7 @@ export class AdminController {
   /** Tổng quan "nhìn trong 5 giây" (Phần 14.2). */
   @Get('dashboard')
   async dashboard() {
-    const [byState, gateA, riders, problems, scheduled, today, outbox] = await Promise.all([
+    const [byState, gateA, riders, problems, scheduled, today, outbox, hourly, pending, topStores] = await Promise.all([
       this.db.query(`SELECT state, count(*)::int AS n FROM orders o WHERE o.state IN ${ACTIVE_STATES} GROUP BY state`),
       this.db.query(
         `SELECT count(*)::int AS total,
@@ -83,7 +84,23 @@ export class AdminController {
          FROM orders WHERE created_at >= date_trunc('day', now())`,
       ),
       this.db.query(`SELECT count(*) FILTER (WHERE status = 'FAILED')::int AS failed_jobs FROM scheduled_jobs`),
+      // Biểu đồ đơn theo giờ trong 24 giờ qua (giờ Việt Nam).
+      this.db.query(
+        `SELECT extract(hour FROM created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::int AS hour, count(*)::int AS orders,
+                count(*) FILTER (WHERE state = 'HOAN_THANH')::int AS completed
+         FROM orders WHERE created_at > now() - interval '24 hours' GROUP BY 1`,
+      ),
+      this.db.query(
+        `SELECT (SELECT count(*)::int FROM stores WHERE status = 'PENDING') AS stores, (SELECT count(*)::int FROM riders WHERE status = 'PENDING') AS riders`,
+      ),
+      this.db.query(
+        `SELECT s.id, s.name, s.category, count(o.id)::int AS orders, COALESCE(sum(o.subtotal) FILTER (WHERE o.state = 'HOAN_THANH'), 0)::bigint AS gmv
+         FROM orders o JOIN stores s ON s.id = o.store_id WHERE o.created_at >= date_trunc('day', now())
+         GROUP BY s.id ORDER BY count(o.id) DESC LIMIT 5`,
+      ),
     ]);
+    const byHour = new Map(hourly.rows.map((h) => [h.hour, h]));
+    const nowHour = Number(new Intl.DateTimeFormat('en-GB', { hour: 'numeric', hourCycle: 'h23', timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date()));
     const g = gateA.rows[0];
     const pct = (n: number) => (g.total ? Math.round((n / g.total) * 1000) / 10 : null);
     return {
@@ -94,6 +111,13 @@ export class AdminController {
       scheduledNext2h: scheduled.rows[0],
       today: { ...today.rows[0], gmv: Number(today.rows[0].gmv) },
       system: { failedJobs: outbox.rows[0].failed_jobs },
+      hourly: Array.from({ length: 24 }, (_, i) => {
+        const hour = (nowHour + 1 + i) % 24;
+        const h = byHour.get(hour);
+        return { hour, orders: h?.orders ?? 0, completed: h?.completed ?? 0 };
+      }),
+      pendingPartners: pending.rows[0],
+      topStores: topStores.rows.map((t) => ({ id: Number(t.id), name: t.name, category: t.category, orders: t.orders, gmv: Number(t.gmv) })),
       at: new Date(),
     };
   }
@@ -244,5 +268,5 @@ export class AdminController {
   }
 }
 
-@Module({ imports: [OrdersModule, AuthModule], controllers: [AdminController] })
+@Module({ imports: [OrdersModule, AuthModule], controllers: [AdminController, AdminManageController] })
 export class AdminModule {}
