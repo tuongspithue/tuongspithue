@@ -20,12 +20,12 @@ Nền tảng giao hàng **siêu địa phương**: người dùng mở app là t
 | 10 | [Đơn hẹn giờ](docs/10-don-hen-gio.md) | Hẹn giờ lấy/giao, chuyển đơn chờ lâu sang hẹn giờ, "Yêu cầu mở" gửi nhiều quán, bảng đơn hẹn của quán, chợ chuyến hẹn của shipper, xác nhận lại trước giờ |
 | 11 | [Điểm uy tín khu vực](docs/11-diem-uy-tin-khu-vuc.md) | Công thức điểm shipper/quán, chuẩn hoá theo khu vực, chống thao túng, cấp độ & huy hiệu, nơi sử dụng uy tín, Bảng Vàng khu vực |
 | 12 | [Tích hợp AI (Groq)](docs/12-tich-hop-ai.md) | 18 tính năng AI đã rà soát; tích hợp Groq qua AI Gateway, giới hạn tốc độ, dự phòng, chế độ không-AI; an toàn, chi phí — AI gợi ý, người thật quyết định |
-| 14 | [Trang quản trị Admin](docs/14-trang-quan-tri-admin.md) | Dashboard tổng quan tuỳ biến, bản đồ trực tiếp có tua lại, trung tâm sự cố, hồ sơ 360°, **trung tâm cấu hình phân tầng** (theo khu/ngành/đối tác/thời gian), Rule Builder, xem trước tác động, duyệt 4 mắt, phiên bản & hoàn tác, báo cáo kéo thả, phân quyền tuỳ chỉnh |
 | 13 | [Báo cáo rà soát & hoàn thiện](docs/13-bao-cao-ra-soat.md) | Những gì đã loại bỏ, bổ sung, sửa cho nhất quán; ma trận đối chiếu yêu cầu; các việc cần xác nhận trước khi xây dựng |
+| 14 | [Trang quản trị Admin](docs/14-trang-quan-tri-admin.md) | Dashboard tổng quan tuỳ biến, bản đồ trực tiếp có tua lại, trung tâm sự cố, hồ sơ 360°, **trung tâm cấu hình phân tầng** (theo khu/ngành/đối tác/thời gian), Rule Builder, xem trước tác động, duyệt 4 mắt, phiên bản & hoàn tác, báo cáo kéo thả, phân quyền tuỳ chỉnh |
 
 ## ⚡ Tóm tắt nhanh
 
-- **3 ứng dụng di động:** Khách · Đối tác Quán · Tài xế — cùng **2 web:** Vận hành/CSKH · Quản trị.
+- **3 ứng dụng di động:** Khách · Đối tác Quán · Tài xế — cùng **Web quản lý quán** và **Admin Console** (vận hành, CSKH, quản trị hợp nhất).
 - **Bốn chế độ giao:** Hệ thống giao · Quán tự giao · Lai · Tự giao có dự phòng hệ thống.
 - **Xác nhận bằng người thật:** chuông toàn màn hình → nhắc → **gọi IVR tự động** → điều phối viên gọi → huỷ & hoàn tiền nếu quá 3 phút. Shipper nhận chuyến theo các vòng tìm mở rộng, có gán tay khi cần.
 - **Đơn hẹn giờ:** khách chọn giờ lấy (sau 1–3 giờ hoặc giờ cụ thể); đơn hiện trực tiếp trên tab *Đơn hẹn* của quán và *Chợ chuyến hẹn* của shipper để họ chọn nhận; xác nhận lại trước giờ.
