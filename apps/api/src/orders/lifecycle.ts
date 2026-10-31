@@ -8,7 +8,7 @@ import { LatLng, point } from '../common/geo';
 export interface Actor {
   id: number | null;
   role: ActorRole;
-  channel: 'APP' | 'IVR' | 'OPS_CALL' | 'WEB' | 'SYSTEM';
+  channel: 'APP' | 'OPS_CALL' | 'WEB' | 'SYSTEM';
 }
 
 export const SYSTEM_ACTOR: Actor = { id: null, role: 'SYSTEM', channel: 'SYSTEM' };

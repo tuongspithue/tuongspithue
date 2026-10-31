@@ -50,7 +50,7 @@ export class AuthService {
        ON CONFLICT (phone) DO UPDATE SET code_hash = EXCLUDED.code_hash, attempts = 0, expires_at = EXCLUDED.expires_at`,
       [phone, this.hash(phone, code), OTP_TTL_SECONDS],
     );
-    // TODO(SMS/ZNS): gửi mã qua nhà cung cấp SMS brandname / Zalo ZNS (Phần 5.1).
+    // Bản thử nghiệm: mã hiện trên màn hình (OTP_DEV_ECHO). Kênh gửi OTP khi chạy thật cần chủ sản phẩm chọn (Phần 13.5).
     return this.config.otpDevEcho ? { sent: true, devCode: code } : { sent: true };
   }
 

@@ -115,8 +115,7 @@ export class ScheduledService implements OnModuleInit {
     await client.query('UPDATE orders SET merchant_reply_deadline = $2 WHERE id = $1', [order.id, deadline]);
     const steps: Array<[number, string]> = [
       [1 / 3, 'REMIND'],
-      [2 / 3, 'IVR_CALL'],
-      [0.9, 'OPS_QUEUE'],
+      [2 / 3, 'OPS_CALL'],
       [1, 'AUTO_CANCEL'],
     ];
     for (const [fraction, action] of steps) {
@@ -173,11 +172,18 @@ export class ScheduledService implements OnModuleInit {
 
     onOrder('MERCHANT_RECONFIRM_DEADLINE', async (client, order) => {
       if (!order.is_scheduled || order.merchant_reconfirmed_at || !order.state.startsWith('HEN_')) return;
-      await this.notifications.toStore(client, order.store_id, 'IVR', 'RECONFIRM_SCHEDULED_IVR', { orderId: Number(order.id) });
       if (order.state === OrderState.HEN_SHIPPER_DA_GIU) {
         await this.lifecycle.apply(client, order, OrderEvent.MERCHANT_RECONFIRM_MISSED, SYSTEM_ACTOR);
       }
-      await this.notifications.enqueue(client, null, 'PUSH', 'OPS_STUCK_ORDER', { orderId: Number(order.id), reason: 'MERCHANT_NOT_RECONFIRMED' });
+      // Điều phối viên gọi quán để hỏi lại (mở app gọi từ Admin Console).
+      const store = (await client.query('SELECT name, phone FROM stores WHERE id = $1', [order.store_id])).rows[0];
+      await this.notifications.enqueue(client, null, 'PUSH', 'OPS_CALL_STORE', {
+        orderId: Number(order.id),
+        code: order.code,
+        reason: 'MERCHANT_NOT_RECONFIRMED',
+        storeName: store.name,
+        storePhone: store.phone,
+      });
     });
 
     onOrder('SCHEDULED_PICKUP_OPEN', async (client, order) => {

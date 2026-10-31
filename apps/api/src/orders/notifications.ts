@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PoolClient } from 'pg';
 
-export type Channel = 'PUSH' | 'SMS' | 'ZNS' | 'IVR';
+/** Chỉ dùng kênh miễn phí: thông báo đẩy (web push) và trong app. Gọi/SMS/Zalo mở app ngoài trên máy người dùng. */
+export type Channel = 'PUSH';
 
 /**
- * Hàng chờ thông báo. MVP chỉ ghi vào bảng notifications; bộ gửi thật (FCM/APNs, SMS, ZNS, IVR)
+ * Hàng chờ thông báo. MVP chỉ ghi vào bảng notifications; bộ gửi web push (PushService)
  * đọc bảng này và gửi đi (Phần 3.7). Ghi trong cùng transaction với thay đổi đơn.
  */
 @Injectable()

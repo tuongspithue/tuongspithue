@@ -21,7 +21,7 @@ export interface ConfigDefinition {
 
 const gateAStepsValid = (v: unknown): string | null => {
   if (!Array.isArray(v) || v.length === 0) return 'Phải là danh sách các mốc';
-  const actions = ['REMIND', 'IVR_CALL', 'SUGGEST_SCHEDULE', 'OPS_QUEUE', 'AUTO_CANCEL'];
+  const actions = ['REMIND', 'OPS_CALL', 'SUGGEST_SCHEDULE', 'AUTO_CANCEL'];
   for (const s of v) {
     if (typeof s?.afterSeconds !== 'number' || s.afterSeconds < 10 || s.afterSeconds > 900) return 'afterSeconds trong khoảng 10–900';
     if (!actions.includes(s.action)) return `action phải thuộc ${actions.join(', ')}`;

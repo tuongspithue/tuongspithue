@@ -5,7 +5,11 @@
 
 import { OrderState } from './order-state';
 
-export type GateAAction = 'REMIND' | 'IVR_CALL' | 'SUGGEST_SCHEDULE' | 'OPS_QUEUE' | 'AUTO_CANCEL';
+/**
+ * REMIND: nhắc lại quán (thông báo đẩy) · OPS_CALL: điều phối viên bấm gọi quán bằng app điện thoại
+ * (thay cho cuộc gọi tự động trả phí) · SUGGEST_SCHEDULE: gợi ý khách hẹn giờ · AUTO_CANCEL: huỷ, hoàn tiền.
+ */
+export type GateAAction = 'REMIND' | 'OPS_CALL' | 'SUGGEST_SCHEDULE' | 'AUTO_CANCEL';
 
 export interface SlaStep {
   afterSeconds: number;
@@ -14,9 +18,8 @@ export interface SlaStep {
 
 export const DEFAULT_GATE_A_STEPS: readonly SlaStep[] = [
   { afterSeconds: 45, action: 'REMIND' },
-  { afterSeconds: 90, action: 'IVR_CALL' },
+  { afterSeconds: 90, action: 'OPS_CALL' },
   { afterSeconds: 120, action: 'SUGGEST_SCHEDULE' },
-  { afterSeconds: 150, action: 'OPS_QUEUE' },
   { afterSeconds: 180, action: 'AUTO_CANCEL' },
 ];
 

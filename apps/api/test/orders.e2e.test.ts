@@ -161,6 +161,11 @@ describe('luồng đầy đủ: đặt đơn → Cổng A → Cổng B → giao 
     // Cổng B.
     const taken = await t.http().post(`/v1/rider/offers/${offer.id}/accept`).set(auth(riderA.token)).expect(200);
     expect(taken.body.state).toBe('SHIPPER_DA_NHAN');
+    // Liên hệ qua app ngoài: mỗi bên thấy SĐT của bên kia khi đơn đang chạy.
+    const asCustomer = await t.http().get(`/v1/orders/${order.id}`).set(auth(customer)).expect(200);
+    expect(asCustomer.body.contacts).toEqual({ store: '0911111111', rider: '0933333333' });
+    const asRider = await t.http().get(`/v1/orders/${order.id}`).set(auth(riderA.token)).expect(200);
+    expect(asRider.body.contacts).toEqual({ customer: '0922222222', store: '0911111111' });
     const trips = await t.http().get('/v1/rider/trips').set(auth(riderA.token)).expect(200);
     expect(trips.body.trips.map((x: any) => x.id)).toEqual([order.id]);
     const myStores = await t.http().get('/v1/merchant/stores').set(auth(merchant)).expect(200);
@@ -208,6 +213,7 @@ describe('luồng đầy đủ: đặt đơn → Cổng A → Cổng B → giao 
       'DELIVERED:RIDER:APP',
     ]);
     expect(view.body.allergyAcknowledged).toBe(true);
+    expect(view.body.contacts).toEqual({}); // đơn đã xong: không còn lộ SĐT
     expect(view.body.riderTier).toBe('ROOKIE');
 
     // Đánh giá tách riêng quán và shipper; điểm uy tín tính lại.
@@ -248,16 +254,19 @@ describe('luồng đầy đủ: đặt đơn → Cổng A → Cổng B → giao 
 });
 
 describe('Cổng A — hẹn giờ và dự phòng', () => {
-  it('quán im lặng: nhắc, gọi IVR có đọc ghi chú, báo Ops, 180 giây thì huỷ và hoàn tiền', async () => {
+  it('quán im lặng: nhắc, nhờ Ops gọi quán (kèm SĐT & lời đọc có ghi chú), 180 giây thì huỷ và hoàn tiền', async () => {
     const order = await placeOrder({ items: [{ itemId: phoId, quantity: 1, noteTags: ['Không hành'], allergens: ['SEAFOOD'] }] });
     const placedAt = Date.now();
 
     await t.jobs.runDue(new Date(placedAt + 100_000));
     let view = await t.http().get(`/v1/orders/${order.id}`).set(auth(customer)).expect(200);
     expect(view.body.state).toBe('CHO_QUAN_XAC_NHAN');
-    const ivr = await t.pool.query(`SELECT payload FROM notifications WHERE channel = 'IVR'`);
-    expect(ivr.rows[0].payload.script).toContain('ghi chú: Không hành');
-    expect(ivr.rows[0].payload.script).toContain('Lưu ý dị ứng: SEAFOOD');
+    const call = await t.pool.query(`SELECT payload FROM notifications WHERE template = 'OPS_CALL_STORE'`);
+    expect(call.rows[0].payload).toMatchObject({ storePhone: '0911111111', reason: 'MERCHANT_SILENT' });
+    expect(call.rows[0].payload.script).toContain('ghi chú: Không hành');
+    expect(call.rows[0].payload.script).toContain('Lưu ý dị ứng: SEAFOOD');
+    // Không còn kênh trả phí (SMS/ZNS/IVR).
+    expect((await t.pool.query(`SELECT DISTINCT channel FROM notifications`)).rows).toEqual([{ channel: 'PUSH' }]);
 
     await t.jobs.runDue(new Date(placedAt + 181_000));
     view = await t.http().get(`/v1/orders/${order.id}`).set(auth(customer)).expect(200);
@@ -265,7 +274,7 @@ describe('Cổng A — hẹn giờ và dự phòng', () => {
     expect(view.body.refund).toBe('FULL');
     const templates = (await t.pool.query('SELECT template FROM notifications ORDER BY id')).rows.map((r) => r.template);
     expect(templates).toEqual(
-      expect.arrayContaining(['NEW_ORDER', 'NEW_ORDER_REMINDER', 'NEW_ORDER_IVR', 'SUGGEST_SCHEDULE', 'OPS_STUCK_ORDER', 'ORDER_CANCELLED_MERCHANT_SILENT']),
+      expect.arrayContaining(['NEW_ORDER', 'NEW_ORDER_REMINDER', 'OPS_CALL_STORE', 'SUGGEST_SCHEDULE', 'ORDER_CANCELLED_MERCHANT_SILENT']),
     );
   });
 

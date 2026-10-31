@@ -8,6 +8,7 @@ import {
   sanitizeItemNote,
   sanitizeNoteText,
   ORDER_NOTE_MAX_LENGTH,
+  TERMINAL_STATES,
 } from '@sqt/domain';
 import { randomBytes, randomInt } from 'crypto';
 import { PoolClient } from 'pg';
@@ -55,19 +56,13 @@ export class OrdersService implements OnModuleInit {
       const info = { orderId: Number(order.id), code: order.code };
       switch (action) {
         case 'REMIND':
-          await this.notifications.toStore(client, order.store_id, 'ZNS', 'NEW_ORDER_REMINDER', info);
+          await this.notifications.toStore(client, order.store_id, 'PUSH', 'NEW_ORDER_REMINDER', info);
           break;
-        case 'IVR_CALL':
-          await this.notifications.toStore(client, order.store_id, 'IVR', 'NEW_ORDER_IVR', {
-            ...info,
-            script: await this.ivrScript(client, order),
-          });
+        case 'OPS_CALL':
+          await this.requestOpsCall(client, order, 'MERCHANT_SILENT');
           break;
         case 'SUGGEST_SCHEDULE':
           await this.notifications.enqueue(client, order.customer_id, 'PUSH', 'SUGGEST_SCHEDULE', info);
-          break;
-        case 'OPS_QUEUE':
-          await this.notifications.enqueue(client, null, 'PUSH', 'OPS_STUCK_ORDER', { ...info, reason: 'MERCHANT_SILENT' });
           break;
         case 'AUTO_CANCEL':
           await this.lifecycle.apply(client, order, OrderEvent.MERCHANT_TIMEOUT, SYSTEM_ACTOR, {
@@ -87,8 +82,24 @@ export class OrdersService implements OnModuleInit {
     });
   }
 
-  /** Lời đọc IVR có cả ghi chú và cảnh báo dị ứng (Phần 2.2.3). */
-  private async ivrScript(client: PoolClient, order: OrderRow): Promise<string> {
+  /**
+   * Nhờ điều phối viên gọi quán: Admin Console hiện số quán (bấm để mở app gọi) và lời đọc đơn.
+   * Thay cho cuộc gọi tự động trả phí (Phần 3.3).
+   */
+  async requestOpsCall(client: PoolClient, order: OrderRow, reason: string) {
+    const store = (await client.query<{ phone: string; name: string }>('SELECT phone, name FROM stores WHERE id = $1', [order.store_id])).rows[0];
+    await this.notifications.enqueue(client, null, 'PUSH', 'OPS_CALL_STORE', {
+      orderId: Number(order.id),
+      code: order.code,
+      reason,
+      storeName: store.name,
+      storePhone: store.phone,
+      script: await this.callScript(client, order),
+    });
+  }
+
+  /** Lời đọc đơn cho quán qua điện thoại, có cả ghi chú và cảnh báo dị ứng (Phần 2.2.3). */
+  private async callScript(client: PoolClient, order: OrderRow): Promise<string> {
     const { rows } = await client.query(
       'SELECT name_snapshot, quantity, note, note_tags, allergens FROM order_items WHERE order_id = $1 ORDER BY id',
       [order.id],
@@ -100,7 +111,7 @@ export class OrdersService implements OnModuleInit {
     });
     const allergens = [...new Set(rows.flatMap((r) => r.allergens))];
     const warn = allergens.length ? ` Lưu ý dị ứng: ${allergens.join(', ')}.` : '';
-    return `Quán có đơn mới ${Number(order.total).toLocaleString('vi-VN')} đồng. ${parts.join('. ')}.${warn} Bấm 1 để nhận, bấm 2 để từ chối.`;
+    return `Quán có đơn mới ${order.code}, ${Number(order.total).toLocaleString('vi-VN')} đồng. ${parts.join('. ')}.${warn}`;
   }
 
   private async scheduleGateA(client: PoolClient, order: OrderRow, from: Date) {
@@ -420,9 +431,25 @@ export class OrdersService implements OnModuleInit {
     // Khách thấy cấp uy tín của shipper; quán/shipper thấy số đơn thành công của khách (Phần 11.5).
     const extra = await q.query(
       `SELECT (SELECT tier FROM trust_scores WHERE subject_type = 'RIDER' AND subject_id = $1) AS rider_tier,
-              (SELECT count(*)::int FROM orders WHERE customer_id = $2 AND state = 'HOAN_THANH') AS customer_done`,
-      [o.rider_id, o.customer_id],
+              (SELECT count(*)::int FROM orders WHERE customer_id = $2 AND state = 'HOAN_THANH') AS customer_done,
+              (SELECT phone FROM users WHERE id = $2) AS customer_phone,
+              (SELECT phone FROM users WHERE id = $1) AS rider_phone,
+              (SELECT phone FROM stores WHERE id = $3) AS store_phone,
+              (SELECT name FROM stores WHERE id = $3) AS store_name`,
+      [o.rider_id, o.customer_id, o.store_id],
     );
+    const x = extra.rows[0];
+    // Liên hệ bằng app gọi/SMS/Zalo trên máy người dùng (không dùng dịch vụ số ẩn trả phí).
+    // Chỉ lộ SĐT cho các bên của đơn và chỉ khi đơn còn đang chạy (Phần 5.8).
+    const active = !TERMINAL_STATES.has(o.state);
+    const isOps = hasRole(viewer, 'OPS', 'ADMIN');
+    const receiverPhone = o.recipient_phone ?? x.customer_phone;
+    const contacts: Record<string, string | null> = {};
+    if (active || isOps) {
+      if (!isCustomer || isOps) contacts.customer = receiverPhone;
+      if (!isStore || isOps) contacts.store = x.store_phone;
+      if (o.rider_id && (!isRider || isOps)) contacts.rider = x.rider_phone;
+    }
     const events = await q.query(
       `SELECT e.event, e.from_state, e.to_state, e.actor_role, e.channel, e.created_at, u.full_name
        FROM order_events e LEFT JOIN users u ON u.id = e.actor_id WHERE e.order_id = $1 ORDER BY e.id`,
@@ -436,8 +463,13 @@ export class OrdersService implements OnModuleInit {
       deliveryMode: o.delivery_mode,
       storeId: Number(o.store_id),
       riderId: o.rider_id ? Number(o.rider_id) : null,
-      riderTier: o.rider_id ? (extra.rows[0].rider_tier ?? 'ROOKIE') : null,
-      ...(isCustomer ? {} : { customerCompletedOrders: extra.rows[0].customer_done }),
+      storeName: x.store_name,
+      riderTier: o.rider_id ? (x.rider_tier ?? 'ROOKIE') : null,
+      contacts,
+      recipientName: o.recipient_name,
+      dropoffAddress: o.dropoff_address,
+      dropoffNote: o.dropoff_note,
+      ...(isCustomer ? {} : { customerCompletedOrders: x.customer_done }),
       paymentMethod: o.payment_method,
       subtotal: Number(o.subtotal),
       deliveryFee: Number(o.delivery_fee),

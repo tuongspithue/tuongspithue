@@ -13,7 +13,7 @@ class RejectDto {
 
 /** Các điều kiện "đơn có vấn đề" (Phần 2.4, 14.4). */
 const PROBLEM_SQL = `(
-  (o.state IN ('CHO_QUAN_XAC_NHAN') AND o.created_at < now() - interval '150 seconds') OR
+  (o.state IN ('CHO_QUAN_XAC_NHAN') AND o.created_at < now() - interval '90 seconds') OR
   (o.state = 'DANG_TIM_SHIPPER' AND o.updated_at < now() - interval '5 minutes') OR
   (o.state = 'CAN_CAN_THIEP') OR
   (o.state IN ('DANG_GIAO', 'DA_LAY_HANG') AND EXISTS (
@@ -93,7 +93,7 @@ export class AdminController {
   async listOrders(@Query('state') state?: string, @Query('problem') problem?: string, @Query('q') q?: string) {
     const { rows } = await this.db.query(
       `SELECT o.id, o.code, o.state, o.total, o.payment_method, o.is_scheduled, o.scheduled_pickup_at, o.created_at, o.updated_at,
-              s.name AS store_name, u.phone AS customer_phone, ${PROBLEM_REASON_SQL} AS problem
+              s.name AS store_name, s.phone AS store_phone, u.phone AS customer_phone, ${PROBLEM_REASON_SQL} AS problem
        FROM orders o JOIN stores s ON s.id = o.store_id JOIN users u ON u.id = o.customer_id
        WHERE ($1::text IS NULL OR o.state = $1)
          AND ($2::boolean IS NOT TRUE OR ${PROBLEM_SQL})
@@ -111,6 +111,7 @@ export class AdminController {
         isScheduled: r.is_scheduled,
         pickupAt: r.scheduled_pickup_at,
         storeName: r.store_name,
+        storePhone: r.store_phone,
         // SĐT khách che bớt mặc định (Phần 14.9).
         customerPhone: r.customer_phone.replace(/^(\d{3})\d{4}(\d{3})$/, '$1****$2'),
         problem: problem === 'true' ? r.problem : null,
@@ -123,6 +124,23 @@ export class AdminController {
   @Get('orders/:id')
   order(@CurrentUser() user: AuthUser, @Param('id', ParseIntPipe) id: number) {
     return this.orders.view(this.db, id, user);
+  }
+
+  /** "Việc cần làm" của Ops: các đơn cần gọi quán, kèm SĐT và lời đọc đơn (thay cuộc gọi tự động). */
+  @Get('ops-inbox')
+  async opsInbox() {
+    const { rows } = await this.db.query(
+      `SELECT DISTINCT ON (n.payload->>'orderId') n.id, n.template, n.payload, n.created_at, o.state
+       FROM notifications n JOIN orders o ON o.id = (n.payload->>'orderId')::bigint
+       WHERE n.user_id IS NULL AND n.template = 'OPS_CALL_STORE' AND n.created_at > now() - interval '1 day'
+         AND o.state IN ('CHO_QUAN_XAC_NHAN', 'HEN_CHO_QUAN_NHAN', 'CAN_CAN_THIEP', 'HEN_SHIPPER_DA_GIU', 'HEN_TREN_CHO_CHUYEN')
+       ORDER BY n.payload->>'orderId', n.id DESC`,
+    );
+    return {
+      items: rows
+        .map((r) => ({ id: Number(r.id), orderId: Number(r.payload.orderId), code: r.payload.code, reason: r.payload.reason, storeName: r.payload.storeName, storePhone: r.payload.storePhone, script: r.payload.script ?? null, state: r.state, at: r.created_at }))
+        .sort((a, b) => +new Date(a.at) - +new Date(b.at)),
+    };
   }
 
   @Get('partners/pending')

@@ -15,6 +15,7 @@ interface Row {
   isScheduled: boolean;
   pickupAt: string | null;
   storeName: string;
+  storePhone: string;
   customerPhone: string;
   problem: string | null;
   createdAt: string;
@@ -86,7 +87,14 @@ function OrdersInner() {
                   <StateBadge state={r.state} label={STATE_LABELS[r.state] ?? r.state} />
                 </td>
                 {problem && <td className="tone-bad">{r.problem ? PROBLEM_LABELS[r.problem] ?? r.problem : ''}</td>}
-                <td>{r.storeName}</td>
+                <td>
+                  {r.storeName}
+                  {problem && r.problem === 'MERCHANT_SILENT' && (
+                    <div>
+                      <a href={`tel:${r.storePhone}`}>📞 Gọi quán {r.storePhone}</a>
+                    </div>
+                  )}
+                </td>
                 <td>{r.customerPhone}</td>
                 <td>
                   {money(r.total)} <span className="muted">{r.paymentMethod}</span>

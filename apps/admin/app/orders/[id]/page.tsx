@@ -2,11 +2,12 @@
 
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
+import { ContactButtons } from '@/components/ContactButtons';
 import { StateBadge } from '@/components/Shell';
 import { ALLERGEN_LABELS, EVENT_LABELS, STATE_LABELS, api, money, time } from '@/lib/api';
 
 const ROLE_LABELS: Record<string, string> = { CUSTOMER: 'Khách', MERCHANT: 'Quán', RIDER: 'Shipper', OPS: 'Điều phối viên', SYSTEM: 'Hệ thống' };
-const CHANNEL_LABELS: Record<string, string> = { APP: 'app', IVR: 'cuộc gọi tự động', OPS_CALL: 'Ops gọi điện', SYSTEM: 'tự động', WEB: 'web' };
+const CHANNEL_LABELS: Record<string, string> = { APP: 'app', OPS_CALL: 'Ops gọi điện', SYSTEM: 'tự động', WEB: 'web' };
 
 /** Hồ sơ đơn: dòng thời gian ai xác nhận, lúc nào, qua kênh nào (Phần 14.5). */
 export default function OrderDetailPage() {
@@ -64,6 +65,14 @@ export default function OrderDetailPage() {
         </div>
       </div>
 
+      <h2>Liên hệ</h2>
+      <div className="card" style={{ display: 'grid', gap: 8 }}>
+        <ContactButtons label={`Quán ${o.storeName ?? ''}`} phone={o.contacts?.store} />
+        <ContactButtons label={o.recipientName ? `Người nhận ${o.recipientName}` : 'Khách'} phone={o.contacts?.customer} />
+        <ContactButtons label="Shipper" phone={o.contacts?.rider} />
+        {o.dropoffAddress && <div className="muted">Giao tới: {o.dropoffAddress}{o.dropoffNote ? ` — ${o.dropoffNote}` : ''}</div>}
+      </div>
+
       <h2>Món & ghi chú</h2>
       <table>
         <thead>
@@ -90,7 +99,7 @@ export default function OrderDetailPage() {
       {o.state === 'CHO_QUAN_XAC_NHAN' && (
         <>
           <h2>Ops xác nhận thay quán</h2>
-          <p className="muted">Chỉ dùng sau khi đã gọi điện và quán đồng ý nhận đơn.</p>
+          <p className="muted">Bấm "Gọi" ở mục Liên hệ để gọi quán, đọc đơn (kể cả ghi chú và dị ứng), rồi xác nhận khi quán đồng ý nhận.</p>
           <div className="row">
             <label>
               Thời gian chuẩn bị{' '}

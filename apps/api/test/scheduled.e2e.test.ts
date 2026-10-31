@@ -159,7 +159,7 @@ describe('đặt đơn hẹn', () => {
 });
 
 describe('quán nhận đơn hẹn (Cổng A)', () => {
-  it('quán im lặng tới hạn trả lời: nhắc, gọi IVR, báo Ops rồi huỷ và hoàn tiền', async () => {
+  it('quán im lặng tới hạn trả lời: nhắc, nhờ Ops gọi quán rồi huỷ và hoàn tiền', async () => {
     const order = await paidScheduled(slotAfter(240));
     const v = await state(order.id);
     expect(new Date(v.schedule.merchantReplyDeadline).getTime()).toBeLessThanOrEqual(Date.now() + 30 * MIN + 1000);
@@ -168,7 +168,7 @@ describe('quán nhận đơn hẹn (Cổng A)', () => {
     const after = await state(order.id);
     expect(after).toMatchObject({ state: 'DA_HUY', refund: 'FULL' });
     const templates = (await t.pool.query('SELECT template FROM notifications')).rows.map((r) => r.template);
-    expect(templates).toEqual(expect.arrayContaining(['NEW_SCHEDULED_ORDER', 'NEW_ORDER_REMINDER', 'NEW_ORDER_IVR', 'OPS_STUCK_ORDER']));
+    expect(templates).toEqual(expect.arrayContaining(['NEW_SCHEDULED_ORDER', 'NEW_ORDER_REMINDER', 'OPS_CALL_STORE']));
   });
 
   it('quán đề xuất giờ khác, khách đồng ý → đơn lên chợ chuyến với giờ mới', async () => {
@@ -287,7 +287,7 @@ describe('chợ chuyến hẹn (Cổng B) và xác nhận lại', () => {
     expect(released.body).toMatchObject({ state: 'HEN_TREN_CHO_CHUYEN', late: false });
   });
 
-  it('quán không xác nhận lại trước giờ → gọi IVR, chuyển cần can thiệp', async () => {
+  it('quán không xác nhận lại trước giờ → nhờ Ops gọi quán, chuyển cần can thiệp', async () => {
     await t.http().post('/v1/rider/status').set(auth(riderA.token)).send({ online: true, ...offset(300) }).expect(200);
     const order = await paidScheduled(slotAfter(90));
     await accept(order.id);
@@ -297,7 +297,7 @@ describe('chợ chuyến hẹn (Cổng B) và xác nhận lại', () => {
     await travelUntil(order.id, 19);
     await t.jobs.runDue();
     expect((await state(order.id)).state).toBe('CAN_CAN_THIEP');
-    const ivr = await t.pool.query(`SELECT 1 FROM notifications WHERE template = 'RECONFIRM_SCHEDULED_IVR'`);
-    expect(ivr.rowCount).toBe(1);
+    const call = await t.pool.query(`SELECT payload FROM notifications WHERE template = 'OPS_CALL_STORE'`);
+    expect(call.rows.map((r) => r.payload.reason)).toContain('MERCHANT_NOT_RECONFIRMED');
   });
 });

@@ -78,6 +78,13 @@ export const STATE_LABELS: Record<string, string> = {
   HEN_SAN_SANG: 'Hẹn · sẵn sàng',
 };
 
+/** Liên hệ bằng app trên máy (không dùng dịch vụ trả phí): gọi, SMS, Zalo. */
+export const contactLinks = (phone: string) => ({
+  call: `tel:${phone}`,
+  sms: `sms:${phone}`,
+  zalo: `https://zalo.me/${phone}`,
+});
+
 export const ALLERGEN_LABELS: Record<string, string> = {
   PEANUT: 'Đậu phộng',
   SEAFOOD: 'Hải sản',

@@ -109,7 +109,7 @@ describe('trung tâm cấu hình phân tầng (Phần 14.6)', () => {
       .http()
       .put('/v1/admin/config/sla.gate_a.steps')
       .set(auth(admin))
-      .send({ scope: 'GLOBAL', value: [{ afterSeconds: 60, action: 'IVR_CALL' }, { afterSeconds: 120, action: 'AUTO_CANCEL' }], reason: 'Rút ngắn chờ ở khu thí điểm' })
+      .send({ scope: 'GLOBAL', value: [{ afterSeconds: 60, action: 'OPS_CALL' }, { afterSeconds: 120, action: 'AUTO_CANCEL' }], reason: 'Rút ngắn chờ ở khu thí điểm' })
       .expect(200);
     const o = (await order().expect(201)).body;
     await t.jobs.runDue(new Date(Date.now() + 125_000));

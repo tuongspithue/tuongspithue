@@ -11,6 +11,7 @@ import { DATABASE, Database } from './database/database';
 import { OrdersModule } from './orders/orders.module';
 import { StoresModule } from './stores/stores';
 import { ConfigCenterModule } from './config-center/config-center.module';
+import { PushModule } from './push/push';
 
 @Global()
 @Module({
@@ -56,6 +57,7 @@ class HealthController {
     StoresModule,
     OrdersModule,
     AdminModule,
+    PushModule,
   ],
   controllers: [HealthController],
   providers: [
