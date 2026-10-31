@@ -1,0 +1,91 @@
+/* Design tokens theo Phần 9.2 — màu theo ý nghĩa, có chế độ tối. */
+:root {
+  --bg: #f7f7f8;
+  --surface: #ffffff;
+  --text: #17181a;
+  --muted: #6b6f76;
+  --border: #e3e4e7;
+  --primary: #ff6b2c;
+  --primary-text: #ffffff;
+  --confirmed: #148a3e;
+  --waiting: #b26b00;
+  --scheduled: #6a4ff0;
+  --danger: #d0353a;
+  --radius: 12px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111214;
+    --surface: #1b1d20;
+    --text: #eceef1;
+    --muted: #9a9fa8;
+    --border: #2c2f34;
+    --confirmed: #3ccf6e;
+    --waiting: #ffb020;
+    --scheduled: #9d8bff;
+    --danger: #ff6b6f;
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif; }
+a { color: inherit; }
+button, input, select, textarea { font: inherit; color: inherit; }
+
+.shell { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+.nav { background: var(--surface); border-right: 1px solid var(--border); padding: 16px 12px; display: flex; flex-direction: column; gap: 4px; }
+.nav .brand { font-weight: 700; font-size: 17px; padding: 4px 10px 16px; }
+.nav .brand span { color: var(--primary); }
+.nav a { text-decoration: none; padding: 9px 10px; border-radius: 8px; color: var(--muted); }
+.nav a.active, .nav a:hover { background: var(--bg); color: var(--text); }
+.nav .spacer { flex: 1; }
+main { padding: 24px; max-width: 1200px; width: 100%; }
+h1 { font-size: 22px; margin: 0 0 16px; }
+h2 { font-size: 17px; margin: 24px 0 10px; }
+
+.grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+.card .label { color: var(--muted); font-size: 13px; }
+.card .value { font-size: 26px; font-weight: 700; margin-top: 4px; }
+.card.alert { border-color: var(--danger); }
+.card.alert .value { color: var(--danger); }
+
+table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { font-size: 13px; color: var(--muted); font-weight: 600; }
+tr:last-child td { border-bottom: 0; }
+td a { font-weight: 600; }
+
+.badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; border: 1px solid currentColor; }
+.tone-ok { color: var(--confirmed); }
+.tone-wait { color: var(--waiting); }
+.tone-bad { color: var(--danger); }
+.tone-sched { color: var(--scheduled); }
+.tone-muted { color: var(--muted); }
+
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+input, select, textarea { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; min-width: 0; }
+textarea { width: 100%; font-family: ui-monospace, monospace; font-size: 13px; }
+.btn { border: 0; border-radius: 999px; padding: 8px 16px; background: var(--primary); color: var(--primary-text); font-weight: 600; cursor: pointer; }
+.btn.secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
+.btn.danger { background: var(--danger); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.error { color: var(--danger); margin: 8px 0; }
+.ok { color: var(--confirmed); margin: 8px 0; }
+.muted { color: var(--muted); }
+.timeline { list-style: none; padding: 0; margin: 0; }
+.timeline li { padding: 8px 0 8px 18px; border-left: 2px solid var(--border); position: relative; }
+.timeline li::before { content: ""; position: absolute; left: -6px; top: 13px; width: 10px; height: 10px; border-radius: 50%; background: var(--confirmed); }
+.login { max-width: 360px; margin: 12vh auto; }
+.login .card { display: flex; flex-direction: column; gap: 10px; }
+
+@media (max-width: 760px) {
+  .shell { grid-template-columns: 1fr; }
+  .nav { flex-direction: row; flex-wrap: wrap; border-right: 0; border-bottom: 1px solid var(--border); }
+  .nav .brand { width: 100%; padding-bottom: 6px; }
+  main { padding: 16px; }
+  table { display: block; overflow-x: auto; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }

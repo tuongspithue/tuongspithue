@@ -228,3 +228,37 @@ describe('kết nối AI do Admin nhập — mặc định Groq (Phần 12.8)', 
     expect(check.body.ok).toBe(false);
   });
 });
+
+describe('Admin Console: tổng quan, đơn có vấn đề, duyệt hồ sơ (Phần 14)', () => {
+  it('tổng quan đếm đơn đang chạy và đơn có vấn đề; hàng đợi chỉ ra lý do', async () => {
+    const o = (await order({ paymentMethod: 'VIETQR' }).expect(201)).body;
+    await t.http().post(`/v1/webhooks/payments/dev/${o.id}/paid`).expect(200);
+    await t.pool.query(`UPDATE orders SET created_at = now() - interval '3 minutes' WHERE id = $1`, [o.id]);
+    const dash = await t.http().get('/v1/admin/dashboard').set(auth(admin)).expect(200);
+    expect(dash.body.activeOrders.CHO_QUAN_XAC_NHAN).toBeGreaterThanOrEqual(1);
+    expect(dash.body.problemOrders).toBeGreaterThanOrEqual(1);
+    const queue = await t.http().get('/v1/admin/orders').query({ problem: 'true' }).set(auth(admin)).expect(200);
+    const row = queue.body.orders.find((r: any) => r.id === o.id);
+    expect(row).toMatchObject({ problem: 'MERCHANT_SILENT', customerPhone: '092****222' });
+    const detail = await t.http().get(`/v1/admin/orders/${o.id}`).set(auth(admin)).expect(200);
+    expect(detail.body.timeline[0].event).toBe('ORDER_PLACED');
+    await t.http().get('/v1/admin/dashboard').set(auth(customer.token)).expect(403);
+  });
+
+  it('hồ sơ chờ duyệt; từ chối có lý do, ghi nhật ký và báo đối tác', async () => {
+    const owner = await t.login('0988888888');
+    const s = await t
+      .http()
+      .post('/v1/merchant/stores')
+      .set(auth(owner.token))
+      .send({ name: 'Quán Mới', category: 'DRINK', ...STORE_AT, address: '9 Hàm Nghi, Quận 1', phone: '0988888888' })
+      .expect(201);
+    const pending = await t.http().get('/v1/admin/partners/pending').set(auth(admin)).expect(200);
+    expect(pending.body.stores.map((x: any) => x.id)).toContain(s.body.id);
+    await t.http().post(`/v1/admin/stores/${s.body.id}/reject`).set(auth(admin)).send({ reason: 'Ảnh mặt tiền chưa rõ' }).expect(200);
+    const n = await t.pool.query(`SELECT payload FROM notifications WHERE user_id = $1 AND template = 'STORE_REJECTED'`, [owner.userId]);
+    expect(n.rows[0].payload.reason).toBe('Ảnh mặt tiền chưa rõ');
+    const logs = await t.http().get('/v1/admin/users/audit-logs').query({ targetType: 'store' }).set(auth(admin)).expect(200);
+    expect(logs.body.logs[0]).toMatchObject({ action: 'STORE_REJECTED', reason: 'Ảnh mặt tiền chưa rõ' });
+  });
+});

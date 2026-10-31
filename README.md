@@ -49,6 +49,7 @@ Monorepo dùng **pnpm**:
 |---|---|
 | `packages/domain` | Luật nghiệp vụ thuần TypeScript, không phụ thuộc CSDL: máy trạng thái đơn (Phần 3.2, 10.6) với bất biến *người thật xác nhận* ở Cổng A/B, phí ship (4.1), ghi chú từng món & dị ứng (2.1.4a), chính sách huỷ (3.5), điểm & cấp uy tín (11), đọc menu dạng chữ (2.2.2) |
 | `apps/api` | Backend NestJS + PostgreSQL/PostGIS: đăng nhập OTP, quán & menu, "Quanh tôi", đặt đơn có Idempotency-Key, Cổng A (app quán, Ops gọi xác nhận) với các mốc nhắc → IVR → Ops → tự huỷ sau 180 giây, điều phối shipper theo vòng, Cổng B, các bước giao có geofence, **đơn hẹn giờ** (khung giờ & năng lực quán, quán nhận/đề xuất giờ, chợ chuyến hẹn, giữ/nhả chuyến, xác nhận lại T−30/T−20, tự chuyển điều phối khi còn 30 phút), **đánh giá & điểm uy tín v1** (sao Bayes, tỷ lệ nhận đơn, tốc độ xác nhận, hoàn thành chuyến, giữ cam kết chuyến hẹn; cấp uy tín quyết định thứ tự mời chuyến, thời điểm thấy chợ chuyến hẹn và số chuyến được giữ), **trung tâm cấu hình phân tầng** (quán → ngành → toàn hệ thống, kiểm tra khoảng giá trị, nguyên tắc bất biến, phiên bản, hoàn tác), **phân quyền chức năng & điều chỉnh cấp** từng người dùng (lý do, thời hạn ≤ 90 ngày, thông báo cho người bị ảnh hưởng), **kết nối AI do Admin nhập** (mặc định Groq, key mã hoá chỉ hiện 4 ký tự cuối, kiểm tra kết nối, model theo tác vụ, tự quay về chế độ không-AI), nhập menu từ danh sách chữ, nhật ký thao tác nội bộ bất biến, nhật ký sự kiện bất biến, outbox |
+| `apps/admin` | **Admin Console** (Next.js): đăng nhập OTP chỉ cho ADMIN/OPS, tổng quan tự làm mới, hàng đợi đơn có vấn đề, chi tiết đơn với dòng thời gian ai-xác-nhận-qua-kênh-nào và Ops xác nhận thay quán, duyệt/từ chối đối tác, trung tâm cấu hình (sửa, lịch sử, hoàn tác), quyền & xếp loại người dùng, kết nối AI. Dùng được trên điện thoại, có chế độ tối |
 | `infra` | `docker-compose.yml` cho PostgreSQL + PostGIS và Redis khi phát triển |
 
 **Chạy cục bộ**
@@ -60,11 +61,12 @@ cp apps/api/.env.example apps/api/.env               # sửa JWT_SECRET, ADMIN_P
 set -a; . apps/api/.env; set +a
 pnpm db:migrate
 pnpm --filter @sqt/api start                         # http://localhost:3000/health
+NEXT_PUBLIC_API_URL=http://localhost:3000 pnpm --filter @sqt/admin start   # http://localhost:3001
 ```
 
 **Kiểm thử:** `pnpm test` chạy test của `domain` và test đầu-cuối của `api` trên CSDL `sqt_test` (đổi bằng `TEST_DATABASE_URL`). CI trên GitHub Actions chạy `lint`, `build`, `test` ở mỗi lần đẩy code.
 
-**Chưa có ở bản này** (làm tiếp theo lộ trình MVP, Phần 8): chuẩn hoá điểm theo phân vị khu vực và Bảng Vàng (Phần 11.6), luồng duyệt 4 mắt, Rule Builder, điều chỉnh ưu tiên theo tác vụ (Phần 14–15, bản 1.0), Admin Console giao diện web, gửi thông báo thật (FCM/SMS/ZNS/IVR — hiện chỉ ghi hàng chờ), cổng thanh toán thật, ba app Flutter.
+**Chưa có ở bản này** (làm tiếp theo lộ trình MVP, Phần 8): chuẩn hoá điểm theo phân vị khu vực và Bảng Vàng (Phần 11.6), luồng duyệt 4 mắt, Rule Builder, điều chỉnh ưu tiên theo tác vụ, dashboard kéo thả, bản đồ trực tiếp (Phần 14–15, bản 1.0), gửi thông báo thật (FCM/SMS/ZNS/IVR — hiện chỉ ghi hàng chờ), cổng thanh toán thật, ba app Flutter.
 
 ## 📖 Thuật ngữ
 
