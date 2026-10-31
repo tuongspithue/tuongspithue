@@ -15,7 +15,7 @@ import {
   Max,
   Min,
 } from 'class-validator';
-import { AuthUser, CurrentUser, Public, worksAtStore } from '../common/auth';
+import { AuthUser, CurrentUser, Public, assertPartnerSession, worksAtStore } from '../common/auth';
 import { BusinessError } from '../common/errors';
 import { point } from '../common/geo';
 import { DATABASE, Database } from '../database/database';
@@ -26,7 +26,7 @@ import { ConfigCenter } from '../config-center/config.service';
 /** Ngành hàng mở ở MVP (Phần 1.5). */
 export const MVP_CATEGORIES = ['FOOD', 'DRINK', 'GROCERY', 'WATER_ICE', 'MOM_BABY'] as const;
 
-class CreateStoreDto {
+export class CreateStoreDto {
   @Length(2, 160) name!: string;
   @IsIn(MVP_CATEGORIES as unknown as string[], { message: 'Ngành hàng chưa mở ở giai đoạn này' }) category!: string;
   @IsLatitude() lat!: number;
@@ -265,6 +265,7 @@ export class StoresController {
 
   @Post('merchant/stores')
   create(@CurrentUser() user: AuthUser, @Body() dto: CreateStoreDto) {
+    assertPartnerSession(user);
     return this.stores.create(user, dto);
   }
 

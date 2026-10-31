@@ -1,10 +1,12 @@
 import { Pool } from 'pg';
+import { createActivationCode } from '../auth/activation';
+import { loadConfig } from '../config';
 import { migrate } from './migrate';
 
 /**
  * Dữ liệu mẫu để test: 3 quán đã duyệt & đang mở quanh một toạ độ, 2 shipper đã duyệt.
  * Chạy: DATABASE_URL=... SEED_LAT=10.7769 SEED_LNG=106.7009 node dist/src/database/seed.js
- * Đăng nhập bằng các số điện thoại in ra ở cuối (mã OTP hiện trên màn hình khi bật OTP_DEV_ECHO).
+ * In ra mã kích hoạt cho quán, shipper và Admin mẫu; khách đăng nhập bằng số bất kỳ (không cần mã).
  */
 const LAT = Number(process.env.SEED_LAT ?? 10.7769);
 const LNG = Number(process.env.SEED_LNG ?? 106.7009);
@@ -93,13 +95,24 @@ async function main() {
       [id, LNG, LAT],
     );
   }
+  // Mã kích hoạt cho tài khoản mẫu (chạy lại seed là cấp mã mới).
+  const config = loadConfig();
+  const codes: string[] = [];
+  const phones: Array<[string, string]> = [
+    ...config.adminPhones.map((p) => [p, 'Admin'] as [string, string]),
+    ...STORES.map((s) => [s.owner, `Quán ${s.name}`] as [string, string]),
+    ...RIDERS.map((p) => [p, 'Shipper'] as [string, string]),
+  ];
+  for (const [phone, label] of phones) {
+    const id = await user(pool, phone, 'CUSTOMER');
+    const { code } = await createActivationCode(pool, config.jwtSecret, id, null);
+    codes.push(`  ${label.padEnd(24)} ${phone}  mã ${code}`);
+  }
   await pool.end();
   console.log(`
-Dữ liệu mẫu quanh (${LAT}, ${LNG}):
-  Quán:    ${STORES.map((s) => `${s.owner} (${s.name})`).join(', ')}
-  Shipper: ${RIDERS.join(', ')}
-  Khách:   số điện thoại bất kỳ
-  Admin:   các số trong ADMIN_PHONES`);
+Dữ liệu mẫu quanh (${LAT}, ${LNG}). Mã kích hoạt (hết hạn sau 3 ngày, dùng 1 lần):
+${codes.join('\n')}
+  Khách: số điện thoại bất kỳ, không cần mã`);
 }
 
 main().catch((err) => {

@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import { Pool } from 'pg';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
+import { AuthService } from '../src/auth/auth';
 import { migrate } from '../src/database/migrate';
 import { configureApp } from '../src/main';
 import { JobsService } from '../src/orders/jobs';
@@ -19,14 +20,17 @@ export interface TestContext {
   pool: Pool;
   jobs: JobsService;
   http: () => ReturnType<typeof request>;
+  /** Đăng nhập như đối tác: cấp mã kích hoạt trực tiếp rồi kích hoạt qua API. */
   login: (phone: string) => Promise<{ token: string; userId: number }>;
+  /** Đăng nhập như khách trên web app (không xác minh). */
+  customerLogin: (phone: string, name?: string) => Promise<{ token: string; userId: number }>;
+  issueCode: (phone: string, revokeOthers?: boolean) => Promise<string>;
   close: () => Promise<void>;
 }
 
 export async function setup(): Promise<TestContext> {
   process.env.DATABASE_URL = DB_URL;
   process.env.JOBS_WORKER = 'off';
-  process.env.OTP_DEV_ECHO = 'true';
   process.env.ADMIN_PHONES = ADMIN_PHONE;
 
   const pool = new Pool({ connectionString: DB_URL });
@@ -38,9 +42,20 @@ export async function setup(): Promise<TestContext> {
   await app.init();
   const http = () => request(app.getHttpServer());
 
+  const issueCode = async (phone: string, revokeOthers = false) => {
+    const { rows } = await pool.query(
+      `INSERT INTO users (phone) VALUES ($1) ON CONFLICT (phone) DO UPDATE SET phone = EXCLUDED.phone RETURNING id`,
+      [phone],
+    );
+    return (await app.get(AuthService).issueActivationCode(Number(rows[0].id), null, revokeOthers)).code;
+  };
   const login = async (phone: string) => {
-    const req = await http().post('/v1/auth/otp/request').send({ phone }).expect(200);
-    const res = await http().post('/v1/auth/otp/verify').send({ phone, code: req.body.devCode }).expect(200);
+    const code = await issueCode(phone);
+    const res = await http().post('/v1/auth/activate').send({ phone, code }).expect(200);
+    return { token: res.body.accessToken as string, userId: res.body.userId as number };
+  };
+  const customerLogin = async (phone: string, name = 'Khách thử') => {
+    const res = await http().post('/v1/auth/customer').send({ phone, name }).expect(200);
     return { token: res.body.accessToken as string, userId: res.body.userId as number };
   };
 
@@ -50,6 +65,8 @@ export async function setup(): Promise<TestContext> {
     jobs: app.get(JobsService),
     http,
     login,
+    customerLogin,
+    issueCode,
     close: async () => {
       await app.close();
       await pool.end();

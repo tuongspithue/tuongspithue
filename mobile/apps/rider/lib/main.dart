@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sqt_core/sqt_core.dart';
+import 'package:sqt_partner/sqt_partner.dart';
 
 import 'screens/home.dart';
 
@@ -46,7 +47,12 @@ class _GateState extends State<_Gate> {
   Widget build(BuildContext context) {
     if (_signedIn == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
     if (_signedIn == false) {
-      return OtpLoginScreen(api: widget.api, title: 'SQT Tài Xế — đăng nhập', onSignedIn: () => setState(() => _signedIn = true));
+      return PartnerSignInScreen(
+        api: widget.api,
+        title: 'SQT Tài Xế — đăng nhập',
+        onSignedIn: () => setState(() => _signedIn = true),
+        onApply: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PartnerApplyScreen(api: widget.api, kind: PartnerKind.rider))),
+      );
     }
     return RiderHome(api: widget.api);
   }

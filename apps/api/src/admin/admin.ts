@@ -1,11 +1,20 @@
 import { Body, Controller, Get, HttpCode, Inject, Module, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
-import { Length } from 'class-validator';
+import { IsBoolean, IsOptional, Length, Matches } from 'class-validator';
+import { AuthModule, AuthService } from '../auth/auth';
 import { AuthUser, CurrentUser, Roles } from '../common/auth';
 import { BusinessError } from '../common/errors';
 import { audit } from '../config-center/config.service';
 import { DATABASE, Database } from '../database/database';
 import { OrdersModule } from '../orders/orders.module';
 import { OrdersService } from '../orders/orders.service';
+
+class ActivationCodeDto {
+  @IsOptional() @IsBoolean() revokeOthers?: boolean;
+}
+
+class ActivationByPhoneDto extends ActivationCodeDto {
+  @Matches(/^0\d{9}$/, { message: 'Số điện thoại không hợp lệ' }) phone!: string;
+}
 
 class RejectDto {
   @Length(3, 300) reason!: string;
@@ -38,6 +47,7 @@ export class AdminController {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
     private readonly orders: OrdersService,
+    private readonly auth: AuthService,
   ) {}
 
   /** Tổng quan "nhìn trong 5 giây" (Phần 14.2). */
@@ -146,16 +156,16 @@ export class AdminController {
   @Get('partners/pending')
   async pending() {
     const stores = await this.db.query(
-      `SELECT s.id, s.name, s.category, s.address_text, s.phone, s.created_at, u.phone AS owner_phone
+      `SELECT s.id, s.name, s.category, s.address_text, s.phone, s.created_at, u.phone AS owner_phone, u.full_name AS owner_name
        FROM stores s JOIN users u ON u.id = s.owner_user_id WHERE s.status = 'PENDING' ORDER BY s.created_at`,
     );
     const riders = await this.db.query(
-      `SELECT r.user_id, r.vehicle_type, r.plate_number, u.phone, u.created_at
+      `SELECT r.user_id, r.vehicle_type, r.plate_number, u.phone, u.full_name, u.created_at
        FROM riders r JOIN users u ON u.id = r.user_id WHERE r.status = 'PENDING' ORDER BY u.created_at`,
     );
     return {
-      stores: stores.rows.map((s) => ({ id: Number(s.id), name: s.name, category: s.category, address: s.address_text, phone: s.phone, ownerPhone: s.owner_phone, createdAt: s.created_at })),
-      riders: riders.rows.map((r) => ({ userId: Number(r.user_id), vehicleType: r.vehicle_type, plateNumber: r.plate_number, phone: r.phone, createdAt: r.created_at })),
+      stores: stores.rows.map((s) => ({ id: Number(s.id), name: s.name, category: s.category, address: s.address_text, phone: s.phone, ownerPhone: s.owner_phone, ownerName: s.owner_name, createdAt: s.created_at })),
+      riders: riders.rows.map((r) => ({ userId: Number(r.user_id), vehicleType: r.vehicle_type, plateNumber: r.plate_number, phone: r.phone, fullName: r.full_name, createdAt: r.created_at })),
     };
   }
 
@@ -187,6 +197,31 @@ export class AdminController {
     return this.decide(admin, 'rider', userId, 'REJECTED', dto.reason);
   }
 
+  /**
+   * Cấp mã kích hoạt cho đối tác/nhân viên (Phần 13.9). Admin gửi mã bằng Zalo/SMS từ máy mình;
+   * dùng cả khi đối tác đổi/mất điện thoại (kèm đăng xuất các máy cũ).
+   */
+  @Post('users/:id/activation-code')
+  @Roles('ADMIN')
+  @HttpCode(200)
+  async activationCode(@CurrentUser() admin: AuthUser, @Param('id', ParseIntPipe) id: number, @Body() dto: ActivationCodeDto) {
+    return this.db.tx(async (client) => {
+      const issued = await this.auth.issueActivationCode(id, admin.id, dto.revokeOthers ?? false, client);
+      await audit(client, admin.id, 'ACTIVATION_CODE_ISSUED', 'user', String(id), null, { revokeOthers: dto.revokeOthers ?? false }, null);
+      return issued;
+    });
+  }
+
+  /** Cấp lại mã theo số điện thoại (đối tác đổi máy, cài lại app, hết hạn mã). */
+  @Post('activation-codes')
+  @Roles('ADMIN')
+  @HttpCode(200)
+  async activationByPhone(@CurrentUser() admin: AuthUser, @Body() dto: ActivationByPhoneDto) {
+    const u = await this.db.one<{ id: string }>('SELECT id FROM users WHERE phone = $1', [dto.phone]);
+    if (!u) throw new BusinessError('USER_NOT_FOUND', 'Chưa có tài khoản nào với số này. Đối tác cần đăng ký trong app trước', 404);
+    return this.activationCode(admin, Number(u.id), dto);
+  }
+
   /** Duyệt/từ chối hồ sơ đối tác, có nhật ký và thông báo (Phần 14.7). */
   private async decide(admin: AuthUser, kind: 'store' | 'rider', id: number, status: 'APPROVED' | 'REJECTED', reason: string | null) {
     return this.db.tx(async (client) => {
@@ -202,10 +237,12 @@ export class AdminController {
         `${kind.toUpperCase()}_${status}`,
         JSON.stringify({ id, reason }),
       ]);
-      return { id, status, decidedBy: admin.id };
+      // Duyệt xong cấp luôn mã kích hoạt để Admin gửi cho đối tác.
+      const activation = status === 'APPROVED' ? await this.auth.issueActivationCode(Number(rows[0].user_id), admin.id, false, client) : null;
+      return { id, status, decidedBy: admin.id, activation };
     });
   }
 }
 
-@Module({ imports: [OrdersModule], controllers: [AdminController] })
+@Module({ imports: [OrdersModule, AuthModule], controllers: [AdminController] })
 export class AdminModule {}

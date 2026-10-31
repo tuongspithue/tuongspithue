@@ -26,7 +26,7 @@ export class TrustController {
 
   @Post('orders/:id/review')
   review(@CurrentUser() user: AuthUser, @Param('id', ParseIntPipe) id: number, @Body() dto: ReviewDto) {
-    return this.trust.review(user.id, id, dto);
+    return this.trust.review(user, id, dto);
   }
 
   @Public()

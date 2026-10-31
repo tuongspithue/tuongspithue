@@ -43,21 +43,27 @@ docker compose -f infra/docker-compose.prod.yml --env-file infra/.env.prod exec 
 
 ## 16.4. Tài khoản thử (sau khi chạy dữ liệu mẫu)
 
-| Vai trò | Số điện thoại |
-|---|---|
-| Admin | Các số trong `ADMIN_PHONES` |
-| Quán | `0911000001` (Phở Cô Lan), `0911000002` (Trà Sữa Mây), `0911000003` (Tạp Hoá Cô Ba) |
-| Shipper | `0933000001`, `0933000002` |
-| Khách | Số bất kỳ |
+Không có SMS/OTP (xem Phần 13.9). Lệnh tạo dữ liệu mẫu in ra **mã kích hoạt 8 số** cho từng tài khoản (dùng 1 lần, hết hạn sau 3 ngày; chạy lại lệnh là có mã mới):
 
-**Mã OTP:** trong giai đoạn thử nghiệm (`TEST_PHASE=true`, `OTP_DEV_ECHO=true`), mã hiện ngay trên màn hình đăng nhập — chưa gửi SMS. **Phải tắt trước khi mở cho người dùng thật** (xem 16.6).
+| Vai trò | Số điện thoại | Đăng nhập bằng |
+|---|---|---|
+| Admin | Các số trong `ADMIN_PHONES` | Số + mã kích hoạt (Admin Console) |
+| Quán | `0911000001` (Phở Cô Lan), `0911000002` (Trà Sữa Mây), `0911000003` (Tạp Hoá Cô Ba) | Số + mã kích hoạt (app quán) |
+| Shipper | `0933000001`, `0933000002` | Số + mã kích hoạt (app shipper) |
+| Khách | Số bất kỳ | Tên + số, không cần mã |
+
+Cấp mã riêng cho Admin (khi chưa vào được Admin Console):
+```bash
+docker compose -f infra/docker-compose.prod.yml --env-file infra/.env.prod exec api node dist/src/database/activation-code.js 0900000001
+```
+Đối tác mới: đăng ký trong app → Admin gọi xác minh → **Duyệt** → bấm **Gửi SMS / Mở Zalo** để gửi mã.
 
 ## 16.5. Lần đầu sử dụng
 
-**Khách (web app):** mở `https://app.<tên miền>` bằng Chrome/Safari → đăng nhập số điện thoại → cho phép **vị trí** để thấy quán quanh mình. Khi theo dõi đơn có thể bấm **Bật thông báo** (không bắt buộc). Gợi ý "Thêm vào màn hình chính" chỉ là tuỳ chọn.
+**Khách (web app):** mở `https://app.<tên miền>` bằng Chrome/Safari → chọn món, khi đặt nhập **tên + số điện thoại** (không cần mã) → cho phép **vị trí** để thấy quán quanh mình. Khi theo dõi đơn có thể bấm **Bật thông báo** (không bắt buộc). Gợi ý "Thêm vào màn hình chính" chỉ là tuỳ chọn.
 
 **Quán và shipper (app cài đặt):**
-1. Đăng nhập bằng số điện thoại.
+1. Lần đầu: bấm **Đăng ký đối tác** và gửi hồ sơ → chờ Admin gọi xác minh và gửi mã kích hoạt qua Zalo/SMS. Có mã rồi: nhập số + mã để đăng nhập.
 2. Cho phép **thông báo** khi được hỏi.
 3. Bấm **Kiểm tra máy** (dải trên cùng) và sửa hết các mục đỏ: thông báo, vị trí (shipper chọn **"Luôn cho phép"**), **không tối ưu pin cho app**. Máy Xiaomi/Oppo/Vivo còn phải bật **"Tự khởi chạy"** trong Cài đặt.
 4. Bấm **Thử chuông** rồi khoá máy ngay để chắc chắn chuông kêu khi màn hình tắt.
@@ -88,7 +94,8 @@ docker compose -f infra/docker-compose.prod.yml --env-file infra/.env.prod exec 
 | Một số máy Android tự tắt app chạy nền | Quán/shipper lỡ đơn | Màn hình **Kiểm tra máy**; điều phối viên gọi quán sau 90 giây |
 | Bản iPhone của app quán/shipper chưa build | iOS hạn chế chạy nền, cần APNs/tài khoản Apple Developer | Làm sau Android; cấu hình Info.plist đã sẵn |
 | Khách dùng web: thông báo chỉ khi khách đã bấm cho phép | Khách có thể không biết đơn đổi trạng thái khi đóng trang | Trang đơn tự cập nhật khi mở lại; quán/shipper gọi khách qua nút Gọi/Zalo |
-| OTP hiện trên màn hình | **Chỉ dùng thử nội bộ**, ai cũng đăng nhập được số bất kỳ | Trước khi mở cho người thật: chọn kênh gửi OTP (xem Phần 13.5) và đặt `TEST_PHASE=false` |
+| Khách không xác minh số khi đặt | Có thể có đơn ảo | Quán gọi xác nhận khách mới; khách mới không được hẹn giờ trả tiền mặt; Ops khoá số bùng đơn |
+| Khách đổi máy không thấy đơn cũ | Phiên khách gắn với máy để người nhập trùng số không xem được đơn | Đơn vẫn chạy bình thường; quán/shipper gọi khách được |
 | Thanh toán online là giả lập | Chỉ thử với tiền mặt | Ký cổng thanh toán ở giai đoạn sau |
 
 ## 16.8. Cập nhật & theo dõi

@@ -305,7 +305,7 @@ class TripCard extends StatelessWidget {
           OrderItemsView(trip),
           if (trip['dropoffAddress'] != null) Text('📍 Giao tới: ${trip['dropoffAddress']}${trip['dropoffNote'] != null ? ' — ${trip['dropoffNote']}' : ''}'),
           ContactButtons(label: 'Quán ${trip['storeName'] ?? ''}', phone: contacts['store'] as String?),
-          ContactButtons(label: trip['recipientName'] != null ? 'Người nhận ${trip['recipientName']}' : 'Khách', phone: contacts['customer'] as String?),
+          ContactButtons(label: 'Khách ${trip['customerName'] ?? ''}'.trim(), phone: contacts['customer'] as String?),
           const SizedBox(height: 8),
           ...actions.map((a) => Padding(padding: const EdgeInsets.only(top: 6), child: a)),
         ]),

@@ -20,7 +20,7 @@ Mục tiêu: **chuyên nghiệp, ổn định, mở rộng được**, nhưng **
 | Chia lưới không gian | **Uber H3** | Hệ số cao điểm, bản đồ nhiệt theo ô |
 | Lưu file | S3-compatible (AWS S3 / Viettel/VNG Cloud Object Storage) + CDN | Ảnh món, ảnh giao hàng, CCCD (mã hoá) |
 | Push | Khách: **Web Push (VAPID)** miễn phí · Quán/shipper: **dịch vụ chạy nền (foreground service)** hỏi máy chủ mỗi 10 giây + thông báo toàn màn hình kêu lặp lại; FCM/APNs khi cần | Không mất phí, không cần Firebase |
-| SMS/Zalo/Gọi | **Mở app trên máy người dùng** (`tel:`, `sms:`, `zalo.me`) — không tích hợp dịch vụ trả phí | OTP khi chạy thật: chủ sản phẩm chọn kênh (13.5) |
+| SMS/Zalo/Gọi | **Mở app trên máy người dùng** (`tel:`, `sms:`, `zalo.me`) — không tích hợp dịch vụ trả phí | Đăng nhập không cần OTP: xem 13.9 (khách tên + SĐT; đối tác dùng mã kích hoạt Admin cấp) |
 | Gọi quán khi chưa xác nhận | Điều phối viên bấm gọi từ Admin Console | Thay IVR; không dùng số ẩn — SĐT chỉ lộ cho các bên của đơn khi đơn đang chạy |
 | eKYC | Nhà cung cấp eKYC VN (FPT.AI, VNPT eKYC…) | OCR CCCD, so khớp khuôn mặt, liveness |
 | AI | **Mặc định Groq** (LLM + nhận dạng giọng nói) qua AI Gateway nội bộ; **key, base URL, model do Admin nhập** trên Admin Console; thêm được nhà cung cấp dự phòng tương thích OpenAI | Phản hồi rất nhanh; đổi nhà cung cấp không cần sửa code — xem Phần 12.8 |
@@ -79,7 +79,7 @@ flowchart LR
 
 | Module | Trách nhiệm | Dữ liệu sở hữu |
 |---|---|---|
-| **Identity & KYC** | OTP, JWT/refresh token, vai trò, eKYC, thiết bị | users, devices, kyc_records, roles |
+| **Identity & KYC** | Đăng nhập khách (tên + SĐT) & mã kích hoạt đối tác, JWT có phiên bản, vai trò, eKYC, thiết bị | users, devices, kyc_records, roles |
 | **Catalog** | Quán, chi nhánh, menu, tuỳ chọn, giờ mở cửa, tồn kho | merchants, stores, menu_items, modifiers, store_hours |
 | **Discovery** | "Quanh tôi", tìm kiếm, xếp hạng, gợi ý | index OpenSearch (đọc từ Catalog qua event) |
 | **Order** | Giỏ hàng, checkout, **máy trạng thái**, Cổng A | carts, orders, order_items, order_events |
@@ -119,7 +119,7 @@ flowchart LR
 - **Idempotency** cho mọi API ghi và mọi consumer (bảng `processed_events`).
 - **Saga** cho luồng thanh toán–đơn: thu tiền → tạo đơn → (bị từ chối/huỷ) hoàn tiền bù trừ.
 - **Retry có backoff + dead-letter queue** cho thông báo, webhook thanh toán.
-- **Circuit breaker** & timeout cho dịch vụ bên ngoài (bản đồ, SMS, cổng thanh toán); có nhà cung cấp dự phòng cho SMS/OTP và bản đồ.
+- **Circuit breaker** & timeout cho dịch vụ bên ngoài (bản đồ, AI, cổng thanh toán); có nhà cung cấp dự phòng cho AI và bản đồ.
 - **Bộ hẹn giờ SLA** (Cổng A, Cổng B, giao trễ) chạy bằng **delayed job** bền vững: MVP dùng **bảng `scheduled_jobs` trên PostgreSQL**, worker lấy việc bằng `FOR UPDATE SKIP LOCKED` (việc nằm trong CSDL nên không mất khi khởi động lại, chạy nhiều worker song song an toàn, không thêm thành phần vận hành); chuyển sang **BullMQ** khi tải lớn — không dùng `setTimeout` trong RAM.
 - Hoạt động **khi mất kết nối**: app quán/shipper lưu hàng đợi thao tác cục bộ, gửi lại với cùng Idempotency-Key.
 
@@ -137,7 +137,7 @@ flowchart LR
 | RPO / RTO | RPO ≤ 5 phút, RTO ≤ 30 phút |
 
 ## 5.8. Bảo mật
-- Xác thực: OTP → **JWT truy cập ngắn hạn (15 phút) + refresh token xoay vòng**, gắn thiết bị; đăng xuất thiết bị từ xa.
+- Xác thực (13.9): khách nhập tên + SĐT → token chỉ có quyền khách, gắn với máy; đối tác nhập **mã kích hoạt** Admin cấp → token có phiên bản, Admin đăng xuất được mọi máy từ xa. Quyền nạp lại từ CSDL ở mỗi yêu cầu.
 - Phân quyền: RBAC + kiểm tra **quyền theo tài nguyên** (nhân viên quán chỉ thấy đơn quán mình; shipper chỉ thấy địa chỉ chi tiết khách **sau khi nhận chuyến** và **ẩn sau khi hoàn thành 2 giờ**).
 - **Số điện thoại ẩn** giữa các bên; chat lọc SĐT/thông tin nhạy cảm.
 - Mã hoá: TLS 1.2+ toàn bộ; mã hoá lúc lưu (ảnh CCCD, tài khoản ngân hàng bằng KMS, trường nhạy cảm mã hoá cấp cột).
@@ -167,7 +167,7 @@ Mục tiêu: **không bao giờ "sập toàn bộ"** — mỗi sự cố chỉ l
 | Sự cố | Chế độ suy giảm |
 |---|---|
 | Cổng thanh toán online lỗi | Tạm ẩn phương thức đó, **chỉ COD/VietQR**; đơn đang chờ thanh toán được đối chiếu lại khi cổng hoạt động |
-| Dịch vụ SMS/OTP lỗi | Chuyển nhà cung cấp dự phòng → Zalo ZNS → OTP qua cuộc gọi; phiên đăng nhập cũ vẫn dùng được |
+| Admin không kịp cấp mã cho đối tác mới | Không ảnh hưởng đối tác đang hoạt động (phiên giữ 180 ngày); có nhiều tài khoản Admin/Ops cấp mã được |
 | Bản đồ/định tuyến lỗi | Chuyển nhà cung cấp dự phòng → ước tính khoảng cách đường chim bay × 1,3; phí ship tính theo bảng bậc cố định |
 | Điều phối (dispatch) lỗi | Đơn chuyển sang **bảng chuyến mở** (shipper trong khu tự chọn như chợ chuyến hẹn) + Ops gán tay; quán tự giao không bị ảnh hưởng |
 | Realtime (WebSocket) lỗi | App tự chuyển sang hỏi định kỳ 10 giây + push |

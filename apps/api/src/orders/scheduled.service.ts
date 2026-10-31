@@ -3,7 +3,7 @@ import { BOARD_DELAY_MINUTES, MAX_SCHEDULED_CLAIMS, OrderEvent, OrderState } fro
 import { TrustService } from '../trust/trust.service';
 import { EntitlementService } from '../config-center/entitlements.service';
 import { PoolClient } from 'pg';
-import { AuthUser, worksAtStore } from '../common/auth';
+import { AuthUser, ownsOrder, worksAtStore } from '../common/auth';
 import { BusinessError } from '../common/errors';
 import { APP_CONFIG, AppConfig } from '../config';
 import { DATABASE, Database } from '../database/database';
@@ -414,7 +414,7 @@ export class ScheduledService implements OnModuleInit {
   async respondToProposal(user: AuthUser, orderId: number, accept: boolean, afterAccepted: (c: PoolClient, o: OrderRow) => Promise<OrderRow>) {
     return this.db.tx(async (client) => {
       const order = await this.lifecycle.lock(client, orderId);
-      if (Number(order.customer_id) !== user.id) throw new BusinessError('ORDER_NOT_FOUND', 'Không tìm thấy đơn', 404);
+      if (!ownsOrder(user, order)) throw new BusinessError('ORDER_NOT_FOUND', 'Không tìm thấy đơn', 404);
       const actor: Actor = { id: user.id, role: 'CUSTOMER', channel: 'APP' };
       if (!accept) {
         const cancelled = await this.lifecycle.apply(client, order, OrderEvent.CUSTOMER_REJECT_CHANGES, actor, {

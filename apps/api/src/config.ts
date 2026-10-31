@@ -8,8 +8,6 @@ export interface AppConfig {
   databaseUrl: string;
   jwtSecret: string;
   jwtTtlSeconds: number;
-  /** Trả mã OTP trong phản hồi — chỉ dùng khi phát triển, không bao giờ bật ở production. */
-  otpDevEcho: boolean;
   /** Số điện thoại được cấp vai trò ADMIN khi đăng nhập (khởi tạo hệ thống). */
   adminPhones: string[];
   business: {
@@ -57,8 +55,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     databaseUrl: env.DATABASE_URL ?? 'postgres://sqt:sqt@localhost:5432/sqt',
     jwtSecret,
     jwtTtlSeconds: Number(env.JWT_TTL_SECONDS ?? 900),
-    // Giai đoạn thử nghiệm (TEST_PHASE=true) được phép hiện mã OTP trên màn hình kể cả khi chạy production.
-    otpDevEcho: env.OTP_DEV_ECHO === 'true' && (!isProd || env.TEST_PHASE === 'true'),
     adminPhones: (env.ADMIN_PHONES ?? '').split(',').map((p) => p.trim()).filter(Boolean),
     business: {
       serviceFee: 2_000,

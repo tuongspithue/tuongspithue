@@ -10,6 +10,7 @@ import {
   weightedScore,
 } from '@sqt/domain';
 import { PoolClient } from 'pg';
+import { AuthUser, ownsOrder } from '../common/auth';
 import { BusinessError } from '../common/errors';
 import { DATABASE, Database, Queryable } from '../database/database';
 import { JobsService } from '../orders/jobs';
@@ -198,13 +199,13 @@ export class TrustService implements OnModuleInit {
 
   /** Đánh giá tách riêng quán và shipper sau khi giao xong (Phần 2.1.7). */
   async review(
-    customerId: number,
+    customer: AuthUser,
     orderId: number,
     input: { store?: { stars: number; tags?: string[]; comment?: string }; rider?: { stars: number; tags?: string[]; comment?: string } },
   ) {
     return this.db.tx(async (client) => {
       const order = (await client.query('SELECT * FROM orders WHERE id = $1', [orderId])).rows[0];
-      if (!order || Number(order.customer_id) !== customerId) throw new BusinessError('ORDER_NOT_FOUND', 'Không tìm thấy đơn', 404);
+      if (!order || !ownsOrder(customer, order)) throw new BusinessError('ORDER_NOT_FOUND', 'Không tìm thấy đơn', 404);
       if (order.state !== 'HOAN_THANH') throw new BusinessError('ORDER_NOT_COMPLETED', 'Chỉ đánh giá được đơn đã giao xong', 409);
       if (input.rider && !order.rider_id) throw new BusinessError('NO_RIDER', 'Đơn này không có shipper để đánh giá');
       const targets: Array<[TrustSubject, number, NonNullable<typeof input.store>]> = [];
@@ -215,7 +216,7 @@ export class TrustService implements OnModuleInit {
         const { rowCount } = await client.query(
           `INSERT INTO reviews (order_id, author_id, target_type, target_id, stars, tags, comment)
            VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (order_id, target_type) DO NOTHING`,
-          [orderId, customerId, type, id, r.stars, r.tags ?? [], r.comment ?? null],
+          [orderId, customer.id, type, id, r.stars, r.tags ?? [], r.comment ?? null],
         );
         if (!rowCount) throw new BusinessError('ALREADY_REVIEWED', 'Bạn đã đánh giá đơn này', 409);
         await this.enqueue(client, type, id);

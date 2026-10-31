@@ -12,7 +12,7 @@ import {
 } from '@sqt/domain';
 import { randomBytes, randomInt } from 'crypto';
 import { PoolClient } from 'pg';
-import { AuthUser, hasRole, worksAtStore } from '../common/auth';
+import { AuthUser, hasRole, ownsOrder, worksAtStore } from '../common/auth';
 import { BusinessError } from '../common/errors';
 import { point } from '../common/geo';
 import { APP_CONFIG, AppConfig } from '../config';
@@ -201,8 +201,8 @@ export class OrdersService implements OnModuleInit {
       const { rows } = await client.query<OrderRow>(
         `INSERT INTO orders (code, customer_id, store_id, state, delivery_mode, dropoff_location, dropoff_address, dropoff_note,
            recipient_name, recipient_phone, order_note, distance_m, subtotal, delivery_fee, service_fee, total,
-           payment_method, has_allergens, delivery_pin, is_scheduled, schedule_type, scheduled_for, scheduled_pickup_at)
-         VALUES ($1, $2, $3, $4, $5, ${point(6, 7)}, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
+           payment_method, has_allergens, delivery_pin, is_scheduled, schedule_type, scheduled_for, scheduled_pickup_at, customer_device)
+         VALUES ($1, $2, $3, $4, $5, ${point(6, 7)}, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)
          RETURNING *`,
         [
           newOrderCode(),
@@ -229,6 +229,7 @@ export class OrdersService implements OnModuleInit {
           plan?.type ?? null,
           plan?.scheduledFor ?? null,
           plan?.pickupAt ?? null,
+          user.device ?? null,
         ],
       );
       const order = rows[0];
@@ -383,7 +384,7 @@ export class OrdersService implements OnModuleInit {
   async cancelByCustomer(user: AuthUser, orderId: number, now: Date = new Date()) {
     return this.db.tx(async (client) => {
       const order = await this.lifecycle.lock(client, orderId);
-      if (Number(order.customer_id) !== user.id) throw new BusinessError('ORDER_NOT_FOUND', 'Không tìm thấy đơn', 404);
+      if (!ownsOrder(user, order)) throw new BusinessError('ORDER_NOT_FOUND', 'Không tìm thấy đơn', 404);
       const { rows } = await client.query<{ n: string }>(
         `SELECT count(*) AS n FROM orders WHERE customer_id = $1 AND cancel_reason = 'CUSTOMER_FREE'
            AND created_at >= date_trunc('month', $2::timestamptz)`,
@@ -421,7 +422,7 @@ export class OrdersService implements OnModuleInit {
   async view(q: Queryable, orderId: number, viewer: AuthUser) {
     const { rows } = await q.query('SELECT * FROM orders WHERE id = $1', [orderId]);
     const o = rows[0];
-    const isCustomer = o && Number(o.customer_id) === viewer.id;
+    const isCustomer = o && ownsOrder(viewer, o);
     const isStore = o && worksAtStore(viewer, Number(o.store_id));
     const isRider = o && o.rider_id && Number(o.rider_id) === viewer.id;
     if (!o || !(isCustomer || isStore || isRider || hasRole(viewer, 'OPS', 'ADMIN'))) {
@@ -433,6 +434,7 @@ export class OrdersService implements OnModuleInit {
       `SELECT (SELECT tier FROM trust_scores WHERE subject_type = 'RIDER' AND subject_id = $1) AS rider_tier,
               (SELECT count(*)::int FROM orders WHERE customer_id = $2 AND state = 'HOAN_THANH') AS customer_done,
               (SELECT phone FROM users WHERE id = $2) AS customer_phone,
+              (SELECT full_name FROM users WHERE id = $2) AS customer_name,
               (SELECT phone FROM users WHERE id = $1) AS rider_phone,
               (SELECT phone FROM stores WHERE id = $3) AS store_phone,
               (SELECT name FROM stores WHERE id = $3) AS store_name`,
@@ -469,7 +471,8 @@ export class OrdersService implements OnModuleInit {
       recipientName: o.recipient_name,
       dropoffAddress: o.dropoff_address,
       dropoffNote: o.dropoff_note,
-      ...(isCustomer ? {} : { customerCompletedOrders: x.customer_done }),
+      // Khách không cần xác minh khi đặt: quán/shipper xem tên và số đơn đã thành công để gọi xác minh (Phần 13.9).
+      ...(isCustomer ? {} : { customerName: o.recipient_name ?? x.customer_name, customerCompletedOrders: x.customer_done }),
       paymentMethod: o.payment_method,
       subtotal: Number(o.subtotal),
       deliveryFee: Number(o.delivery_fee),

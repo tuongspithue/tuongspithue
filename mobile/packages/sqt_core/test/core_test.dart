@@ -12,16 +12,16 @@ void main() {
     expect(stateLabel('CHO_QUAN_XAC_NHAN'), 'Chờ quán xác nhận');
   });
 
-  test('ApiClient lưu token sau khi xác thực OTP và gắn vào các yêu cầu sau', () async {
+  test('ApiClient lưu token sau khi đăng nhập bằng mã kích hoạt và gắn vào các yêu cầu sau', () async {
     final seen = <String?>[];
     final client = MockClient((req) async {
       seen.add(req.headers['Authorization']);
-      if (req.url.path == '/v1/auth/otp/verify') return http.Response(jsonEncode({'accessToken': 'tok', 'userId': 7}), 200);
+      if (req.url.path == '/v1/auth/activate') return http.Response(jsonEncode({'accessToken': 'tok', 'userId': 7}), 200);
       return http.Response('{"ok":true}', 200);
     });
     final store = MemoryTokenStore();
     final api = ApiClient(tokens: store, client: client, baseUrl: 'http://x');
-    expect(await api.verifyOtp('0901234567', '123456'), 7);
+    expect(await api.activate('0901234567', '12345678'), 7);
     expect(await store.read(), 'tok');
     await api.get('/v1/me/trust');
     expect(seen.last, 'Bearer tok');

@@ -35,12 +35,12 @@ class CustomerApp extends StatelessWidget {
   }
 }
 
-/// Khách xem quán không cần đăng nhập; chỉ hỏi SĐT khi đặt hàng (Phần 2.1.1).
+/// Khách xem quán không cần đăng nhập; chỉ hỏi tên + SĐT khi đặt hàng, không cần mã xác minh (Phần 2.1.1, 13.9).
 Future<bool> ensureSignedIn(BuildContext context, ApiClient api) async {
   if (api.signedIn || await api.restore()) return true;
   if (!context.mounted) return false;
   final ok = await Navigator.of(context).push<bool>(MaterialPageRoute(
-    builder: (ctx) => OtpLoginScreen(api: api, title: 'Nhập số điện thoại để đặt hàng', onSignedIn: () => Navigator.of(ctx).pop(true)),
+    builder: (ctx) => CustomerSignInScreen(api: api, onSignedIn: () => Navigator.of(ctx).pop(true)),
   ));
   return ok ?? false;
 }

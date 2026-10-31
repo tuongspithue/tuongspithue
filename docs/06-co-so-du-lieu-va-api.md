@@ -295,9 +295,10 @@ Quy ước: `/v1`, JSON, tiền tệ bằng **số nguyên đồng**, thời gia
 ### Xác thực
 | Method | Path | Mô tả |
 |---|---|---|
-| POST | `/v1/auth/otp/request` | `{phone}` → gửi OTP (rate limit 3 lần/10 phút) |
-| POST | `/v1/auth/otp/verify` | `{phone, code, device}` → `{access_token, refresh_token}` |
-| POST | `/v1/auth/refresh` | Xoay vòng token |
+| POST | `/v1/auth/customer` | `{phone, name}` → token khách (chỉ quyền khách, gắn máy, 180 ngày) — không cần mã (13.9) |
+| POST | `/v1/auth/partner-apply` | `{kind: RIDER\|MERCHANT, phone, fullName, vehicleType?, store?}` → hồ sơ chờ Admin gọi xác minh |
+| POST | `/v1/auth/activate` | `{phone, code}` mã kích hoạt 8 số → token đối tác (180 ngày, Admin thu hồi được) |
+| POST | `/v1/admin/activation-codes` | (ADMIN) `{phone, revokeOthers?}` → mã mới + tin soạn sẵn để gửi qua Zalo/SMS |
 
 ### Khách hàng
 | Method | Path | Mô tả |

@@ -7,7 +7,7 @@ Ký hiệu mức ưu tiên: **[P0]** bắt buộc cho MVP · **[P1]** bản 1.0 
 ## 2.1. App Người mua — "Ship Quanh Tôi"
 
 ### 2.1.1. Đăng ký / Đăng nhập
-- [P0] Đăng nhập bằng **số điện thoại + OTP** (SMS/Zalo ZNS), không cần mật khẩu.
+- [P0] Chỉ nhập **tên + số điện thoại**, không cần mật khẩu hay mã xác minh; quán/shipper nhận đơn sẽ gọi xác minh (xem 13.9).
 - [P1] Đăng nhập Google / Apple / Zalo.
 - [P0] Cho phép **xem quán khi chưa đăng nhập**; chỉ yêu cầu đăng nhập khi bấm *Đặt hàng*.
 - [P1] Hồ sơ: tên, ảnh, ngày sinh (tặng voucher sinh nhật), **sở thích ăn uống** (chay, không cay, ít ngọt, dị ứng…) — dùng để gợi ý sẵn ghi chú cho từng món (xem 2.1.4a).
@@ -121,7 +121,7 @@ Thanh tiến trình rõ ràng, mỗi bước có **tên người xác nhận + g
 
 ### 2.2.1. Đăng ký & Xác minh quán (Onboarding)
 - [P0] Đăng ký trong **10 phút** trên điện thoại:
-  1. SĐT chủ quán + OTP
+  1. SĐT + họ tên chủ quán; Admin gọi xác minh rồi gửi **mã kích hoạt** qua Zalo/SMS (13.9)
   2. Thông tin quán: tên, ngành hàng, địa chỉ (ghim bản đồ chính xác vị trí cửa), giờ mở cửa
   3. Ảnh mặt tiền + ảnh bên trong
   4. CCCD chủ quán (eKYC: chụp 2 mặt + selfie khớp khuôn mặt)
@@ -191,7 +191,7 @@ Thanh tiến trình rõ ràng, mỗi bước có **tên người xác nhận + g
 ## 2.3. App Tài xế — "SQT Tài Xế" (Shipper hệ thống & Shipper của quán)
 
 ### 2.3.1. Đăng ký & Xác minh
-- [P0] SĐT + OTP → eKYC CCCD + selfie (kiểm tra người thật — liveness).
+- [P0] SĐT + họ tên → Admin gọi xác minh, gửi **mã kích hoạt** (13.9) → eKYC CCCD + selfie (kiểm tra người thật — liveness).
 - [P0] Bằng lái xe, đăng ký xe, ảnh xe, biển số.
 - [P1] Lý lịch tư pháp: **không bắt buộc** khi đăng ký (tránh rào cản); nộp thì được huy hiệu "Đã xác minh nhân thân ✔" và được ưu tiên đơn giá trị cao.
 - [P0] Tài khoản ngân hàng/ví nhận tiền.

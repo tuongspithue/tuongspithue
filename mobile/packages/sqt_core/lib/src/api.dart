@@ -77,14 +77,15 @@ class ApiClient {
     await tokens.write(null);
   }
 
-  /// Gửi OTP; khi phát triển API trả kèm mã thử (devCode).
-  Future<String?> requestOtp(String phone) async {
-    final res = await post('/v1/auth/otp/request', {'phone': phone});
-    return res['devCode'] as String?;
-  }
+  /// Khách: nhập tên + số là dùng được, không cần mã xác minh — người nhận đơn sẽ gọi xác minh.
+  Future<int> signInCustomer(String phone, String name) =>
+      _saveSession(post('/v1/auth/customer', {'phone': phone, 'name': name}));
 
-  Future<int> verifyOtp(String phone, String code) async {
-    final res = await post('/v1/auth/otp/verify', {'phone': phone, 'code': code});
+  /// Quán/shipper/Admin: đăng nhập bằng mã kích hoạt 8 số Admin gửi qua Zalo/SMS.
+  Future<int> activate(String phone, String code) => _saveSession(post('/v1/auth/activate', {'phone': phone, 'code': code}));
+
+  Future<int> _saveSession(Future<dynamic> request) async {
+    final res = await request;
     _token = res['accessToken'] as String;
     await tokens.write(_token);
     return res['userId'] as int;

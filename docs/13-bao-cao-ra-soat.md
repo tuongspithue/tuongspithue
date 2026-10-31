@@ -159,3 +159,33 @@ Lần rà soát này đọc lại toàn bộ 15 phần theo bốn góc: **logic 
 | 31/10/2026 | **Bỏ dịch vụ trả phí SMS brandname, Zalo ZNS, IVR, số ẩn**: liên hệ Gọi/SMS/Zalo mở app trên máy (SĐT chỉ lộ cho các bên của đơn khi đơn đang chạy); nhắc quán bằng **Web Push miễn phí**; 90 giây quán chưa nhận thì **điều phối viên gọi quán** từ Admin Console. OTP giai đoạn thử hiện trên màn hình; kênh OTP khi chạy thật cần chủ sản phẩm chọn | 3.3, 5.1, 16 |
 | 31/10/2026 | **Thử nghiệm bằng bản web (PWA) trước**, app cài đặt làm sau: yêu cầu thêm vào màn hình chính ngay lần đầu, GPS trình duyệt, chuông + giữ màn hình sáng khi trang mở, bộ triển khai Docker + HTTPS + dữ liệu mẫu | 16 |
 | 31/10/2026 | **Chốt lại: khách dùng web app** (không bắt cài, gợi ý cài chỉ là tuỳ chọn); **quán & shipper dùng app cài đặt Android** để xác nhận kịp thời: dịch vụ chạy nền kêu chuông lặp lại cả khi khoá máy, thông báo toàn màn hình, shipper gửi vị trí nền, chụp ảnh xác nhận thật khi GPS yếu, màn hình "Kiểm tra máy". APK build tự động trên GitHub Actions. Bỏ bản web của quán/shipper | 2, 5, 16 |
+| 31/10/2026 | **Đăng nhập không dùng SMS/Zalo**: khách chỉ nhập tên + SĐT, quán/shipper gọi xác minh khi nhận đơn (phiên khách gắn với máy, chỉ có quyền khách); quán/shipper/Ops đăng ký trong app, **Admin gọi xác minh rồi cấp mã kích hoạt 8 số** gửi bằng Zalo/SMS từ máy Admin. Bỏ hẳn OTP và chế độ hiện mã trên màn hình | 2, 5, 6, 13.9, 16 |
+
+## 13.9. Đăng nhập không dùng SMS/Zalo (chốt 31/10/2026)
+
+Không tích hợp dịch vụ gửi tin trả phí. Thay bằng **người thật xác minh**, đúng với nguyên tắc cốt lõi của sản phẩm.
+
+### Khách hàng — không cần mã xác minh
+1. Khách xem quán, chọn món không cần đăng nhập. Khi bấm **Đặt hàng** mới hỏi **tên + số điện thoại**, bấm Tiếp tục là đặt được.
+2. **Người nhận đơn tự gọi xác minh**: thẻ đơn ở app quán hiện tên khách, số đơn đã thành công; khách mới (0 đơn) có dòng đỏ *"Khách mới — bấm Gọi để xác nhận đơn trước khi nhận"*. Shipper cũng có nút Gọi/Zalo khách.
+3. Các lớp chặn đơn ảo vẫn giữ: khách mới chưa đủ đơn thành công không được hẹn giờ trả tiền mặt (10.3), điểm uy tín khách, Ops khoá số điện thoại hay bùng đơn (Phần 15).
+
+**Bảo vệ khi ai cũng nhập được số bất kỳ:**
+| Rủi ro | Cách chặn |
+|---|---|
+| Người khác nhập trùng số để xem/huỷ đơn của khách | Mỗi lần đăng nhập là một **phiên gắn với máy**; khách chỉ xem, huỷ, đánh giá được đơn **đặt từ chính máy đó** |
+| Nhập số của quán/shipper/Admin để chiếm quyền | Phiên khách **chỉ mang quyền khách**, kể cả khi số đó là của đối tác |
+| Ghi đè tên khách cũ | Tên đã lưu không bị người đăng nhập sau thay đổi |
+
+### Quán, shipper, nhân viên Ops — Admin xác minh
+1. Trong app quán/shipper bấm **"Đăng ký đối tác"**, điền hồ sơ (quán: tên, ngành, địa chỉ, **lấy vị trí khi đứng tại quán**; shipper: phương tiện, biển số). Không cần đăng nhập.
+2. Admin vào **Duyệt đối tác**, bấm **Gọi** để xác minh đúng chủ số (hỏi tên quán, địa chỉ…), rồi bấm **Duyệt**.
+3. Hệ thống cấp **mã kích hoạt 8 số** (dùng 1 lần, hết hạn sau 3 ngày, sai 5 lần là khoá). Admin bấm **Gửi SMS** (mở app Tin nhắn soạn sẵn) hoặc **Mở Zalo** (tin đã được sao chép, dán vào chat) — gửi từ máy Admin, không tốn phí dịch vụ.
+4. Đối tác nhập số + mã → đăng nhập, giữ phiên 180 ngày trên máy đó.
+5. **Đổi/mất điện thoại:** Admin vào *Cấp lại mã kích hoạt*, nhập số; chọn *Đăng xuất các máy cũ* nếu mất máy.
+6. **Admin đầu tiên** (chưa có ai cấp mã): chạy trên máy chủ `node dist/src/database/activation-code.js <số điện thoại>` — số đó phải có trong `ADMIN_PHONES`.
+
+### Hạn chế đã biết
+- Khách đổi máy thì không thấy lại đơn cũ đặt ở máy trước (đơn vẫn chạy bình thường, quán/shipper vẫn gọi được).
+- Thông báo đẩy gửi theo tài khoản số điện thoại: nếu người khác đăng nhập trùng số và bật thông báo, họ có thể nhận thông báo trạng thái (không có nội dung chi tiết đơn).
+- Khi lượng khách lớn hoặc gian lận tăng, có thể bổ sung "nhắn tin ngược" (khách tự gửi SMS tới số hệ thống) mà không đổi luồng hiện tại.

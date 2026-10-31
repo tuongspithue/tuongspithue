@@ -17,6 +17,22 @@ export type Role = 'CUSTOMER' | 'MERCHANT_OWNER' | 'MERCHANT_STAFF' | 'RIDER' | 
 export interface AuthUser {
   id: number;
   roles: Array<{ role: Role; scopeId: number }>;
+  /** Mã máy của phiên khách (đăng nhập không xác minh). Không có = phiên đối tác do Admin kích hoạt. */
+  device?: string;
+}
+
+/** Thao tác đối tác (mở quán, đăng ký shipper) cần phiên do Admin kích hoạt, không dùng phiên khách. */
+export function assertPartnerSession(user: AuthUser): void {
+  if (user.device) throw new ForbiddenException('Hãy đăng ký trong app đối tác; Admin sẽ xác minh và gửi mã kích hoạt');
+}
+
+/**
+ * Khách có phải chủ đơn này không. Phiên khách chỉ thấy đơn đặt từ chính máy đó,
+ * vì ai cũng có thể nhập một số điện thoại bất kỳ để đặt hàng.
+ */
+export function ownsOrder(user: AuthUser, order: Record<string, any>): boolean {
+  if (Number(order.customer_id) !== user.id) return false;
+  return !user.device || order.customer_device === user.device;
 }
 
 export function hasRole(user: AuthUser, ...roles: Role[]): boolean {
@@ -58,20 +74,28 @@ export class AuthGuard implements CanActivate {
     const req = ctx.switchToHttp().getRequest();
     const header: string | undefined = req.headers.authorization;
     if (!header?.startsWith('Bearer ')) throw new UnauthorizedException('Cần đăng nhập');
-    let payload: { sub: string };
+    let payload: { sub: string; k?: 'C' | 'P'; d?: string; v?: number };
     try {
       payload = await this.jwt.verifyAsync(header.slice(7));
     } catch {
       throw new UnauthorizedException('Phiên đăng nhập không hợp lệ hoặc đã hết hạn');
     }
     const userId = Number(payload.sub);
-    const user = await this.db.one<{ status: string }>('SELECT status FROM users WHERE id = $1', [userId]);
+    const user = await this.db.one<{ status: string; session_version: number }>('SELECT status, session_version FROM users WHERE id = $1', [userId]);
     if (!user || user.status !== 'ACTIVE') throw new UnauthorizedException('Tài khoản không hoạt động');
-    const { rows } = await this.db.query<{ role: Role; scope_id: string }>(
-      'SELECT role, scope_id FROM user_roles WHERE user_id = $1',
-      [userId],
-    );
-    const authUser: AuthUser = { id: userId, roles: rows.map((r) => ({ role: r.role, scopeId: Number(r.scope_id) })) };
+    let authUser: AuthUser;
+    if (payload.k === 'C' && payload.d) {
+      // Phiên khách chỉ có quyền khách, kể cả khi số này cũng là của một đối tác.
+      authUser = { id: userId, roles: [{ role: 'CUSTOMER', scopeId: 0 }], device: payload.d };
+    } else if (payload.k === 'P' && payload.v === user.session_version) {
+      const { rows } = await this.db.query<{ role: Role; scope_id: string }>(
+        'SELECT role, scope_id FROM user_roles WHERE user_id = $1',
+        [userId],
+      );
+      authUser = { id: userId, roles: rows.map((r) => ({ role: r.role, scopeId: Number(r.scope_id) })) };
+    } else {
+      throw new UnauthorizedException('Phiên đăng nhập đã bị thu hồi, vui lòng đăng nhập lại');
+    }
     req.user = authUser;
 
     const required = this.reflector.getAllAndOverride<Role[] | undefined>(ROLES, targets);

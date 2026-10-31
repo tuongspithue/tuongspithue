@@ -187,7 +187,10 @@ class OrderCard extends StatelessWidget {
             StateChip(state),
           ]),
           if (schedule != null) Text('🟣 Lấy hàng lúc ${hhmm(schedule['pickupAt'] as String?)}', style: const TextStyle(color: SqtColors.scheduled, fontWeight: FontWeight.bold)),
-          Text('${money(order['total'] as num)} · ${order['paymentMethod']} · Khách ✔ ${order['customerCompletedOrders'] ?? 0} đơn'),
+          Text('${money(order['total'] as num)} · ${order['paymentMethod']} · ${order['customerName'] ?? 'Khách'} ✔ ${order['customerCompletedOrders'] ?? 0} đơn'),
+          // Khách đặt không cần mã xác minh: khách mới thì quán gọi xác nhận trước khi làm món (Phần 13.9).
+          if (isNew && (order['customerCompletedOrders'] ?? 0) == 0)
+            const Text('🆕 Khách mới — bấm Gọi để xác nhận đơn trước khi nhận', style: TextStyle(color: SqtColors.danger, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           OrderItemsView(order),
           ContactButtons(label: 'Khách', phone: (order['contacts'] as Map?)?['customer'] as String?),

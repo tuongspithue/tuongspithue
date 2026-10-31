@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Headers, HttpCode, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
-import { AuthUser, CurrentUser, Public, Roles } from '../common/auth';
+import { AuthUser, CurrentUser, Public, Roles, assertPartnerSession } from '../common/auth';
 import { BusinessError } from '../common/errors';
 import { IdempotencyService } from './idempotency';
 import { DispatchService } from './dispatch';
@@ -179,6 +179,7 @@ export class RiderController {
 
   @Post('register')
   register(@CurrentUser() user: AuthUser, @Body() dto: RiderRegisterDto) {
+    assertPartnerSession(user);
     return this.rider.register(user.id, dto.vehicleType, dto.plateNumber);
   }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sqt_core/sqt_core.dart';
+import 'package:sqt_partner/sqt_partner.dart';
 
 import 'screens/board.dart';
 
@@ -58,19 +59,20 @@ class _GateState extends State<_Gate> {
   Widget build(BuildContext context) {
     if (_signedIn == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
     if (_signedIn == false) {
-      return OtpLoginScreen(
+      return PartnerSignInScreen(
         api: widget.api,
         title: 'SQT Đối Tác — đăng nhập quán',
         onSignedIn: () {
           setState(() => _signedIn = true);
           _loadStores();
         },
+        onApply: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PartnerApplyScreen(api: widget.api, kind: PartnerKind.merchant))),
       );
     }
     final stores = _stores;
     if (stores == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
     if (stores.isEmpty) {
-      return const Scaffold(body: Center(child: Padding(padding: EdgeInsets.all(24), child: Text('Tài khoản chưa có quán. Hãy đăng ký quán trên trang đối tác.', textAlign: TextAlign.center))));
+      return const Scaffold(body: Center(child: Padding(padding: EdgeInsets.all(24), child: Text('Tài khoản chưa có quán. Hãy đăng xuất và bấm "Đăng ký đối tác", hoặc liên hệ Admin.', textAlign: TextAlign.center))));
     }
     if (stores.length == 1) return BoardScreen(api: widget.api, store: stores.first as Map<String, dynamic>);
     return Scaffold(

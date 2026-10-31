@@ -85,41 +85,59 @@ class OrderItemsView extends StatelessWidget {
   }
 }
 
-/// Màn đăng nhập bằng số điện thoại + OTP, dùng chung cho ba app.
-class OtpLoginScreen extends StatefulWidget {
-  const OtpLoginScreen({super.key, required this.api, required this.title, required this.onSignedIn});
-  final ApiClient api;
+/// Khung chung cho các màn đăng nhập: tiêu đề, các ô nhập, lỗi, nút chính.
+class _SignInFrame extends StatelessWidget {
+  const _SignInFrame({required this.title, required this.children});
   final String title;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: ListView(
+                padding: const EdgeInsets.all(24),
+                shrinkWrap: true,
+                children: [Text(title, style: Theme.of(context).textTheme.headlineSmall), const SizedBox(height: 24), ...children],
+              ),
+            ),
+          ),
+        ),
+      );
+}
+
+String? _checkPhone(String phone) => RegExp(r'^0\d{9}$').hasMatch(phone) ? null : 'Số điện thoại gồm 10 số, bắt đầu bằng 0';
+
+/// Khách: tên + số điện thoại, không cần mã xác minh (Phần 13.9).
+class CustomerSignInScreen extends StatefulWidget {
+  const CustomerSignInScreen({super.key, required this.api, required this.onSignedIn});
+  final ApiClient api;
   final VoidCallback onSignedIn;
 
   @override
-  State<OtpLoginScreen> createState() => _OtpLoginScreenState();
+  State<CustomerSignInScreen> createState() => _CustomerSignInScreenState();
 }
 
-class _OtpLoginScreenState extends State<OtpLoginScreen> {
+class _CustomerSignInScreenState extends State<CustomerSignInScreen> {
   final _phone = TextEditingController();
-  final _code = TextEditingController();
-  bool _codeSent = false;
+  final _name = TextEditingController();
   bool _busy = false;
-  String? _hint;
   String? _error;
 
   Future<void> _submit() async {
+    final phone = _phone.text.trim();
+    final name = _name.text.trim();
+    final invalid = name.isEmpty ? 'Vui lòng nhập tên để quán và shipper xưng hô' : _checkPhone(phone);
+    if (invalid != null) return setState(() => _error = invalid);
     setState(() {
       _busy = true;
       _error = null;
     });
     try {
-      if (!_codeSent) {
-        final dev = await widget.api.requestOtp(_phone.text.trim());
-        setState(() {
-          _codeSent = true;
-          _hint = dev != null ? 'Mã thử nghiệm: $dev' : 'Đã gửi mã tới số của bạn';
-        });
-      } else {
-        await widget.api.verifyOtp(_phone.text.trim(), _code.text.trim());
-        widget.onSignedIn();
-      }
+      await widget.api.signInCustomer(phone, name);
+      widget.onSignedIn();
     } on ApiException catch (e) {
       setState(() => _error = e.message);
     } finally {
@@ -128,48 +146,93 @@ class _OtpLoginScreenState extends State<OtpLoginScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
-            child: ListView(
-              padding: const EdgeInsets.all(24),
-              shrinkWrap: true,
-              children: [
-                Text(widget.title, style: Theme.of(context).textTheme.headlineSmall),
-                const SizedBox(height: 24),
-                TextField(
-                  key: const Key('phone'),
-                  controller: _phone,
-                  enabled: !_codeSent,
-                  keyboardType: TextInputType.phone,
-                  autofillHints: const [AutofillHints.telephoneNumber],
-                  decoration: const InputDecoration(labelText: 'Số điện thoại', hintText: '0901234567'),
-                ),
-                if (_codeSent) ...[
-                  const SizedBox(height: 12),
-                  TextField(
-                    key: const Key('otp'),
-                    controller: _code,
-                    keyboardType: TextInputType.number,
-                    autofillHints: const [AutofillHints.oneTimeCode],
-                    maxLength: 6,
-                    decoration: const InputDecoration(labelText: 'Mã OTP'),
-                  ),
-                ],
-                if (_hint != null) Text(_hint!),
-                if (_error != null) Text(_error!, style: const TextStyle(color: SqtColors.danger)),
-                const SizedBox(height: 16),
-                FilledButton(onPressed: _busy ? null : _submit, child: Text(_codeSent ? 'Đăng nhập' : 'Gửi mã')),
-              ],
-            ),
-          ),
+  Widget build(BuildContext context) => _SignInFrame(title: 'Thông tin người đặt', children: [
+        TextField(
+          key: const Key('name'),
+          controller: _name,
+          textCapitalization: TextCapitalization.words,
+          autofillHints: const [AutofillHints.name],
+          decoration: const InputDecoration(labelText: 'Tên của bạn', hintText: 'Chị Hoa'),
         ),
-      ),
-    );
+        const SizedBox(height: 12),
+        TextField(
+          key: const Key('phone'),
+          controller: _phone,
+          keyboardType: TextInputType.phone,
+          autofillHints: const [AutofillHints.telephoneNumber],
+          decoration: const InputDecoration(labelText: 'Số điện thoại', hintText: '0901234567'),
+        ),
+        const SizedBox(height: 8),
+        const Text('📞 Quán hoặc shipper sẽ gọi số này để xác nhận đơn — hãy nhập đúng số bạn đang dùng.'),
+        if (_error != null) Text(_error!, style: const TextStyle(color: SqtColors.danger)),
+        const SizedBox(height: 16),
+        FilledButton(key: const Key('sign-in'), onPressed: _busy ? null : _submit, child: const Text('Tiếp tục')),
+      ]);
+}
+
+/// Quán/shipper: số điện thoại + mã kích hoạt Admin gửi qua Zalo/SMS sau khi xác minh (Phần 13.9).
+class PartnerSignInScreen extends StatefulWidget {
+  const PartnerSignInScreen({super.key, required this.api, required this.title, required this.onSignedIn, required this.onApply});
+  final ApiClient api;
+  final String title;
+  final VoidCallback onSignedIn;
+
+  /// Mở màn đăng ký đối tác (chưa có tài khoản).
+  final VoidCallback onApply;
+
+  @override
+  State<PartnerSignInScreen> createState() => _PartnerSignInScreenState();
+}
+
+class _PartnerSignInScreenState extends State<PartnerSignInScreen> {
+  final _phone = TextEditingController();
+  final _code = TextEditingController();
+  bool _busy = false;
+  String? _error;
+
+  Future<void> _submit() async {
+    final phone = _phone.text.trim();
+    final code = _code.text.trim();
+    final invalid = _checkPhone(phone) ?? (RegExp(r'^\d{8}$').hasMatch(code) ? null : 'Mã kích hoạt gồm 8 chữ số');
+    if (invalid != null) return setState(() => _error = invalid);
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await widget.api.activate(phone, code);
+      widget.onSignedIn();
+    } on ApiException catch (e) {
+      setState(() => _error = e.message);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
+
+  @override
+  Widget build(BuildContext context) => _SignInFrame(title: widget.title, children: [
+        TextField(
+          key: const Key('phone'),
+          controller: _phone,
+          keyboardType: TextInputType.phone,
+          decoration: const InputDecoration(labelText: 'Số điện thoại', hintText: '0901234567'),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          key: const Key('code'),
+          controller: _code,
+          keyboardType: TextInputType.number,
+          maxLength: 8,
+          decoration: const InputDecoration(labelText: 'Mã kích hoạt (8 số)', helperText: 'Admin gửi qua Zalo/SMS sau khi gọi xác minh'),
+        ),
+        if (_error != null) Text(_error!, style: const TextStyle(color: SqtColors.danger)),
+        const SizedBox(height: 16),
+        FilledButton(key: const Key('sign-in'), onPressed: _busy ? null : _submit, child: const Text('Đăng nhập')),
+        const SizedBox(height: 24),
+        OutlinedButton(key: const Key('apply'), onPressed: widget.onApply, child: const Text('Chưa có tài khoản? Đăng ký đối tác')),
+        const SizedBox(height: 8),
+        const Text('Đổi hoặc mất điện thoại: liên hệ Admin để nhận mã mới.', textAlign: TextAlign.center),
+      ]);
 }
 
 /// Tải lại dữ liệu định kỳ (MVP chưa dùng WebSocket ở app — Phần 5.11: realtime lỗi thì hỏi định kỳ).

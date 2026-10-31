@@ -2,6 +2,7 @@
 library;
 
 export 'src/alerts.dart';
+export 'src/apply.dart';
 export 'src/device.dart';
 export 'src/device_check.dart';
 export 'src/photo.dart';
