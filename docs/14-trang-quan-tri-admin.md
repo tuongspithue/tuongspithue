@@ -146,7 +146,7 @@ Ví dụ: *Thời gian quán phải trả lời đơn hẹn* có mặc định 3
 | **COD & rủi ro** | Hạn mức COD của shipper theo cấp, điều kiện khách được dùng COD, giới hạn giá trị đơn COD |
 | **Khuyến mãi** | Chương trình, ngân sách theo ngày/khu, điều kiện, luật chống lạm dụng |
 | **Thông báo** | **Trình soạn mẫu tin** cho push/SMS/ZNS/email/lời đọc IVR (có biến như `{ten_quan}`, `{eta}`), xem trước trên khung điện thoại, chọn kênh và thứ tự kênh dự phòng, giờ im lặng |
-| **AI (Groq)** | Bật/tắt từng tác vụ, model cho từng tác vụ, timeout, giới hạn token, ngân sách chi phí theo ngày, nhà cung cấp dự phòng, phiên bản prompt; xem độ trễ, tỷ lệ lỗi, chi phí trực tiếp |
+| **AI (mặc định Groq)** | **Màn hình "Kết nối AI"**: nhập/thay key, base URL, nhà cung cấp dự phòng, kiểm tra kết nối, chọn model từ danh sách (Phần 12.8); bật/tắt từng tác vụ, model cho từng tác vụ, timeout, giới hạn token, ngân sách chi phí theo ngày, nhà cung cấp dự phòng, phiên bản prompt; xem độ trễ, tỷ lệ lỗi, chi phí trực tiếp |
 | **Nội dung app** | Banner, bộ sưu tập ("Cú Đêm", "Quán uy tín tuần này"), thứ tự mục trang chủ theo khu, câu hỏi thường gặp, điều khoản; **phiên bản app tối thiểu** (buộc cập nhật khi cần) |
 | **Chế độ đặc biệt** | Mưa bão, Tết, sự kiện lớn, **các chế độ vận hành suy giảm** (Phần 5.11): mỗi chế độ là một **gói cài đặt dựng sẵn**, bật bằng một nút cho một khu hoặc toàn thành phố |
 
@@ -198,7 +198,7 @@ THÌ   chuyển quán sang "Tạm nghỉ" 30 phút  VÀ  nhắn chủ quán  VÀ
 | **💰 Tài chính** | Đối soát cổng thanh toán (khớp/lệch); kỳ thanh toán quán (T+1) và lệnh chi hàng loạt; rút tiền của shipper; công nợ COD (nợ quá hạn, nhắc, khoá); thuế khấu trừ; sổ cái (tra theo đơn, theo tài khoản); báo cáo lãi/lỗ theo khu |
 | **🏷️ Khuyến mãi** | Tạo chương trình, theo dõi ngân sách đã dùng theo thời gian thực, hiệu quả (đơn tăng thêm, chi phí/đơn), phát hiện lạm dụng, dừng khẩn |
 | **⭐ Uy tín** | Phân bố điểm theo khu, đối tác sắp xuống cấp, hàng đợi khiếu nại điểm (xem bằng chứng, chấp nhận/từ chối), bảng xếp hạng, cấu hình trọng số (qua 14.6) |
-| **🤖 AI (Groq)** | Độ trễ, tỷ lệ lỗi, số lần chuyển dự phòng, chi phí theo tác vụ/ngày; xem mẫu hội thoại đã ẩn danh; kết quả bộ đánh giá tiếng Việt; quản lý phiên bản prompt |
+| **🤖 AI (mặc định Groq)** | Kết nối AI (key, base URL, model — Phần 12.8); độ trễ, tỷ lệ lỗi, số lần chuyển dự phòng, chi phí theo tác vụ/ngày; xem mẫu hội thoại đã ẩn danh; kết quả bộ đánh giá tiếng Việt; quản lý phiên bản prompt |
 | **🛡️ Gian lận & An toàn** | Cờ gian lận do mô hình phát hiện; **đồ thị liên kết** tài khoản – thiết bị – địa chỉ – thanh toán; SOS; báo cáo hành vi; danh sách chặn |
 
 ---

@@ -21,7 +21,7 @@ Nền tảng giao hàng **siêu địa phương**: người dùng mở app là t
 | 9 | [Giao diện trực quan, sinh động](docs/09-giao-dien-truc-quan-sinh-dong.md) | Design system, màu theo ý nghĩa, hiệu ứng chuyển động, trực quan hoá, chi tiết dễ dùng cho từng app, gamification, kiểm thử khả dụng, **khả năng tiếp cận** (người lớn tuổi, khuyết tật, máy yếu, không cài app) |
 | 10 | [Đơn hẹn giờ](docs/10-don-hen-gio.md) | Hẹn giờ lấy/giao, chuyển đơn chờ lâu sang hẹn giờ, "Yêu cầu mở" gửi nhiều quán, bảng đơn hẹn của quán, chợ chuyến hẹn của shipper, xác nhận lại trước giờ |
 | 11 | [Điểm uy tín khu vực](docs/11-diem-uy-tin-khu-vuc.md) | Công thức điểm shipper/quán, chuẩn hoá theo khu vực, chống thao túng, cấp độ & huy hiệu, nơi sử dụng uy tín, Bảng Vàng khu vực |
-| 12 | [Tích hợp AI (Groq)](docs/12-tich-hop-ai.md) | 18 tính năng AI đã rà soát; tích hợp Groq qua AI Gateway, giới hạn tốc độ, dự phòng, chế độ không-AI; an toàn, chi phí — AI gợi ý, người thật quyết định |
+| 12 | [Tích hợp AI (mặc định Groq)](docs/12-tich-hop-ai.md) | Admin nhập key, base URL, model trên Admin Console (mặc định Groq); tạm gác phân tích hình ảnh; 18 tính năng AI đã rà soát; tích hợp Groq qua AI Gateway, giới hạn tốc độ, dự phòng, chế độ không-AI; an toàn, chi phí — AI gợi ý, người thật quyết định |
 | 13 | [Báo cáo rà soát & hoàn thiện](docs/13-bao-cao-ra-soat.md) | Những gì đã loại bỏ, bổ sung, sửa cho nhất quán; ma trận đối chiếu yêu cầu; các việc cần xác nhận trước khi xây dựng |
 | 14 | [Trang quản trị Admin](docs/14-trang-quan-tri-admin.md) | Dashboard tổng quan tuỳ biến, bản đồ trực tiếp có tua lại, trung tâm sự cố, hồ sơ 360°, **trung tâm cấu hình phân tầng** (theo khu/ngành/đối tác/thời gian), Rule Builder, xem trước tác động, duyệt 4 mắt, phiên bản & hoàn tác, báo cáo kéo thả, phân quyền tuỳ chỉnh |
 | 15 | [Phân quyền, xếp loại & ưu tiên](docs/15-phan-quyen-xep-loai-uu-tien.md) | Admin chủ động phân quyền chức năng từng khách/quán/shipper, đánh giá thực địa & khách bí mật, nâng/hạ/khoá cấp, nhãn phân loại, điều chỉnh mức ưu tiên theo từng tác vụ (có biên độ, thời hạn, duyệt, nhật ký, khiếu nại) |
@@ -33,11 +33,11 @@ Nền tảng giao hàng **siêu địa phương**: người dùng mở app là t
 - **Xác nhận bằng người thật:** chuông toàn màn hình → nhắc → **gọi IVR tự động** → điều phối viên gọi → huỷ & hoàn tiền nếu quá 3 phút. Shipper nhận chuyến theo các vòng tìm mở rộng, có gán tay khi cần.
 - **Đơn hẹn giờ:** khách chọn giờ lấy (sau 1–3 giờ hoặc giờ cụ thể); đơn hiện trực tiếp trên tab *Đơn hẹn* của quán và *Chợ chuyến hẹn* của shipper để họ chọn nhận; xác nhận lại trước giờ.
 - **Uy tín là trung tâm:** điểm 0–100 chuẩn hoá theo khu vực, cấp Kim cương/Vàng/Bạc/Đồng, quyết định thứ hạng hiển thị, ưu tiên nhận đơn/chuyến hẹn và quyền lợi.
-- **AI thông minh (Groq — phản hồi rất nhanh):** trợ lý đặt hàng "Hỏi Quanh", tạo menu từ ảnh, dự báo ETA & nhu cầu, điều phối, cảnh báo đơn nguy cơ, chống gian lận, bot CSKH — **AI không bao giờ xác nhận đơn thay người**.
+- **AI thông minh (mặc định Groq, Admin tự nhập key/model/đường dẫn):** trợ lý đặt hàng "Hỏi Quanh", nhập menu từ danh sách chữ, dự báo ETA & nhu cầu, điều phối, cảnh báo đơn nguy cơ, chống gian lận, bot CSKH — **AI không bao giờ xác nhận đơn thay người**.
 - **Trực quan, sinh động:** radar "quanh tôi", màu theo trạng thái, hiệu ứng xác nhận ✔, bản đồ shipper di chuyển mượt, chế độ đơn giản cho chủ quán, vuốt để xác nhận cho shipper.
 - **Admin Console linh hoạt:** chỉnh gần như mọi tham số vận hành theo từng khu, ngành, đối tác, khung giờ mà không cần lập trình hay phát hành app; có xem trước tác động, duyệt, phiên bản và hoàn tác 1 nút. Dashboard kéo thả, bấm vào mọi con số để xem chi tiết tới từng đơn.
 - **Admin chủ động xếp loại & ưu tiên:** điểm tự động là nền; Admin phân quyền chức năng từng người, nâng/hạ cấp, gắn nhãn, cộng/trừ ưu tiên trong điều phối, chợ chuyến hẹn, hiển thị, CSKH — trong giới hạn ±20 điểm, có thời hạn, người duyệt và quyền khiếu nại.
-- **Công nghệ (đã chốt cho MVP):** Flutter · Next.js · NestJS · PostgreSQL + PostGIS · Redis (GEO, Streams, BullMQ) · WebSocket · dịch vụ cloud được quản lý · **Groq** cho AI. Mở rộng sau: Go, Kafka, OpenSearch, Kubernetes.
+- **Công nghệ (đã chốt cho MVP):** Flutter · Next.js · NestJS · PostgreSQL + PostGIS · Redis (GEO, Streams, BullMQ) · WebSocket · dịch vụ cloud được quản lý · **AI mặc định Groq** (Admin cấu hình). Mở rộng sau: Go, Kafka, OpenSearch, Kubernetes.
 - **Ổn định:** máy trạng thái chặt, nhật ký sự kiện bất biến, outbox, idempotency, sổ cái kép, hẹn giờ SLA bền vững, giám sát theo SLO.
 
 

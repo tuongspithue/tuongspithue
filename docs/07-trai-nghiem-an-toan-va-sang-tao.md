@@ -19,7 +19,7 @@
 
 ### Các màn hình chính cần thiết kế
 - **App khách (≈ 25 màn):** Onboarding, Chọn vị trí, Trang chủ (danh sách/bản đồ), Danh mục, Tìm kiếm, Trang quán, Chi tiết món, Giỏ hàng, Checkout, Thanh toán, Chờ xác nhận, Theo dõi đơn, Chat, Đánh giá, Báo sự cố, Lịch sử, Tín dụng hoàn tiền, Voucher, Địa chỉ, Hồ sơ, Trợ giúp, Đơn nhóm.
-- **App quán (≈ 20 màn):** Đăng ký 8 bước, Bảng đơn (Mới / Đang làm / Chờ shipper / Đang giao / Xong), Chi tiết đơn, Popup đơn mới toàn màn hình, Menu, Sửa món, OCR menu, Cài đặt cửa hàng, Shipper của quán, Doanh thu, Khuyến mãi, Nhân viên, Đánh giá.
+- **App quán (≈ 20 màn):** Đăng ký 8 bước, Bảng đơn (Mới / Đang làm / Chờ shipper / Đang giao / Xong), Chi tiết đơn, Popup đơn mới toàn màn hình, Menu, Sửa món, Nhập menu từ danh sách chữ, Cài đặt cửa hàng, Shipper của quán, Doanh thu, Khuyến mãi, Nhân viên, Đánh giá.
 - **App shipper (≈ 18 màn):** Đăng ký & eKYC, Khoá học, Trang chủ bản đồ nhiệt, Popup mời chuyến, Dẫn đường, Checklist lấy hàng, Xác nhận giao, Thu nhập & COD, Lịch sử, Thưởng, SOS, Hỗ trợ.
 
 > Chi tiết giao diện sinh động xem [Phần 9](09-giao-dien-truc-quan-sinh-dong.md).
@@ -94,7 +94,7 @@
     Quán tự giao trả chiết khấu thấp hơn, được gắn nhãn *"Quán tự giao – ship gần rẻ"*, giúp quán giữ quan hệ trực tiếp với khách quen.
 
 12. **🤖 Trợ lý AI cho quán** *(chi tiết toàn bộ ứng dụng AI: [Phần 12](12-tich-hop-ai.md))*
-    Tạo menu từ ảnh, viết mô tả món hấp dẫn, gợi ý tên combo, hiển thị mặt bằng giá khu vực dạng số liệu (AI không khuyên giá), cảnh báo "Hôm nay mưa — nên chuẩn bị thêm món nóng", tóm tắt đánh giá khách tuần qua.
+    Tạo menu từ danh sách chữ, viết mô tả món hấp dẫn, gợi ý tên combo, hiển thị mặt bằng giá khu vực dạng số liệu (AI không khuyên giá), cảnh báo "Hôm nay mưa — nên chuẩn bị thêm món nóng", tóm tắt đánh giá khách tuần qua.
 
 13. **🎁 "Treo món" — Lan toả yêu thương** *(giai đoạn sau, P2)*
     Khách có thể "treo" một suất cơm/ly nước cho shipper hoặc người khó khăn trong khu vực; quán và nền tảng đồng góp. Xây dựng hình ảnh thương hiệu nhân văn.

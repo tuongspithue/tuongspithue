@@ -346,7 +346,7 @@ Idempotency-Key: 6f1c2b0e-...
 | POST | `/v1/merchant/orders/{id}/assign-rider` | Gán shipper của quán / "Tôi tự giao" |
 | PATCH | `/v1/merchant/stores/{id}` | Mở/đóng, đông khách, chế độ giao |
 | PATCH | `/v1/merchant/menu-items/{id}` | Sửa món, bật/tắt hết hàng |
-| POST | `/v1/merchant/menu/ocr` | Upload ảnh menu giấy → nháp menu |
+| POST | `/v1/merchant/menu/import-text` | Gửi danh sách món dạng chữ → AI chuẩn hoá thành menu nháp (đọc từ ảnh: tạm gác) |
 | POST | `/v1/merchant/stores/{id}/riders/invite` | Mời shipper của quán bằng SĐT |
 | GET | `/v1/merchant/stores/{id}/statements?from=&to=` | Bảng kê doanh thu |
 

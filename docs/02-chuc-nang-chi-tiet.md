@@ -108,7 +108,7 @@ Thanh tiến trình rõ ràng, mỗi bước có **tên người xác nhận + g
 ### 2.2.2. Quản lý Menu
 - [P0] Thêm/sửa món: ảnh, tên, giá, mô tả, nhóm, tuỳ chọn (size/topping), giới hạn số lượng/ngày.
 - [P0] **Bật/tắt "Hết hàng"** bằng 1 chạm (công tắc lớn) — tự bật lại ngày mai (tuỳ chọn).
-- [P1] **Tạo menu bằng ảnh**: chụp tờ menu giấy → AI nhận dạng (OCR) tên món + giá → quán chỉ cần kiểm tra.
+- [P1] **Tạo menu từ danh sách chữ**: quán dán/gõ danh sách món kèm giá → AI chuẩn hoá thành menu nháp → quán kiểm tra và đăng. *(Đọc menu từ ảnh chụp bằng AI: tạm gác — Phần 12.9.)*
 - [P1] Nhập món bằng giọng nói.
 - [P1] Menu theo khung giờ (sáng / trưa / tối).
 - [P2] Quản lý tồn kho cho tạp hoá: nhập/xuất, cảnh báo sắp hết, quét mã vạch.

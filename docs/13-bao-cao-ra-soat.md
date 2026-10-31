@@ -83,7 +83,7 @@
 Đây là những điểm **tài liệu không thể tự chốt** — cần chủ sản phẩm hoặc chuyên gia quyết định:
 
 1. **Pháp lý:** thủ tục đăng ký sàn TMĐT; quy định khấu trừ thuế cho hộ kinh doanh & shipper; điều kiện kinh doanh thuốc không kê đơn trực tuyến; thủ tục chuyển dữ liệu cá nhân ra nước ngoài (do Groq xử lý ở nước ngoài). → *Luật sư & chuyên gia thuế.*
-2. **Groq:** kiểm tra trên console Groq danh sách model hiện hành, hạn mức tốc độ của gói tài khoản, giá, và chính sách lưu trữ dữ liệu; chạy bộ đánh giá tiếng Việt để chọn model cho từng tác vụ; chọn nhà cung cấp LLM dự phòng.
+2. **AI:** Admin tạo tài khoản Groq và **nhập key trên Admin Console** (Phần 12.8); kiểm tra hạn mức tốc độ, giá, chính sách lưu trữ dữ liệu của gói tài khoản; chạy bộ đánh giá tiếng Việt để chọn model mặc định cho từng tác vụ; (tuỳ chọn) thêm nhà cung cấp dự phòng.
 3. **Khu vực thí điểm** đầu tiên (phường/quận cụ thể).
 4. **Mức phí & chiết khấu** thực tế (các con số trong tài liệu là đề xuất ban đầu).
 5. **Cổng thanh toán** sẽ ký đầu tiên (ảnh hưởng luồng hoàn tiền & chia tiền).
@@ -147,3 +147,10 @@ Lần rà soát này đọc lại toàn bộ 15 phần theo bốn góc: **logic 
 - Bản đặc tả **v1.1 được chốt để bắt đầu xây dựng**: đủ để thiết kế giao diện, viết đặc tả API chi tiết (OpenAPI) và lập kế hoạch MVP.
 - Các điểm còn phụ thuộc bên ngoài vẫn là 6 mục ở **13.5** (pháp lý & thuế, thông tin Groq, khu vực thí điểm, mức phí, cổng thanh toán, hợp đồng shipper). Đây là quyết định kinh doanh/pháp lý, không chặn việc bắt đầu thiết kế và dựng khung kỹ thuật.
 - Từ nay, mọi thay đổi đặc tả đi qua pull request và được ghi vào bảng thay đổi của Phần 13.
+
+## 13.8. Thay đổi sau khi chốt v1.1
+
+| Ngày | Thay đổi | Phần |
+|---|---|---|
+| 31/10/2026 | **Tạm gác mọi khả năng phân tích hình ảnh bằng AI** (đọc menu từ ảnh, kiểm duyệt/nhận diện ảnh…). Thay bằng nhập menu từ danh sách chữ, kiểm duyệt ảnh thủ công. eKYC của nhà cung cấp vẫn giữ | 1, 2, 6, 7, 8, 12.9 |
+| 31/10/2026 | **Key, model, đường dẫn kết nối AI do Admin nhập** trên Admin Console; mặc định Groq; thêm được nhà cung cấp tương thích OpenAI làm dự phòng; key mã hoá, chỉ hiện 4 ký tự cuối, thay key cần duyệt 4 mắt | 5, 8, 12.8, 14 |

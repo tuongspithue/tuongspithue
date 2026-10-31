@@ -23,7 +23,7 @@ Mục tiêu: **chuyên nghiệp, ổn định, mở rộng được**, nhưng **
 | SMS/OTP/ZNS | Nhà cung cấp SMS brandname + Zalo ZNS | |
 | IVR / số ẩn | Tổng đài cloud (Stringee, VNPT, Twilio…) | Gọi xác nhận quán, gọi ẩn số |
 | eKYC | Nhà cung cấp eKYC VN (FPT.AI, VNPT eKYC…) | OCR CCCD, so khớp khuôn mặt, liveness |
-| AI | **Groq** (LLM + nhận dạng giọng nói) qua AI Gateway nội bộ, có nhà cung cấp dự phòng | Phản hồi rất nhanh — xem Phần 12 |
+| AI | **Mặc định Groq** (LLM + nhận dạng giọng nói) qua AI Gateway nội bộ; **key, base URL, model do Admin nhập** trên Admin Console; thêm được nhà cung cấp dự phòng tương thích OpenAI | Phản hồi rất nhanh; đổi nhà cung cấp không cần sửa code — xem Phần 12.8 |
 | Hạ tầng | **MVP: dịch vụ được quản lý** (PostgreSQL/Redis managed có bản sao & backup tự động, chạy container managed) · **Kubernetes** khi có ≥ 2 SRE; Terraform | Giảm rủi ro vận hành; ưu tiên cloud có vùng dữ liệu tại Việt Nam cho dữ liệu cá nhân |
 | CI/CD | GitHub Actions → build image → ArgoCD | |
 | Giám sát | Prometheus + Grafana, Loki (log), Tempo/Jaeger (trace), Sentry (lỗi app), PagerDuty/Opsgenie | |

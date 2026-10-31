@@ -20,7 +20,7 @@
 - Admin Console (Phần 14, mức MVP): dashboard tổng quan, bản đồ trực tiếp, hàng đợi đơn có vấn đề, hồ sơ 360°, duyệt hồ sơ, gán tay, hoàn tiền, **trung tâm cấu hình phân tầng** có phiên bản & hoàn tác, feature flags, xác thực 2 lớp.
 - Backend: modular monolith (NestJS), PostgreSQL+PostGIS, Redis + BullMQ, WebSocket, outbox, ledger, chế độ vận hành suy giảm.
 - Phân quyền chức năng từng người dùng, nâng/hạ/khoá cấp có lý do & thời hạn, nhãn cơ bản (Phần 15, mức MVP).
-- **AI Gateway + tài khoản Groq** dựng sẵn để thử nghiệm nội bộ (chưa phát hành tính năng AI cho người dùng).
+- **AI Gateway + màn hình "Kết nối AI" trên Admin Console** (Admin nhập key, base URL, model; mặc định Groq) dựng sẵn để thử nghiệm nội bộ (chưa phát hành tính năng AI cho người dùng).
 - Ngành hàng MVP: Đồ ăn, Đồ uống, Tạp hoá, Nước bình & đá, Mẹ & bé (Phần 1.5).
 - Khả năng tiếp cận cơ bản (Phần 9.9): chữ to, tương phản, trình đọc màn hình, chế độ đơn giản cho quán, ưu tiên nhắn tin cho người khiếm thính.
 - *MVP kéo dài 4 tháng (thay vì 3) vì phạm vi đã gồm đơn hẹn giờ, điểm uy tín và trung tâm cấu hình — ưu tiên ổn định hơn tốc độ.*
@@ -31,7 +31,7 @@
 - **Kênh Zalo Mini App** để khách đặt hàng ngay trong Zalo không cần cài app (dùng chung API).
 - Khuyến mãi (quán & nền tảng), quảng cáo lên top, huy hiệu, điểm tin cậy.
 - Yêu cầu mở (gửi nhiều quán, nhận báo giá), Bảng Vàng khu vực, khiếu nại điểm uy tín.
-- AI: OCR menu, mô tả món, gợi ý món thay thế/kèm, tóm tắt đánh giá, bot CSKH, giọng nói, ETA học máy, cảnh báo đơn nguy cơ.
+- AI (chỉ chữ & giọng nói, mặc định Groq, Admin cấu hình key/model): nhập menu từ danh sách chữ, mô tả món, gợi ý món thay thế/kèm, tóm tắt đánh giá, bot CSKH, giọng nói, ETA học máy, cảnh báo đơn nguy cơ.
 - Máy in nhiệt, nhân viên & phân quyền của quán, đa chi nhánh; Web đặt nhanh.
 - Ghép đơn cho shipper, chế độ "Về nhà", thưởng mốc, bảo hiểm.
 - OpenSearch cho tìm kiếm, cao điểm theo H3, chế độ mưa bão.

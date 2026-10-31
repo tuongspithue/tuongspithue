@@ -21,7 +21,7 @@
 | 2 | **Bốn chế độ giao linh hoạt** | Quán tự chọn: *Hệ thống giao*, *Quán tự giao*, *Lai* (quán giao trong bán kính X km, xa hơn chuyển cho shipper hệ thống), hoặc *Tự giao có dự phòng hệ thống*. |
 | 3 | **Siêu gần — siêu nhanh** | Ưu tiên quán ≤ 3 km, hiển thị *thời gian đến tay* thực tế (chuẩn bị + di chuyển) chứ không chỉ khoảng cách. |
 | 4 | **Không chỉ đồ ăn** | Nhu yếu phẩm: nước bình, gas, đá, thuốc không kê đơn, tã sữa, văn phòng phẩm, hoa, sửa chữa nhỏ… |
-| 5 | **Thân thiện với quán nhỏ** | Quán vỉa hè, tạp hoá chỉ cần 1 smartphone. Có chế độ "Menu bằng ảnh", nhập món bằng giọng nói, nhận đơn bằng cuộc gọi tự động. |
+| 5 | **Thân thiện với quán nhỏ** | Quán vỉa hè, tạp hoá chỉ cần 1 smartphone. Nhập menu nhanh bằng cách dán/gõ danh sách món (AI chuẩn hoá) hoặc đọc bằng giọng nói, nhận đơn bằng cuộc gọi tự động. |
 | 6 | **Minh bạch** | Phí ship, phí dịch vụ, chiết khấu quán, thu nhập shipper đều hiển thị rõ ràng cho từng bên. |
 
 ## 1.3. Các bên tham gia (Actors)
