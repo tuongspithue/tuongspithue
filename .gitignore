@@ -12,3 +12,4 @@ mobile/**/build/
 .flutter-plugins
 .flutter-plugins-dependencies
 pubspec_overrides.yaml
+infra/.env.prod

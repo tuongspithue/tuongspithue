@@ -19,6 +19,7 @@ class BoardScreen extends StatefulWidget {
 class _BoardScreenState extends State<BoardScreen> with Polling {
   List<Map<String, dynamic>> _orders = [];
   late bool _open = widget.store['isOpen'] as bool;
+  bool _bell = false;
   int get _storeId => widget.store['id'] as int;
 
   @override
@@ -30,10 +31,30 @@ class _BoardScreenState extends State<BoardScreen> with Polling {
   Future<void> _load() async {
     try {
       final res = await widget.api.get('/v1/merchant/stores/$_storeId/orders');
-      if (mounted) setState(() => _orders = (res['orders'] as List).cast<Map<String, dynamic>>());
+      if (!mounted) return;
+      setState(() => _orders = (res['orders'] as List).cast<Map<String, dynamic>>());
+      // Chuông kêu liên tục khi còn đơn mới chưa nhận (chỉ khi trang đang mở — giới hạn của bản web).
+      Browser.alarm(_bell && _orders.any((o) => _newStates.contains(o['state'])));
     } on ApiException catch (e) {
       if (mounted) showError(context, e);
     }
+  }
+
+  /// Bật chuông và giữ màn hình sáng — phải do người dùng bấm (chính sách trình duyệt).
+  Future<void> _toggleBell() async {
+    final on = !_bell;
+    if (on) Browser.unlockAudio();
+    await Browser.keepScreenOn(on);
+    setState(() => _bell = on);
+    if (!on) Browser.alarm(false);
+    _load();
+  }
+
+  @override
+  void dispose() {
+    Browser.alarm(false);
+    Browser.keepScreenOn(false);
+    super.dispose();
   }
 
   Future<void> _toggleOpen(bool v) async {
@@ -74,7 +95,19 @@ class _BoardScreenState extends State<BoardScreen> with Polling {
             const Tab(text: 'Xong'),
           ]),
         ),
-        body: TabBarView(children: [
+        body: Column(children: [
+          PushBanner(api: widget.api, app: 'MERCHANT'),
+          if (Browser.isWeb)
+            Material(
+              color: _bell ? SqtColors.confirmed.withValues(alpha: 0.12) : SqtColors.waiting.withValues(alpha: 0.15),
+              child: ListTile(
+                leading: Icon(_bell ? Icons.notifications_active : Icons.notifications_off),
+                title: Text(_bell ? 'Chuông đang bật · màn hình luôn sáng' : 'Bật chuông báo đơn mới'),
+                subtitle: const Text('Giữ trang này mở ở quầy để nghe chuông'),
+                trailing: Switch(key: const Key('bell'), value: _bell, onChanged: (_) => _toggleBell()),
+              ),
+            ),
+          Expanded(child: TabBarView(children: [
           for (final list in [fresh, working, scheduled, done])
             RefreshIndicator(
               onRefresh: _load,
@@ -82,6 +115,7 @@ class _BoardScreenState extends State<BoardScreen> with Polling {
                   ? ListView(children: const [Padding(padding: EdgeInsets.all(48), child: Text('Chưa có đơn', textAlign: TextAlign.center))])
                   : ListView(padding: const EdgeInsets.all(12), children: [for (final o in list) OrderCard(api: widget.api, order: o, onChanged: _load)]),
             ),
+          ])),
         ]),
       ),
     );
@@ -156,6 +190,8 @@ class OrderCard extends StatelessWidget {
           Text('${money(order['total'] as num)} · ${order['paymentMethod']} · Khách ✔ ${order['customerCompletedOrders'] ?? 0} đơn'),
           const SizedBox(height: 8),
           OrderItemsView(order),
+          ContactButtons(label: 'Khách', phone: (order['contacts'] as Map?)?['customer'] as String?),
+          ContactButtons(label: 'Shipper', phone: (order['contacts'] as Map?)?['rider'] as String?),
           const SizedBox(height: 8),
           if (isNew)
             Row(children: [

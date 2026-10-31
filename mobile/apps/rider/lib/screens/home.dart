@@ -39,7 +39,18 @@ class _RiderHomeState extends State<RiderHome> with Polling {
   @override
   void dispose() {
     _locationTimer?.cancel();
+    Browser.alarm(false);
+    Browser.keepScreenOn(false);
     super.dispose();
+  }
+
+  /// Lấy GPS thật của máy; không được thì giữ vị trí trước đó.
+  Future<void> _refreshPosition({bool notify = false}) async {
+    final p = await currentPosition(onError: notify ? (r) => showDone(context, r) : null);
+    if (p != null) {
+      pos.lat = p.lat;
+      pos.lng = p.lng;
+    }
   }
 
   Future<void> _load() async {
@@ -58,18 +69,31 @@ class _RiderHomeState extends State<RiderHome> with Polling {
         _trips = results[2]['trips'] as List;
         _trust = results[3] as Map<String, dynamic>;
       });
+      Browser.alarm(_online && _offers.isNotEmpty);
     } on ApiException catch (e) {
       if (e.status == 403 && mounted) setState(() => _registered = false);
     }
   }
 
   Future<void> _setOnline(bool v) async {
+    if (v) {
+      Browser.unlockAudio();
+      await _refreshPosition(notify: true);
+    }
     try {
       await widget.api.post('/v1/rider/status', {'online': v, ...pos.toJson()});
       setState(() => _online = v);
       _locationTimer?.cancel();
       // Gửi vị trí định kỳ khi trực tuyến (Phần 5.4); tắt hẳn khi ngoại tuyến.
-      if (v) _locationTimer = Timer.periodic(const Duration(seconds: 15), (_) => widget.api.post('/v1/rider/location', pos.toJson()).catchError((_) => null));
+      if (v) {
+        _locationTimer = Timer.periodic(const Duration(seconds: 15), (_) async {
+          await _refreshPosition();
+          await widget.api.post('/v1/rider/location', pos.toJson()).catchError((_) => null);
+        });
+      }
+      // Bản web chỉ gửi được vị trí khi app đang mở: giữ màn hình sáng khi trực tuyến.
+      await Browser.keepScreenOn(v);
+      if (!v) Browser.alarm(false);
     } on ApiException catch (e) {
       if (mounted) showError(context, e);
     }
@@ -101,11 +125,19 @@ class _RiderHomeState extends State<RiderHome> with Polling {
             const Tab(text: '⭐ Uy tín'),
           ]),
         ),
-        body: TabBarView(children: [
+        body: Column(children: [
+          PushBanner(api: widget.api, app: 'RIDER'),
+          if (Browser.isWeb && _online)
+            const Material(
+              color: Color(0x22FFB020),
+              child: ListTile(dense: true, leading: Icon(Icons.info_outline), title: Text('Giữ app mở khi đang chạy chuyến để cập nhật vị trí cho khách')),
+            ),
+          Expanded(child: TabBarView(children: [
           _list(_offers, 'Chưa có lời mời. Bật trực tuyến để nhận chuyến.', (o) => _OfferCard(offer: o, onAccept: () => _act(() => widget.api.post('/v1/rider/offers/${o['id']}/accept'), 'Đã nhận chuyến'), onDecline: () => _act(() => widget.api.post('/v1/rider/offers/${o['id']}/decline'), 'Đã bỏ qua'))),
           _list(_board, 'Chưa có chuyến hẹn quanh bạn', (t) => _BoardCard(trip: t, onClaim: () => _act(() => widget.api.post('/v1/rider/scheduled-trips/${t['orderId']}/claim'), 'Đã giữ chuyến'))),
           _list(_trips, 'Chưa có chuyến nào', (t) => TripCard(api: widget.api, trip: t, pos: pos, onChanged: _load)),
           _TrustView(trust: _trust),
+          ])),
         ]),
       ),
     );
@@ -221,6 +253,7 @@ class TripCard extends StatelessWidget {
     final state = trip['state'] as String;
     final schedule = trip['schedule'] as Map<String, dynamic>?;
     final p = pos.toJson();
+    final contacts = (trip['contacts'] as Map?) ?? const {};
     final actions = <Widget>[];
     switch (state) {
       case 'SHIPPER_DA_NHAN':
@@ -273,6 +306,9 @@ class TripCard extends StatelessWidget {
           Text('Khách ✔ ${trip['customerCompletedOrders'] ?? 0} đơn thành công'),
           const SizedBox(height: 8),
           OrderItemsView(trip),
+          if (trip['dropoffAddress'] != null) Text('📍 Giao tới: ${trip['dropoffAddress']}${trip['dropoffNote'] != null ? ' — ${trip['dropoffNote']}' : ''}'),
+          ContactButtons(label: 'Quán ${trip['storeName'] ?? ''}', phone: contacts['store'] as String?),
+          ContactButtons(label: trip['recipientName'] != null ? 'Người nhận ${trip['recipientName']}' : 'Khách', phone: contacts['customer'] as String?),
           const SizedBox(height: 8),
           ...actions.map((a) => Padding(padding: const EdgeInsets.only(top: 6), child: a)),
         ]),

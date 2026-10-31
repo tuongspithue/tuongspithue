@@ -100,6 +100,7 @@ class _OrderScreenState extends State<OrderScreen> with Polling {
       body: RefreshIndicator(
         onRefresh: _load,
         child: ListView(padding: const EdgeInsets.all(16), children: [
+          PushBanner(api: widget.api, app: 'CUSTOMER'),
           Align(alignment: Alignment.centerLeft, child: StateChip(state)),
           if (schedule != null) Text('🟣 Hẹn lấy hàng lúc ${hhmm(schedule['pickupAt'] as String?)}', style: const TextStyle(color: SqtColors.scheduled)),
           if (state == 'HEN_CHO_KHACH_DUYET_GIO') ...[
@@ -114,6 +115,8 @@ class _OrderScreenState extends State<OrderScreen> with Polling {
             Card(child: ListTile(leading: const Icon(Icons.pin), title: Text('Mã nhận hàng: ${o['deliveryPin']}'), subtitle: const Text('Chỉ đọc mã cho shipper khi đã nhận đủ hàng'))),
           if (state == 'CHO_KHACH_DEN_LAY') Card(child: ListTile(leading: const Icon(Icons.storefront), title: Text('Đọc mã đơn ${o['code']} tại quầy'))),
           if (o['riderId'] != null) Text('Shipper: ${kTierLabels[o['riderTier']] ?? ''}'),
+          ContactButtons(label: 'Quán ${o['storeName'] ?? ''}', phone: (o['contacts'] as Map?)?['store'] as String?),
+          ContactButtons(label: 'Shipper', phone: (o['contacts'] as Map?)?['rider'] as String?),
           const SizedBox(height: 8),
           OrderItemsView(o),
           const Divider(),

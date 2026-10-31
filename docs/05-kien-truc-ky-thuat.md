@@ -19,9 +19,9 @@ Mục tiêu: **chuyên nghiệp, ổn định, mở rộng được**, nhưng **
 | Bản đồ & định tuyến | Google Maps Platform / **Goong.io** (bản đồ VN) / tự host **OSRM/Valhalla** | Tính ETA, khoảng cách đường đi; tự host để giảm chi phí khi lớn |
 | Chia lưới không gian | **Uber H3** | Hệ số cao điểm, bản đồ nhiệt theo ô |
 | Lưu file | S3-compatible (AWS S3 / Viettel/VNG Cloud Object Storage) + CDN | Ảnh món, ảnh giao hàng, CCCD (mã hoá) |
-| Push | Firebase Cloud Messaging + APNs | |
-| SMS/OTP/ZNS | Nhà cung cấp SMS brandname + Zalo ZNS | |
-| IVR / số ẩn | Tổng đài cloud (Stringee, VNPT, Twilio…) | Gọi xác nhận quán, gọi ẩn số |
+| Push | **Web Push (chuẩn VAPID)** cho bản web — miễn phí; FCM/APNs khi có app cài đặt | Không mất phí theo tin |
+| SMS/Zalo/Gọi | **Mở app trên máy người dùng** (`tel:`, `sms:`, `zalo.me`) — không tích hợp dịch vụ trả phí | OTP khi chạy thật: chủ sản phẩm chọn kênh (13.5) |
+| Gọi quán khi chưa xác nhận | Điều phối viên bấm gọi từ Admin Console | Thay IVR; không dùng số ẩn — SĐT chỉ lộ cho các bên của đơn khi đơn đang chạy |
 | eKYC | Nhà cung cấp eKYC VN (FPT.AI, VNPT eKYC…) | OCR CCCD, so khớp khuôn mặt, liveness |
 | AI | **Mặc định Groq** (LLM + nhận dạng giọng nói) qua AI Gateway nội bộ; **key, base URL, model do Admin nhập** trên Admin Console; thêm được nhà cung cấp dự phòng tương thích OpenAI | Phản hồi rất nhanh; đổi nhà cung cấp không cần sửa code — xem Phần 12.8 |
 | Hạ tầng | **MVP: dịch vụ được quản lý** (PostgreSQL/Redis managed có bản sao & backup tự động, chạy container managed) · **Kubernetes** khi có ≥ 2 SRE; Terraform | Giảm rủi ro vận hành; ưu tiên cloud có vùng dữ liệu tại Việt Nam cho dữ liệu cá nhân |

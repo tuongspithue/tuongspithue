@@ -20,7 +20,7 @@ class RiderApp extends StatelessWidget {
       theme: sqtTheme(brightness: Brightness.light, large: true),
       darkTheme: sqtTheme(brightness: Brightness.dark, large: true),
       themeMode: ThemeMode.system,
-      home: _Gate(api: api),
+      home: InstallGate(appName: 'SQT Tài Xế', child: _Gate(api: api)),
     );
   }
 }

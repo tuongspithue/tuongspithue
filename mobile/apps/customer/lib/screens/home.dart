@@ -4,14 +4,18 @@ import 'package:sqt_core/sqt_core.dart';
 import '../cart.dart';
 import '../main.dart';
 import 'cart_screen.dart';
+import 'order_screen.dart';
 import 'store_screen.dart';
 
 /// "Quanh tôi": các quán đang mở quanh vị trí, sắp theo khoảng cách (Phần 2.1.2, 9.4).
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key, required this.api, required this.cart, this.place = kDefaultPlace});
+  const HomeScreen({super.key, required this.api, required this.cart, this.place = kDefaultPlace, this.openOrderId});
   final ApiClient api;
   final Cart cart;
   final Place place;
+
+  /// Mở thẳng một đơn khi bấm vào thông báo đẩy.
+  final int? openOrderId;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -28,6 +32,23 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _load();
+    _useMyLocation(silent: true);
+    final id = widget.openOrderId;
+    if (id != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (await widget.api.restore() && mounted) {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => OrderScreen(api: widget.api, orderId: id)));
+        }
+      });
+    }
+  }
+
+  /// "Quanh tôi" theo GPS của máy; không được phép thì giữ địa chỉ mặc định/đã chọn.
+  Future<void> _useMyLocation({bool silent = false}) async {
+    final p = await currentPosition(onError: silent ? null : (r) => showDone(context, r));
+    if (p == null || !mounted) return;
+    setState(() => _place = Place(p.lat, p.lng, 'Vị trí hiện tại của bạn'));
     _load();
   }
 
@@ -61,6 +82,13 @@ class _HomeScreenState extends State<HomeScreen> {
           TextField(controller: lng, decoration: const InputDecoration(labelText: 'Kinh độ'), keyboardType: TextInputType.number),
         ]),
         actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx, false);
+              _useMyLocation();
+            },
+            child: const Text('📍 Dùng vị trí của tôi'),
+          ),
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Huỷ')),
           FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Dùng địa chỉ này')),
         ],

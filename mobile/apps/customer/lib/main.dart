@@ -29,7 +29,7 @@ class CustomerApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: sqtTheme(brightness: Brightness.light),
       darkTheme: sqtTheme(brightness: Brightness.dark),
-      home: HomeScreen(api: api, cart: Cart()),
+      home: InstallGate(appName: 'Ship Quanh Tôi', child: HomeScreen(api: api, cart: Cart(), openOrderId: int.tryParse(Browser.startOrderId ?? ''))),
     );
   }
 }

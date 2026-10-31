@@ -9,7 +9,8 @@
     "db:migrate": "ts-node src/database/migrate.ts",
     "test": "jest --runInBand",
     "lint": "tsc -p tsconfig.json --noEmit",
-    "vapid": "ts-node src/push/vapid.ts"
+    "vapid": "ts-node src/push/vapid.ts",
+    "seed": "ts-node src/database/seed.ts"
   },
   "jest": {
     "preset": "ts-jest",

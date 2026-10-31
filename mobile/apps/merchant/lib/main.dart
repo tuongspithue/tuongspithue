@@ -19,7 +19,7 @@ class MerchantApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: sqtTheme(brightness: Brightness.light, large: true),
       darkTheme: sqtTheme(brightness: Brightness.dark, large: true),
-      home: _Gate(api: api),
+      home: InstallGate(appName: 'SQT Đối Tác', child: _Gate(api: api)),
     );
   }
 }

@@ -1,0 +1,38 @@
+# HTTPS tự động (Let's Encrypt) cho 5 tên miền. GPS và thông báo đẩy trên điện thoại BẮT BUỘC dùng HTTPS.
+{
+	email {$ACME_EMAIL}
+}
+
+(pwa) {
+	encode zstd gzip
+	# Service worker và trang chính luôn lấy bản mới để cập nhật app ngay.
+	@fresh path /sw.js /index.html /flutter_bootstrap.js /manifest.json /
+	header @fresh Cache-Control "no-cache"
+	try_files {path} /index.html
+	file_server
+}
+
+{$DOMAIN_APP} {
+	root * /srv/customer
+	import pwa
+}
+
+{$DOMAIN_STORE} {
+	root * /srv/merchant
+	import pwa
+}
+
+{$DOMAIN_RIDER} {
+	root * /srv/rider
+	import pwa
+}
+
+{$DOMAIN_ADMIN} {
+	encode zstd gzip
+	reverse_proxy admin:3001
+}
+
+{$DOMAIN_API} {
+	encode zstd gzip
+	reverse_proxy api:3000
+}

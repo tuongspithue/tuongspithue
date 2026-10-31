@@ -97,10 +97,9 @@ stateDiagram-v2
 | Thời điểm (từ lúc đơn tới quán) | Hành động hệ thống |
 |---|---|
 | 0s | Đẩy thông báo + chuông toàn màn hình trên **tất cả thiết bị** của quán (chủ + nhân viên có quyền nhận đơn) |
-| 45s | Nhắc lại chuông, gửi SMS/Zalo ZNS cho chủ quán |
-| 90s | **Gọi IVR tự động**: "Quán có đơn mới 2 món, 85.000đ. Bấm 1 để nhận, bấm 2 để từ chối." → bấm 1 → hỏi thời gian chuẩn bị (bấm 1: 10 phút, 2: 20 phút, 3: 30 phút) |
+| 45s | Nhắc lại bằng thông báo đẩy tới mọi thiết bị của quán |
+| 90s | **Điều phối viên gọi quán**: Admin Console hiện việc "Gọi quán" kèm SĐT (bấm để mở app gọi) và lời đọc đơn có ghi chú, dị ứng; quán đồng ý thì Ops xác nhận thay (kênh `OPS_CALL`). *Thay cho cuộc gọi tự động (IVR) trả phí — xem 13.8.* |
 | 120s | Hiện gợi ý cho khách: **"Chuyển sang hẹn giờ"** (giữ nguyên giỏ) hoặc chọn quán tương tự |
-| 150s | Đơn vào hàng đợi Ops (nếu khu vực có Ops trực) — Ops gọi trực tiếp quán |
 | 180s | Huỷ tự động, **hoàn tiền 100%**, khách nhận voucher xin lỗi + gợi ý 3 quán tương tự có món tương tự |
 
 - **Nhận đơn = cam kết làm theo ghi chú của từng món.** Ghi chú nào không làm được thì quán phải dùng *Nhận với điều chỉnh* (khách đồng ý) chứ không được bỏ qua. Đơn có ghi chú dị ứng cần thêm thao tác *"Đã đọc ghi chú dị ứng"* trước khi nhận.

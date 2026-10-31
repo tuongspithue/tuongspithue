@@ -57,7 +57,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     databaseUrl: env.DATABASE_URL ?? 'postgres://sqt:sqt@localhost:5432/sqt',
     jwtSecret,
     jwtTtlSeconds: Number(env.JWT_TTL_SECONDS ?? 900),
-    otpDevEcho: !isProd && env.OTP_DEV_ECHO === 'true',
+    // Giai đoạn thử nghiệm (TEST_PHASE=true) được phép hiện mã OTP trên màn hình kể cả khi chạy production.
+    otpDevEcho: env.OTP_DEV_ECHO === 'true' && (!isProd || env.TEST_PHASE === 'true'),
     adminPhones: (env.ADMIN_PHONES ?? '').split(',').map((p) => p.trim()).filter(Boolean),
     business: {
       serviceFee: 2_000,

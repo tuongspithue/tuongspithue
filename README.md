@@ -25,6 +25,7 @@ Nền tảng giao hàng **siêu địa phương**: người dùng mở app là t
 | 13 | [Báo cáo rà soát & hoàn thiện](docs/13-bao-cao-ra-soat.md) | Những gì đã loại bỏ, bổ sung, sửa cho nhất quán; ma trận đối chiếu yêu cầu; các việc cần xác nhận trước khi xây dựng |
 | 14 | [Trang quản trị Admin](docs/14-trang-quan-tri-admin.md) | Dashboard tổng quan tuỳ biến, bản đồ trực tiếp có tua lại, trung tâm sự cố, hồ sơ 360°, **trung tâm cấu hình phân tầng** (theo khu/ngành/đối tác/thời gian), Rule Builder, xem trước tác động, duyệt 4 mắt, phiên bản & hoàn tác, báo cáo kéo thả, phân quyền tuỳ chỉnh |
 | 15 | [Phân quyền, xếp loại & ưu tiên](docs/15-phan-quyen-xep-loai-uu-tien.md) | Admin chủ động phân quyền chức năng từng khách/quán/shipper, đánh giá thực địa & khách bí mật, nâng/hạ/khoá cấp, nhãn phân loại, điều chỉnh mức ưu tiên theo từng tác vụ (có biên độ, thời hạn, duyệt, nhật ký, khiếu nại) |
+| 16 | [Hướng dẫn triển khai & thử nghiệm](docs/16-huong-dan-thu-nghiem.md) | Đưa bản web lên máy chủ (Docker + HTTPS tự động), tài khoản thử, cài lên màn hình chính trên iPhone/Android, kịch bản thử, giới hạn của bản web |
 
 ## ⚡ Tóm tắt nhanh
 
@@ -40,6 +41,10 @@ Nền tảng giao hàng **siêu địa phương**: người dùng mở app là t
 - **Công nghệ (đã chốt cho MVP):** Flutter · Next.js · NestJS · PostgreSQL + PostGIS · Redis (GEO, Streams, BullMQ) · WebSocket · dịch vụ cloud được quản lý · **AI mặc định Groq** (Admin cấu hình). Mở rộng sau: Go, Kafka, OpenSearch, Kubernetes.
 - **Ổn định:** máy trạng thái chặt, nhật ký sự kiện bất biến, outbox, idempotency, sổ cái kép, hẹn giờ SLA bền vững, giám sát theo SLO.
 
+
+## 🧪 Thử nghiệm bản web
+
+Xem [Phần 16](docs/16-huong-dan-thu-nghiem.md): `docker compose -f infra/docker-compose.prod.yml --env-file infra/.env.prod up -d --build` dựng toàn bộ hệ thống với HTTPS tự động; ba app dùng trên điện thoại bằng cách **thêm vào màn hình chính**. Gọi/SMS/Zalo mở app trên máy, thông báo qua Web Push miễn phí.
 
 ## 💻 Mã nguồn
 
@@ -73,7 +78,7 @@ cd apps/customer && flutter run --dart-define=API_URL=http://<địa chỉ API>:
 
 **Kiểm thử:** `pnpm test` chạy test của `domain` và test đầu-cuối của `api` trên CSDL `sqt_test` (đổi bằng `TEST_DATABASE_URL`). CI trên GitHub Actions chạy `lint`, `build`, `test` ở mỗi lần đẩy code.
 
-**Chưa có ở bản này** (làm tiếp theo lộ trình MVP, Phần 8): chuẩn hoá điểm theo phân vị khu vực và Bảng Vàng (Phần 11.6), luồng duyệt 4 mắt, Rule Builder, điều chỉnh ưu tiên theo tác vụ, dashboard kéo thả, bản đồ trực tiếp (Phần 14–15, bản 1.0), gửi thông báo thật (FCM/SMS/ZNS/IVR — hiện chỉ ghi hàng chờ), cổng thanh toán thật; với app di động: GPS thật, chụp ảnh giao hàng, chuông đơn mới chạy nền, thông báo đẩy, bản đồ trực tiếp, đăng nhập Zalo/Apple (cần build và thử trên Android/iOS — môi trường hiện tại chỉ build được bản web).
+**Chưa có ở bản này** (làm tiếp theo lộ trình MVP, Phần 8): chuẩn hoá điểm theo phân vị khu vực và Bảng Vàng (Phần 11.6), luồng duyệt 4 mắt, Rule Builder, điều chỉnh ưu tiên theo tác vụ, dashboard kéo thả, bản đồ trực tiếp (Phần 14–15, bản 1.0), kênh gửi OTP khi chạy thật, cổng thanh toán thật; với app di động: GPS thật, chụp ảnh giao hàng, chuông đơn mới chạy nền, thông báo đẩy, bản đồ trực tiếp, đăng nhập Zalo/Apple (cần build và thử trên Android/iOS — môi trường hiện tại chỉ build được bản web).
 
 ## 📖 Thuật ngữ
 
