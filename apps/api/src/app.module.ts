@@ -10,6 +10,7 @@ import { APP_CONFIG, AppConfig, loadConfig } from './config';
 import { DATABASE, Database } from './database/database';
 import { OrdersModule } from './orders/orders.module';
 import { StoresModule } from './stores/stores';
+import { ConfigCenterModule } from './config-center/config-center.module';
 
 @Global()
 @Module({
@@ -50,6 +51,7 @@ class HealthController {
       inject: [APP_CONFIG],
       useFactory: (config: AppConfig) => ({ secret: config.jwtSecret, signOptions: { expiresIn: config.jwtTtlSeconds } }),
     }),
+    ConfigCenterModule,
     AuthModule,
     StoresModule,
     OrdersModule,

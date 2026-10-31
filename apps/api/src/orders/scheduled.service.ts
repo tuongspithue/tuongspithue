@@ -1,6 +1,7 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { BOARD_DELAY_MINUTES, MAX_SCHEDULED_CLAIMS, OrderEvent, OrderState } from '@sqt/domain';
 import { TrustService } from '../trust/trust.service';
+import { EntitlementService } from '../config-center/entitlements.service';
 import { PoolClient } from 'pg';
 import { AuthUser, worksAtStore } from '../common/auth';
 import { BusinessError } from '../common/errors';
@@ -10,6 +11,8 @@ import { DispatchService } from './dispatch';
 import { JobsService } from './jobs';
 import { Actor, OrderLifecycle, OrderRow, SYSTEM_ACTOR } from './lifecycle';
 import { NotificationsService } from './notifications';
+
+import { RIDER_COD_ALLOWED } from './dispatch';
 
 const MINUTE = 60_000;
 const SLOT_MS = 15 * MINUTE;
@@ -42,6 +45,7 @@ export class ScheduledService implements OnModuleInit {
     private readonly dispatch: DispatchService,
     private readonly notifications: NotificationsService,
     private readonly trust: TrustService,
+    private readonly entitlements: EntitlementService,
   ) {}
 
   private get rules() {
@@ -290,7 +294,7 @@ export class ScheduledService implements OnModuleInit {
        FROM orders o JOIN stores s ON s.id = o.store_id JOIN riders r ON r.user_id = $1
        WHERE o.state = 'HEN_TREN_CHO_CHUYEN' AND r.status = 'APPROVED' AND r.location IS NOT NULL
          AND ST_DWithin(s.location, r.location, $2)
-         AND (o.payment_method <> 'COD' OR r.cod_balance + o.total <= r.cod_limit)
+         AND (o.payment_method <> 'COD' OR (r.cod_balance + o.total <= r.cod_limit AND ${RIDER_COD_ALLOWED}))
          AND o.posted_to_board_at <= $3::timestamptz - make_interval(mins => $4)
        ORDER BY o.scheduled_pickup_at
        LIMIT 100`,
@@ -326,7 +330,9 @@ export class ScheduledService implements OnModuleInit {
         `SELECT scheduled_pickup_at FROM orders WHERE rider_id = $1 AND state IN ('HEN_SHIPPER_DA_GIU', 'HEN_SAN_SANG')`,
         [riderId],
       );
-      const limit = MAX_SCHEDULED_CLAIMS[(await this.trust.get(client, 'RIDER', riderId)).tier];
+      // Admin có thể đặt số chuyến riêng cho từng shipper (Phần 15.2); mặc định theo cấp uy tín.
+      const override = await this.entitlements.get<number | null>(client, 'RIDER', riderId, 'rider.scheduled_claims.max');
+      const limit = override ?? MAX_SCHEDULED_CLAIMS[(await this.trust.get(client, 'RIDER', riderId)).tier];
       if (mine.length >= limit) throw new BusinessError('CLAIM_LIMIT', `Bạn đang giữ tối đa ${limit} chuyến hẹn`, 409);
       const conflict = mine.some((m) => Math.abs(new Date(m.scheduled_pickup_at).getTime() - pickupAt.getTime()) < this.rules.claimGapMinutes * MINUTE);
       if (conflict) throw new BusinessError('CLAIM_CONFLICT', 'Bạn đã giữ một chuyến khác quá sát giờ này', 409);

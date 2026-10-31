@@ -18,7 +18,10 @@ export type TrustSubject = 'STORE' | 'RIDER';
 
 export interface TrustView {
   score: number;
+  /** Cấp hiệu lực (đã gồm điều chỉnh của Admin). */
   tier: TrustTier;
+  autoTier?: TrustTier;
+  adjusted?: boolean;
   completed: number;
   stars: number | null;
   reviewCount: number;
@@ -72,8 +75,21 @@ export class TrustService implements OnModuleInit {
     return { stars, n, score: starsToScore(stars) };
   }
 
+  /** Điều chỉnh cấp còn hiệu lực của Admin (Phần 15.4). */
+  private async activeOverride(q: Queryable, type: TrustSubject, id: number) {
+    const { rows } = await q.query<{ action: string; tier: TrustTier }>(
+      `SELECT action, tier FROM tier_overrides WHERE subject_type = $1 AND subject_id = $2 AND status = 'ACTIVE' AND effective_to > now()
+       ORDER BY created_at DESC LIMIT 1`,
+      [type, id],
+    );
+    return rows[0] ?? null;
+  }
+
   async recompute(client: PoolClient, type: TrustSubject, id: number): Promise<TrustView> {
     const view = type === 'STORE' ? await this.computeStore(client, id) : await this.computeRider(client, id);
+    // Khoá cấp: điểm vẫn tính nhưng cấp giữ nguyên trong thời gian điều tra/khiếu nại.
+    const override = await this.activeOverride(client, type, id);
+    if (override?.action === 'LOCK') view.tier = override.tier;
     await client.query(
       `INSERT INTO trust_scores (subject_type, subject_id, score, tier, components, completed, stars, review_count, updated_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now())
@@ -164,10 +180,15 @@ export class TrustService implements OnModuleInit {
   async get(q: Queryable, type: TrustSubject, id: number): Promise<TrustView> {
     const { rows } = await q.query('SELECT * FROM trust_scores WHERE subject_type = $1 AND subject_id = $2', [type, id]);
     const r = rows[0];
-    if (!r) return { score: ROOKIE_DEFAULT_SCORE, tier: TrustTier.ROOKIE, completed: 0, stars: null, reviewCount: 0, components: {} };
+    const override = await this.activeOverride(q, type, id);
+    if (!r) {
+      return { score: ROOKIE_DEFAULT_SCORE, tier: override?.tier ?? TrustTier.ROOKIE, completed: 0, stars: null, reviewCount: 0, components: {}, autoTier: TrustTier.ROOKIE, adjusted: Boolean(override) };
+    }
     return {
       score: Number(r.score),
-      tier: r.tier,
+      tier: override?.tier ?? r.tier,
+      autoTier: r.tier,
+      adjusted: Boolean(override),
       completed: r.completed,
       stars: r.stars === null ? null : Number(r.stars),
       reviewCount: r.review_count,

@@ -22,6 +22,9 @@ import { JobsService } from './jobs';
 import { Actor, OrderLifecycle, OrderRow, SYSTEM_ACTOR } from './lifecycle';
 import { NotificationsService } from './notifications';
 import { ScheduledService, SchedulePlan } from './scheduled.service';
+import { ConfigCenter } from '../config-center/config.service';
+import { EntitlementService } from '../config-center/entitlements.service';
+import { SlaStep } from '@sqt/domain';
 
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const newOrderCode = () =>
@@ -39,6 +42,8 @@ export class OrdersService implements OnModuleInit {
     private readonly dispatch: DispatchService,
     private readonly notifications: NotificationsService,
     private readonly scheduled: ScheduledService,
+    private readonly configCenter: ConfigCenter,
+    private readonly entitlements: EntitlementService,
   ) {}
 
   onModuleInit() {
@@ -99,7 +104,9 @@ export class OrdersService implements OnModuleInit {
   }
 
   private async scheduleGateA(client: PoolClient, order: OrderRow, from: Date) {
-    for (const step of this.config.business.gateASteps) {
+    const { rows } = await client.query<{ category: string }>('SELECT category FROM stores WHERE id = $1', [order.store_id]);
+    const steps = this.configCenter.get<SlaStep[]>('sla.gate_a.steps', { category: rows[0]?.category });
+    for (const step of steps) {
       await this.jobs.schedule(client, 'GATE_A_STEP', order.id, new Date(from.getTime() + step.afterSeconds * 1000), {
         action: step.action,
       });
@@ -117,6 +124,17 @@ export class OrdersService implements OnModuleInit {
       if (!store || store.status !== 'APPROVED') throw new BusinessError('STORE_NOT_FOUND', 'Không tìm thấy quán', 404);
       // Đơn hẹn được đặt cả khi quán đang đóng (VD đặt trước cho sáng mai) — Phần 10.1.
       if (!store.is_open && !dto.schedule) throw new BusinessError('STORE_CLOSED', 'Quán đang đóng cửa');
+      const scope = { storeId: store.id, category: store.category };
+      const mine = await this.entitlements.effective(client, 'CUSTOMER', user.id);
+      if (dto.paymentMethod === 'COD' && (!this.configCenter.get<boolean>('feature.cod', scope) || mine['customer.cod.enabled'] === false)) {
+        throw new BusinessError('COD_NOT_AVAILABLE', 'Thanh toán tiền mặt hiện không khả dụng, vui lòng chọn thanh toán online');
+      }
+      if (dto.schedule) {
+        const storeAllows = await this.entitlements.get<boolean>(client, 'STORE', store.id, 'store.scheduled.enabled');
+        if (!this.configCenter.get<boolean>('feature.scheduled_orders', scope) || mine['customer.scheduled.enabled'] === false || !storeAllows) {
+          throw new BusinessError('SCHEDULED_NOT_AVAILABLE', 'Đơn hẹn giờ hiện không khả dụng cho đơn này');
+        }
+      }
 
       const isDelivery = dto.deliveryMode === 'PLATFORM';
       if (isDelivery && !dto.dropoff) throw new BusinessError('DROPOFF_REQUIRED', 'Cần địa chỉ giao hàng');
@@ -145,9 +163,19 @@ export class OrdersService implements OnModuleInit {
       const subtotal = computeSubtotal(lines.map((l) => ({ unitPrice: Number(l.menu.price), quantity: l.quantity })));
       // Chưa tích hợp dịch vụ định tuyến: ước tính đường đi = đường chim bay × hệ số (Phần 5.11).
       const routeKm = (straightM * this.config.business.routeFactor) / 1000;
-      const deliveryFee = isDelivery ? computeDeliveryFee(routeKm, this.config.business.deliveryFee) : 0;
-      const serviceFee = this.config.business.serviceFee;
+      const deliveryFee = isDelivery
+        ? computeDeliveryFee(routeKm, {
+            ...this.config.business.deliveryFee,
+            minimumFee: this.configCenter.get<number>('fees.delivery_min', scope),
+            includedKm: this.configCenter.get<number>('fees.delivery_included_km', scope),
+            perKmFee: this.configCenter.get<number>('fees.delivery_per_km', scope),
+          })
+        : 0;
+      const serviceFee = this.configCenter.get<number>('fees.service_fee', scope);
       const total = subtotal + deliveryFee + serviceFee;
+      if (dto.paymentMethod === 'COD' && total > Number(mine['customer.cod.max_value'])) {
+        throw new BusinessError('COD_LIMIT_EXCEEDED', 'Đơn vượt giá trị tối đa cho phép trả tiền mặt, vui lòng chọn thanh toán online');
+      }
       const hasAllergens = lines.some((l) => l.note.allergens.length > 0);
       const needsPin = isDelivery && total >= this.config.business.pinThreshold;
       let plan: SchedulePlan | null = null;

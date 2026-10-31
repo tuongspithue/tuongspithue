@@ -18,6 +18,11 @@ const ACTIVE_RIDER_STATES = [
   OrderState.DA_DEN_NOI,
 ];
 
+/** Điều kiện SQL: shipper `r` không bị Admin tắt quyền nhận đơn COD (Phần 15.2). */
+export const RIDER_COD_ALLOWED = `(SELECT e.value FROM user_entitlements e
+  WHERE e.subject_type = 'RIDER' AND e.subject_id = r.user_id AND e.key = 'rider.cod.enabled'
+    AND e.status = 'ACTIVE' AND e.effective_to > now() ORDER BY e.created_at DESC LIMIT 1) IS DISTINCT FROM 'false'::jsonb`;
+
 /**
  * Điều phối shipper theo vòng mở rộng (Phần 3.4.1). Shipper phải tự bấm nhận chuyến (Cổng B);
  * hệ thống chỉ gửi lời mời.
@@ -72,6 +77,7 @@ export class DispatchService implements OnModuleInit {
            AND r.location_at > $2::timestamptz - interval '2 minutes'
            AND ST_DWithin(r.location, s.location, $3)
            AND r.cod_balance + $4 <= r.cod_limit
+           AND ($4 = 0 OR ${RIDER_COD_ALLOWED})
            AND NOT EXISTS (SELECT 1 FROM orders o WHERE o.rider_id = r.user_id AND o.state = ANY($5))
            AND NOT EXISTS (SELECT 1 FROM dispatch_offers d WHERE d.rider_id = r.user_id AND d.order_id = $6)
            AND NOT EXISTS (SELECT 1 FROM dispatch_offers d WHERE d.rider_id = r.user_id AND d.status = 'SENT' AND d.expires_at > $2)
