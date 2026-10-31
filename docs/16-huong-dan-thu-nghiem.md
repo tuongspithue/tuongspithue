@@ -2,6 +2,8 @@
 
 > **Khách hàng dùng web app** (mở link là đặt, không bắt cài). **Quán và shipper dùng app cài đặt (Android trước)** để chuông kêu kịp thời kể cả khi khoá máy — điều bản web không làm được. Liên hệ Zalo/SMS/Gọi **mở app trên điện thoại**; không dùng dịch vụ trả phí (không SMS brandname, không Firebase).
 
+> Chưa có VPS? Chạy thử miễn phí trên GitHub Codespaces: xem **Phần 17**.
+
 ---
 
 ## 16.1. Cần chuẩn bị

@@ -13,3 +13,6 @@ mobile/**/build/
 .flutter-plugins-dependencies
 pubspec_overrides.yaml
 infra/.env.prod
+
+# Chạy thử Codespaces: bí mật, nhật ký, ảnh tải lên
+.devcontainer/local/

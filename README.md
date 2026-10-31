@@ -26,6 +26,7 @@ Nền tảng giao hàng **siêu địa phương**: người dùng mở app là t
 | 14 | [Trang quản trị Admin](docs/14-trang-quan-tri-admin.md) | Dashboard tổng quan tuỳ biến, bản đồ trực tiếp có tua lại, trung tâm sự cố, hồ sơ 360°, **trung tâm cấu hình phân tầng** (theo khu/ngành/đối tác/thời gian), Rule Builder, xem trước tác động, duyệt 4 mắt, phiên bản & hoàn tác, báo cáo kéo thả, phân quyền tuỳ chỉnh |
 | 15 | [Phân quyền, xếp loại & ưu tiên](docs/15-phan-quyen-xep-loai-uu-tien.md) | Admin chủ động phân quyền chức năng từng khách/quán/shipper, đánh giá thực địa & khách bí mật, nâng/hạ/khoá cấp, nhãn phân loại, điều chỉnh mức ưu tiên theo từng tác vụ (có biên độ, thời hạn, duyệt, nhật ký, khiếu nại) |
 | 16 | [Hướng dẫn triển khai & thử nghiệm](docs/16-huong-dan-thu-nghiem.md) | Đưa máy chủ lên (Docker + HTTPS tự động), lấy APK app quán/shipper, tài khoản thử, kịch bản thử, giới hạn đã biết |
+| 17 | [Chạy thử miễn phí trên Codespaces](docs/17-chay-thu-codespaces.md) | Không cần VPS: tạo Codespace, một lệnh bật cả hệ thống, mở trên điện thoại, trỏ app Android về Codespace |
 
 ## ⚡ Tóm tắt nhanh
 

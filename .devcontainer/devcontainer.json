@@ -1,0 +1,23 @@
+// Chạy thử toàn bộ hệ thống trên GitHub Codespaces (miễn phí trong hạn mức) — xem docs/17-chay-thu-codespaces.md.
+// Mở Codespace xong, chạy: bash scripts/codespace.sh
+{
+  "name": "Ship Quanh Tôi",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "dev",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "hostRequirements": { "cpus": 2, "memory": "8gb" },
+  "forwardPorts": [8080, 3001, 3000],
+  "portsAttributes": {
+    "8080": { "label": "Web app khách", "onAutoForward": "notify" },
+    "3001": { "label": "Admin Console", "onAutoForward": "notify" },
+    "3000": { "label": "API", "onAutoForward": "silent" }
+  },
+  // Cài Node packages, Flutter và tải thư viện app — chỉ chạy một lần khi tạo Codespace (~5–10 phút).
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+  "customizations": {
+    "codespaces": { "openFiles": ["docs/17-chay-thu-codespaces.md"] }
+  }
+}
