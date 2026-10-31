@@ -61,6 +61,13 @@ export TEST_PHASE=true PUBLIC_API_URL="$API_URL" UPLOAD_DIR="$STATE/uploads" COR
 
 api_js() { (cd apps/api && node "dist/src/database/$1.js" "${@:2}"); }
 
+# Build lại máy chủ từ mã mới nhất (sau git pull) — seed/code/start đều chạy bản vừa build.
+build_api() {
+  echo "==> Build máy chủ API"
+  pnpm --filter @sqt/domain build >/dev/null
+  pnpm --filter @sqt/api build >/dev/null
+}
+
 stop_all() {
   for name in api admin web; do
     if [ -f "$STATE/$name.pid" ]; then
@@ -103,9 +110,11 @@ case "${1:-start}" in
     exec tail -n 100 -f "$STATE/logs/api.log" ;;
   code)
     [ -n "${2:-}" ] || { echo "Cách dùng: bash scripts/codespace.sh code 0900000001"; exit 1; }
+    build_api
     api_js activation-code "$2"
     exit 0 ;;
   seed)
+    build_api
     seed
     exit 0 ;;
   start) ;;
@@ -114,9 +123,7 @@ case "${1:-start}" in
     exit 1 ;;
 esac
 
-echo "==> Build máy chủ API"
-pnpm --filter @sqt/domain build >/dev/null
-pnpm --filter @sqt/api build >/dev/null
+build_api
 
 echo "==> Chờ cơ sở dữ liệu và áp dụng migration"
 for i in $(seq 1 30); do
