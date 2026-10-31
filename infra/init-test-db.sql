@@ -1,0 +1,1 @@
+CREATE DATABASE sqt_test OWNER sqt;

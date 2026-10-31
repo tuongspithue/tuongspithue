@@ -13,7 +13,7 @@ Mục tiêu: **chuyên nghiệp, ổn định, mở rộng được**, nhưng **
 | Backend API | **NestJS (TypeScript)** (chốt cho MVP) · **Go** cho Dispatch/Location khi tách dịch vụ | Một ngôn ngữ với web (TypeScript) → đội nhỏ làm nhanh; Go chỉ dùng khi tải đòi hỏi |
 | CSDL chính | **PostgreSQL 16 + PostGIS** | Giao dịch ACID cho đơn & tiền; truy vấn không gian "quanh tôi" |
 | Cache / khoá / hàng đợi nhẹ | **Redis** (GEO, Streams, distributed lock) | Vị trí shipper realtime, rate limit, phiên |
-| Message bus & job hẹn giờ | **MVP: Outbox (PostgreSQL) + Redis Streams + BullMQ** · **Kafka** khi > 100.000 đơn/ngày | Ít thành phần vận hành hơn ở giai đoạn đầu = ổn định hơn với đội nhỏ |
+| Message bus & job hẹn giờ | **MVP: Outbox + bảng việc hẹn giờ trên PostgreSQL**; Redis Streams/BullMQ khi cần · **Kafka** khi > 100.000 đơn/ngày | Ít thành phần vận hành hơn ở giai đoạn đầu = ổn định hơn với đội nhỏ |
 | Tìm kiếm | **MVP: PostGIS + `unaccent` + `pg_trgm`** · **OpenSearch** từ bản 1.0 (analyzer tiếng Việt, bỏ dấu, embedding) | Tránh vận hành cụm tìm kiếm khi dữ liệu còn nhỏ |
 | Realtime | **WebSocket** (Socket.IO / Centrifugo) | Theo dõi đơn, vị trí shipper |
 | Bản đồ & định tuyến | Google Maps Platform / **Goong.io** (bản đồ VN) / tự host **OSRM/Valhalla** | Tính ETA, khoảng cách đường đi; tự host để giảm chi phí khi lớn |
@@ -120,7 +120,7 @@ flowchart LR
 - **Saga** cho luồng thanh toán–đơn: thu tiền → tạo đơn → (bị từ chối/huỷ) hoàn tiền bù trừ.
 - **Retry có backoff + dead-letter queue** cho thông báo, webhook thanh toán.
 - **Circuit breaker** & timeout cho dịch vụ bên ngoài (bản đồ, SMS, cổng thanh toán); có nhà cung cấp dự phòng cho SMS/OTP và bản đồ.
-- **Bộ hẹn giờ SLA** (Cổng A, Cổng B, giao trễ) chạy bằng **delayed job** bền vững (**BullMQ trên Redis có bật lưu trữ AOF**, kèm job quét đối chiếu mỗi phút từ PostgreSQL để không job nào bị mất) — không dùng `setTimeout` trong RAM.
+- **Bộ hẹn giờ SLA** (Cổng A, Cổng B, giao trễ) chạy bằng **delayed job** bền vững: MVP dùng **bảng `scheduled_jobs` trên PostgreSQL**, worker lấy việc bằng `FOR UPDATE SKIP LOCKED` (việc nằm trong CSDL nên không mất khi khởi động lại, chạy nhiều worker song song an toàn, không thêm thành phần vận hành); chuyển sang **BullMQ** khi tải lớn — không dùng `setTimeout` trong RAM.
 - Hoạt động **khi mất kết nối**: app quán/shipper lưu hàng đợi thao tác cục bộ, gửi lại với cùng Idempotency-Key.
 
 ## 5.7. Hiệu năng & quy mô (mục tiêu thiết kế)
