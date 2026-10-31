@@ -23,6 +23,29 @@ export interface AppConfig {
     storeGeofenceM: number;
     dropoffGeofenceM: number;
     pinThreshold: number;
+    /** Đơn hẹn giờ — Phần 10. Thời gian tính bằng phút, so với giờ lấy hàng tại quán. */
+    scheduled: {
+      minLeadMinutes: number;
+      maxDaysAhead: number;
+      riderSpeedKmh: number;
+      replyMinMinutes: number;
+      replyMaxMinutes: number;
+      proposalReplyMinutes: number;
+      merchantReconfirmWindowMinutes: number;
+      merchantReconfirmAtMinutes: number;
+      merchantReconfirmGraceMinutes: number;
+      riderReconfirmWindowMinutes: number;
+      riderReconfirmAtMinutes: number;
+      boardBonusAtMinutes: number;
+      boardBonus: number;
+      boardUnclaimedAtMinutes: number;
+      boardRadiusM: number;
+      slotStartMinutes: number;
+      maxClaims: number;
+      claimGapMinutes: number;
+      freeReleaseHours: number;
+      codMinCompletedOrders: number;
+    };
   };
 }
 
@@ -51,6 +74,28 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       storeGeofenceM: 100,
       dropoffGeofenceM: 150,
       pinThreshold: 1_000_000,
+      scheduled: {
+        minLeadMinutes: 45,
+        maxDaysAhead: 7,
+        riderSpeedKmh: 20,
+        replyMinMinutes: 5,
+        replyMaxMinutes: 30,
+        proposalReplyMinutes: 15,
+        merchantReconfirmWindowMinutes: 60,
+        merchantReconfirmAtMinutes: 30,
+        merchantReconfirmGraceMinutes: 10,
+        riderReconfirmWindowMinutes: 40,
+        riderReconfirmAtMinutes: 20,
+        boardBonusAtMinutes: 60,
+        boardBonus: 3_000,
+        boardUnclaimedAtMinutes: 30,
+        boardRadiusM: 5_000,
+        slotStartMinutes: 15,
+        maxClaims: 2,
+        claimGapMinutes: 30,
+        freeReleaseHours: 2,
+        codMinCompletedOrders: 3,
+      },
     },
   };
 }

@@ -48,7 +48,7 @@ Monorepo dùng **pnpm**:
 | Thư mục | Nội dung |
 |---|---|
 | `packages/domain` | Luật nghiệp vụ thuần TypeScript, không phụ thuộc CSDL: máy trạng thái đơn (Phần 3.2, 10.6) với bất biến *người thật xác nhận* ở Cổng A/B, phí ship (4.1), ghi chú từng món & dị ứng (2.1.4a), chính sách huỷ (3.5) |
-| `apps/api` | Backend NestJS + PostgreSQL/PostGIS: đăng nhập OTP, quán & menu, "Quanh tôi", đặt đơn có Idempotency-Key, Cổng A (app quán, Ops gọi xác nhận) với các mốc nhắc → IVR → Ops → tự huỷ sau 180 giây, điều phối shipper theo vòng, Cổng B, các bước giao có geofence, nhật ký sự kiện bất biến, outbox |
+| `apps/api` | Backend NestJS + PostgreSQL/PostGIS: đăng nhập OTP, quán & menu, "Quanh tôi", đặt đơn có Idempotency-Key, Cổng A (app quán, Ops gọi xác nhận) với các mốc nhắc → IVR → Ops → tự huỷ sau 180 giây, điều phối shipper theo vòng, Cổng B, các bước giao có geofence, **đơn hẹn giờ** (khung giờ & năng lực quán, quán nhận/đề xuất giờ, chợ chuyến hẹn, giữ/nhả chuyến, xác nhận lại T−30/T−20, tự chuyển điều phối khi còn 30 phút), nhật ký sự kiện bất biến, outbox |
 | `infra` | `docker-compose.yml` cho PostgreSQL + PostGIS và Redis khi phát triển |
 
 **Chạy cục bộ**
@@ -64,7 +64,7 @@ pnpm --filter @sqt/api start                         # http://localhost:3000/hea
 
 **Kiểm thử:** `pnpm test` chạy test của `domain` và test đầu-cuối của `api` trên CSDL `sqt_test` (đổi bằng `TEST_DATABASE_URL`). CI trên GitHub Actions chạy `lint`, `build`, `test` ở mỗi lần đẩy code.
 
-**Chưa có ở bản này** (làm tiếp theo lộ trình MVP, Phần 8): đơn hẹn giờ và chợ chuyến hẹn ở tầng API (gói domain đã có máy trạng thái), điểm uy tín, trung tâm cấu hình & Admin Console giao diện web, phân quyền chức năng (Phần 15), gửi thông báo thật (FCM/SMS/ZNS/IVR — hiện chỉ ghi hàng chờ), cổng thanh toán thật, ba app Flutter.
+**Chưa có ở bản này** (làm tiếp theo lộ trình MVP, Phần 8): điểm uy tín, trung tâm cấu hình & Admin Console giao diện web, phân quyền chức năng (Phần 15), gửi thông báo thật (FCM/SMS/ZNS/IVR — hiện chỉ ghi hàng chờ), cổng thanh toán thật, ba app Flutter.
 
 ## 📖 Thuật ngữ
 

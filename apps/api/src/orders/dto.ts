@@ -5,6 +5,7 @@ import {
   IsArray,
   IsBoolean,
   IsIn,
+  IsISO8601,
   IsInt,
   IsLatitude,
   IsLongitude,
@@ -41,6 +42,12 @@ export class RecipientDto {
   @Matches(/^0\d{9}$/) phone!: string;
 }
 
+export class ScheduleDto {
+  /** PICKUP: giờ lấy hàng tại quán; DELIVERY: giờ khách muốn nhận (Phần 10.2). */
+  @IsIn(['PICKUP', 'DELIVERY']) type!: 'PICKUP' | 'DELIVERY';
+  @IsISO8601() at!: string;
+}
+
 export class CreateOrderDto {
   @IsInt() storeId!: number;
   @IsIn(['PLATFORM', 'SELF_PICKUP']) deliveryMode!: 'PLATFORM' | 'SELF_PICKUP';
@@ -50,6 +57,17 @@ export class CreateOrderDto {
   @IsOptional() @ValidateNested() @Type(() => DropoffDto) dropoff?: DropoffDto;
   @IsOptional() @ValidateNested() @Type(() => RecipientDto) recipient?: RecipientDto;
   @IsOptional() @IsString() @MaxLength(400) orderNote?: string;
+  @IsOptional() @ValidateNested() @Type(() => ScheduleDto) schedule?: ScheduleDto;
+}
+
+export class ProposeTimeDto {
+  @IsISO8601() at!: string;
+  @IsInt() @IsIn([5, 10, 15, 20, 30, 45, 60]) prepTimeMin!: number;
+  @IsOptional() @IsBoolean() allergyAck?: boolean;
+}
+
+export class ProposalResponseDto {
+  @IsBoolean() accept!: boolean;
 }
 
 export class MerchantAcceptDto {

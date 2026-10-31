@@ -74,6 +74,14 @@ export class OrderLifecycle {
       [order.id, result.to, ...columns.map((c) => set[c])],
     );
     await this.recordEvent(client, order.id, order.state, result.to, event, actor, opts.payload, opts.at);
+    if (result.to === 'DA_HUY' && order.is_scheduled && order.scheduled_pickup_at) {
+      // Trả lại chỗ trong lịch năng lực của quán (Phần 10.4).
+      await client.query(
+        `UPDATE store_capacity_slots SET booked = GREATEST(booked - 1, 0)
+         WHERE store_id = $1 AND slot_start = to_timestamp(floor(extract(epoch FROM $2::timestamptz) / 900) * 900)`,
+        [order.store_id, order.scheduled_pickup_at],
+      );
+    }
     return rows[0];
   }
 

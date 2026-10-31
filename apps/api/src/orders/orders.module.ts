@@ -1,6 +1,7 @@
 import { Controller, HttpCode, Module, NotFoundException, Param, ParseIntPipe, Post } from '@nestjs/common';
 import { Public } from '../common/auth';
-import { CustomerOrdersController, MerchantOrdersController, OpsOrdersController, RiderController } from './controllers';
+import { CustomerOrdersController, MerchantOrdersController, OpsOrdersController, RiderController, SlotsController } from './controllers';
+import { ScheduledService } from './scheduled.service';
 import { DispatchService } from './dispatch';
 import { IdempotencyService } from './idempotency';
 import { JobsService } from './jobs';
@@ -27,8 +28,8 @@ export class DevPaymentController {
 }
 
 @Module({
-  controllers: [CustomerOrdersController, MerchantOrdersController, OpsOrdersController, RiderController, DevPaymentController],
-  providers: [OrderLifecycle, JobsService, NotificationsService, DispatchService, OrdersService, RiderService, IdempotencyService],
+  controllers: [SlotsController, CustomerOrdersController, MerchantOrdersController, OpsOrdersController, RiderController, DevPaymentController],
+  providers: [OrderLifecycle, JobsService, NotificationsService, DispatchService, OrdersService, RiderService, IdempotencyService, ScheduledService],
   exports: [JobsService, OrdersService],
 })
 export class OrdersModule {}

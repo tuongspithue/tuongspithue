@@ -21,6 +21,7 @@ import { CreateOrderDto, MerchantAcceptDto } from './dto';
 import { JobsService } from './jobs';
 import { Actor, OrderLifecycle, OrderRow, SYSTEM_ACTOR } from './lifecycle';
 import { NotificationsService } from './notifications';
+import { ScheduledService, SchedulePlan } from './scheduled.service';
 
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const newOrderCode = () =>
@@ -37,6 +38,7 @@ export class OrdersService implements OnModuleInit {
     private readonly jobs: JobsService,
     private readonly dispatch: DispatchService,
     private readonly notifications: NotificationsService,
+    private readonly scheduled: ScheduledService,
   ) {}
 
   onModuleInit() {
@@ -113,7 +115,8 @@ export class OrdersService implements OnModuleInit {
       );
       const store = storeRows[0];
       if (!store || store.status !== 'APPROVED') throw new BusinessError('STORE_NOT_FOUND', 'Không tìm thấy quán', 404);
-      if (!store.is_open) throw new BusinessError('STORE_CLOSED', 'Quán đang đóng cửa');
+      // Đơn hẹn được đặt cả khi quán đang đóng (VD đặt trước cho sáng mai) — Phần 10.1.
+      if (!store.is_open && !dto.schedule) throw new BusinessError('STORE_CLOSED', 'Quán đang đóng cửa');
 
       const isDelivery = dto.deliveryMode === 'PLATFORM';
       if (isDelivery && !dto.dropoff) throw new BusinessError('DROPOFF_REQUIRED', 'Cần địa chỉ giao hàng');
@@ -147,13 +150,20 @@ export class OrdersService implements OnModuleInit {
       const total = subtotal + deliveryFee + serviceFee;
       const hasAllergens = lines.some((l) => l.note.allergens.length > 0);
       const needsPin = isDelivery && total >= this.config.business.pinThreshold;
-      const state = dto.paymentMethod === 'COD' ? OrderState.CHO_QUAN_XAC_NHAN : OrderState.CHO_THANH_TOAN;
+      let plan: SchedulePlan | null = null;
+      if (dto.schedule) {
+        plan = this.scheduled.plan(dto.schedule, routeKm, now);
+        if (dto.paymentMethod === 'COD') await this.scheduled.assertCodAllowed(client, user.id);
+        await this.scheduled.reserveSlot(client, store.id, plan.pickupAt, store.slot_capacity);
+      }
+      const waitingMerchant = plan ? OrderState.HEN_CHO_QUAN_NHAN : OrderState.CHO_QUAN_XAC_NHAN;
+      const state = dto.paymentMethod === 'COD' ? waitingMerchant : OrderState.CHO_THANH_TOAN;
 
       const { rows } = await client.query<OrderRow>(
         `INSERT INTO orders (code, customer_id, store_id, state, delivery_mode, dropoff_location, dropoff_address, dropoff_note,
            recipient_name, recipient_phone, order_note, distance_m, subtotal, delivery_fee, service_fee, total,
-           payment_method, has_allergens, delivery_pin)
-         VALUES ($1, $2, $3, $4, $5, ${point(6, 7)}, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+           payment_method, has_allergens, delivery_pin, is_scheduled, schedule_type, scheduled_for, scheduled_pickup_at)
+         VALUES ($1, $2, $3, $4, $5, ${point(6, 7)}, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
          RETURNING *`,
         [
           newOrderCode(),
@@ -176,6 +186,10 @@ export class OrdersService implements OnModuleInit {
           dto.paymentMethod,
           hasAllergens,
           needsPin ? String(randomInt(0, 10_000)).padStart(4, '0') : null,
+          plan !== null,
+          plan?.type ?? null,
+          plan?.scheduledFor ?? null,
+          plan?.pickupAt ?? null,
         ],
       );
       const order = rows[0];
@@ -193,6 +207,8 @@ export class OrdersService implements OnModuleInit {
       });
       if (state === OrderState.CHO_QUAN_XAC_NHAN) {
         await this.scheduleGateA(client, order, now);
+      } else if (state === OrderState.HEN_CHO_QUAN_NHAN) {
+        await this.scheduled.scheduleMerchantReply(client, order, now);
       } else {
         await this.jobs.schedule(client, 'PAYMENT_EXPIRE', order.id, new Date(now.getTime() + PAYMENT_TTL_SECONDS * 1000));
       }
@@ -206,6 +222,7 @@ export class OrdersService implements OnModuleInit {
       const order = await this.lifecycle.lock(client, orderId);
       const paid = await this.lifecycle.apply(client, order, OrderEvent.PAYMENT_SUCCEEDED, SYSTEM_ACTOR);
       if (paid.state === OrderState.CHO_QUAN_XAC_NHAN) await this.scheduleGateA(client, paid, now);
+      if (paid.state === OrderState.HEN_CHO_QUAN_NHAN) await this.scheduled.scheduleMerchantReply(client, paid, now);
       return { id: Number(paid.id), state: paid.state };
     });
   }
@@ -220,13 +237,15 @@ export class OrdersService implements OnModuleInit {
     return order;
   }
 
-  private async afterAccepted(client: PoolClient, accepted: OrderRow) {
+  /** Sau Cổng A: đơn hẹn lên lịch; đơn ngay thì tìm shipper hoặc chờ khách tới lấy. */
+  readonly afterAccepted = async (client: PoolClient, accepted: OrderRow): Promise<OrderRow> => {
     await this.notifications.enqueue(client, accepted.customer_id, 'PUSH', 'MERCHANT_ACCEPTED', { orderId: Number(accepted.id) });
+    if (accepted.is_scheduled) return this.scheduled.afterAccepted(client, accepted);
     if (accepted.delivery_mode === 'SELF_PICKUP') {
       return this.lifecycle.apply(client, accepted, OrderEvent.START_PICKUP_WAIT, SYSTEM_ACTOR);
     }
     return this.dispatch.start(client, accepted);
-  }
+  };
 
   /** Cổng A qua app của quán. */
   async merchantAccept(user: AuthUser, orderId: number, dto: MerchantAcceptDto) {
@@ -335,6 +354,7 @@ export class OrdersService implements OnModuleInit {
         state: order.state,
         prepStarted: order.prep_state === 'READY',
         secondsSinceAccepted: order.accepted_at ? (now.getTime() - new Date(order.accepted_at).getTime()) / 1000 : null,
+        secondsUntilSlot: order.scheduled_pickup_at ? (new Date(order.scheduled_pickup_at).getTime() - now.getTime()) / 1000 : null,
         freeCancellationsUsedThisMonth: Number(rows[0].n),
       });
       if (!decision.allowed) {
@@ -391,6 +411,17 @@ export class OrdersService implements OnModuleInit {
       hasAllergens: o.has_allergens,
       allergyAcknowledged: Boolean(o.allergy_ack_at),
       prepTimeMin: o.prep_time_min,
+      schedule: o.is_scheduled
+        ? {
+            type: o.schedule_type,
+            scheduledFor: o.scheduled_for,
+            pickupAt: o.scheduled_pickup_at,
+            proposedPickupAt: o.proposed_pickup_at,
+            merchantReplyDeadline: o.merchant_reply_deadline,
+            merchantReconfirmed: Boolean(o.merchant_reconfirmed_at),
+            riderReconfirmed: Boolean(o.rider_reconfirmed_at),
+          }
+        : null,
       refund: o.refund_kind,
       // Mã PIN chỉ khách xem; shipper phải hỏi khách khi giao (Phần 2.1.6).
       ...(isCustomer ? { deliveryPin: o.delivery_pin } : {}),

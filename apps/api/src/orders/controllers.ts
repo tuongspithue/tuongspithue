@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Headers, HttpCode, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
-import { AuthUser, CurrentUser, Roles } from '../common/auth';
+import { AuthUser, CurrentUser, Public, Roles } from '../common/auth';
 import { BusinessError } from '../common/errors';
 import { IdempotencyService } from './idempotency';
 import { DispatchService } from './dispatch';
@@ -10,6 +10,8 @@ import {
   LocationDto,
   MerchantAcceptDto,
   PickupDto,
+  ProposalResponseDto,
+  ProposeTimeDto,
   ReasonDto,
   RiderRegisterDto,
   RiderStatusDto,
@@ -17,13 +19,34 @@ import {
 } from './dto';
 import { OrdersService } from './orders.service';
 import { RiderService } from './rider.service';
+import { ScheduledService } from './scheduled.service';
+
+@Controller('v1')
+export class SlotsController {
+  constructor(private readonly scheduled: ScheduledService) {}
+
+  /** Khung giờ còn nhận đơn hẹn của quán (Phần 10.2). */
+  @Public()
+  @Get('stores/:id/slots')
+  slots(@Param('id', ParseIntPipe) id: number, @Query('date') date: string) {
+    return this.scheduled.slots(id, date);
+  }
+}
 
 @Controller('v1/orders')
 export class CustomerOrdersController {
   constructor(
     private readonly orders: OrdersService,
     private readonly idempotency: IdempotencyService,
+    private readonly scheduled: ScheduledService,
   ) {}
+
+  /** Khách đồng ý / từ chối giờ quán đề xuất cho đơn hẹn. */
+  @Post(':id/proposal')
+  @HttpCode(200)
+  proposal(@CurrentUser() user: AuthUser, @Param('id', ParseIntPipe) id: number, @Body() dto: ProposalResponseDto) {
+    return this.scheduled.respondToProposal(user, id, dto.accept, this.orders.afterAccepted);
+  }
 
   /** Bắt buộc Idempotency-Key: mạng chập chờn bấm 2 lần không tạo 2 đơn (Phần 3.2). */
   @Post()
@@ -48,7 +71,23 @@ export class CustomerOrdersController {
 
 @Controller('v1/merchant')
 export class MerchantOrdersController {
-  constructor(private readonly orders: OrdersService) {}
+  constructor(
+    private readonly orders: OrdersService,
+    private readonly scheduled: ScheduledService,
+  ) {}
+
+  @Post('orders/:id/propose-time')
+  @HttpCode(200)
+  proposeTime(@CurrentUser() user: AuthUser, @Param('id', ParseIntPipe) id: number, @Body() dto: ProposeTimeDto) {
+    return this.scheduled.proposeTime(user, id, dto);
+  }
+
+  /** Xác nhận lại trước giờ hẹn (T−30). */
+  @Post('orders/:id/reconfirm')
+  @HttpCode(200)
+  reconfirm(@CurrentUser() user: AuthUser, @Param('id', ParseIntPipe) id: number) {
+    return this.scheduled.merchantReconfirm(user, id);
+  }
 
   @Get('stores/:storeId/orders')
   list(@CurrentUser() user: AuthUser, @Param('storeId', ParseIntPipe) storeId: number, @Query('state') state?: string) {
@@ -99,7 +138,37 @@ export class RiderController {
   constructor(
     private readonly rider: RiderService,
     private readonly dispatch: DispatchService,
+    private readonly scheduled: ScheduledService,
   ) {}
+
+  /** Chợ chuyến hẹn (Phần 10.5). */
+  @Get('scheduled-board')
+  @Roles('RIDER')
+  board(@CurrentUser() user: AuthUser) {
+    return this.scheduled.board(user.id);
+  }
+
+  @Post('scheduled-trips/:orderId/claim')
+  @Roles('RIDER')
+  @HttpCode(200)
+  claim(@CurrentUser() user: AuthUser, @Param('orderId', ParseIntPipe) orderId: number) {
+    return this.scheduled.claim(user.id, orderId);
+  }
+
+  @Post('scheduled-trips/:orderId/release')
+  @Roles('RIDER')
+  @HttpCode(200)
+  releaseClaim(@CurrentUser() user: AuthUser, @Param('orderId', ParseIntPipe) orderId: number, @Body() dto: ReasonDto) {
+    return this.scheduled.releaseClaim(user.id, orderId, dto.reason);
+  }
+
+  /** "Tôi sẵn sàng" trước giờ hẹn (T−20). */
+  @Post('scheduled-trips/:orderId/ready')
+  @Roles('RIDER')
+  @HttpCode(200)
+  ready(@CurrentUser() user: AuthUser, @Param('orderId', ParseIntPipe) orderId: number) {
+    return this.scheduled.riderReconfirm(user.id, orderId);
+  }
 
   @Post('register')
   register(@CurrentUser() user: AuthUser, @Body() dto: RiderRegisterDto) {
