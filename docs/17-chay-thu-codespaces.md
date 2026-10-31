@@ -19,7 +19,7 @@
 
 ## 17.3. Bật hệ thống
 
-Trong khung **Terminal** ở dưới, chạy:
+Hệ thống **tự bật** mỗi lần mở Codespace; kết quả hiện trong khung **Terminal** ở dưới (tab có tên *postAttachCommand*). Nếu không thấy, hoặc muốn bật lại, mở Terminal mới (menu ☰ → **Terminal → New Terminal**) và chạy:
 ```bash
 bash scripts/codespace.sh
 ```
