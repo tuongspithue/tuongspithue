@@ -18,11 +18,13 @@
 - App quán: đăng ký + duyệt, menu, **nhận/từ chối đơn (chuông lớn + IVR dự phòng)**, chuẩn bị xong, mở/đóng, chế độ giao Hệ thống / Tự giao, mời shipper của quán, doanh thu cơ bản.
 - App shipper: đăng ký + eKYC, online/offline, **nhận chuyến**, quy trình 4 bước có geofence, ảnh giao hàng, thu nhập, COD.
 - Web Ops/Admin: duyệt hồ sơ, bản đồ trực tiếp, hàng đợi đơn có vấn đề, gán tay, hoàn tiền, cấu hình phí & SLA.
-- Backend: modular monolith, PostgreSQL+PostGIS, Redis, WebSocket, outbox, ledger.
+- Backend: modular monolith (NestJS), PostgreSQL+PostGIS, Redis + BullMQ, WebSocket, outbox, ledger, chế độ vận hành suy giảm.
+- **AI Gateway + tài khoản Groq** dựng sẵn để thử nghiệm nội bộ (chưa phát hành tính năng AI cho người dùng).
 - **Mục tiêu ra mắt thí điểm:** 150 quán, 80 shipper, 300 đơn/ngày sau 4 tuần.
 
 ### Giai đoạn 2 — Phiên bản 1.0 (Tháng 5–7) · *"Mượt và đáng tin"*
-- Thêm ví/thẻ, hẹn giờ, tự đến lấy, đơn nhóm, tip, PIN nhận hàng.
+- Thêm thẻ, tự đến lấy, đơn nhóm, tip, PIN nhận hàng.
+- **Kênh Zalo Mini App** để khách đặt hàng ngay trong Zalo không cần cài app (dùng chung API).
 - Khuyến mãi (quán & nền tảng), quảng cáo lên top, huy hiệu, điểm tin cậy.
 - Yêu cầu mở (gửi nhiều quán, nhận báo giá), Bảng Vàng khu vực, khiếu nại điểm uy tín.
 - AI: OCR menu, mô tả món, gợi ý món thay thế/kèm, tóm tắt đánh giá, bot CSKH, ETA học máy, cảnh báo đơn nguy cơ.
@@ -101,6 +103,9 @@
 - [ ] Giám sát + cảnh báo + on-call, runbook xử lý sự cố (cổng thanh toán sập, SMS sập, bản đồ sập, DB chậm)
 - [ ] Điều khoản sử dụng, chính sách bảo mật, chính sách huỷ/hoàn tiền công khai trong app
 - [ ] Đăng ký sàn TMĐT, thông báo/đăng ký ứng dụng theo quy định
+- [ ] Diễn tập đủ các **chế độ vận hành suy giảm** (Phần 5.11): cổng thanh toán, SMS, bản đồ, dispatch, realtime, AI
+- [ ] Kiểm tra trên ≥ 10 dòng Android giá rẻ: chuông đơn mới & mời chuyến kêu khi khoá màn hình / tiết kiệm pin
+- [ ] Đã xác nhận với chuyên gia thuế về khấu trừ thuế cho hộ kinh doanh & shipper; với luật sư về ngành hàng thuốc
 - [ ] Ops & CSKH đã đào tạo, có kịch bản xử lý 20 tình huống phổ biến
 - [ ] 150 quán, 80 shipper đã kích hoạt và chạy thử đơn thật nội bộ trong 1 tuần
 

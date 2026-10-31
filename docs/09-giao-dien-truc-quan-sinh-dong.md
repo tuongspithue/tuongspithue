@@ -93,7 +93,7 @@ Mỗi bước là một **thẻ có avatar người xác nhận**, giờ, và th
 
 **Shipper**
 - **Vuốt để xác nhận** từng bước (tránh bấm nhầm khi chạy xe), nút lớn ở nửa dưới màn hình.
-- **Chế độ lái xe**: màn hình tối giản, chỉ chỉ đường + đọc thông báo bằng giọng nói; thao tác khác tạm khoá khi tốc độ > 10 km/h.
+- **Chế độ lái xe**: màn hình tối giản, chỉ chỉ đường + đọc thông báo bằng giọng nói; khi tốc độ > 10 km/h chỉ còn **nút lớn Nhận/Bỏ qua chuyến và lệnh giọng nói**, mọi thao tác nhập liệu khác tạm khoá.
 - **Thẻ chuyến trực quan**: bản đồ mini có đường đi A → B, thu nhập in to, biểu tượng hàng nặng/dễ vỡ/hẹn giờ.
 
 ## 9.6. Hành trình làm quen (Onboarding) 3 bước

@@ -81,7 +81,6 @@ CREATE TABLE stores (
   commission_bps     INT NOT NULL,          -- 1200 = 12%
   is_open            BOOLEAN NOT NULL DEFAULT false,
   busy_mode          BOOLEAN NOT NULL DEFAULT false,
-  auto_accept        BOOLEAN NOT NULL DEFAULT false,
   rating_avg         NUMERIC(3,2) DEFAULT 0,
   accept_rate_7d     NUMERIC(5,4),
   status             VARCHAR(20) NOT NULL DEFAULT 'PENDING'
@@ -151,6 +150,9 @@ CREATE TABLE orders (
   dropoff_location   GEOGRAPHY(POINT, 4326) NOT NULL,
   dropoff_address    TEXT NOT NULL,
   dropoff_note       TEXT,
+  recipient_name     VARCHAR(120),                  -- người nhận khác (đặt hộ)
+  recipient_phone    VARCHAR(15),
+  rider_wait_fee     BIGINT NOT NULL DEFAULT 0,     -- phí chờ tại quán
   subtotal           BIGINT NOT NULL,
   delivery_fee       BIGINT NOT NULL,
   service_fee        BIGINT NOT NULL,
@@ -162,7 +164,7 @@ CREATE TABLE orders (
   pricing_quote_id   UUID,
   prep_time_min      INT,
   accepted_by        BIGINT REFERENCES users(id),   -- người thật xác nhận Cổng A
-  accepted_channel   VARCHAR(10),                   -- APP, IVR, OPS_CALL, AUTO
+  accepted_channel   VARCHAR(10),                   -- APP, IVR, OPS_CALL (không có AUTO: mọi đơn do người xác nhận)
   accepted_at        TIMESTAMPTZ,
   rider_id           BIGINT REFERENCES riders(user_id), -- người thật xác nhận Cổng B
   rider_accepted_at  TIMESTAMPTZ,

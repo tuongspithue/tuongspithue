@@ -55,8 +55,8 @@
 - Shipper: nút SOS, bảo hiểm tai nạn theo chuyến, ẩn SĐT, cảnh báo khu vực nguy hiểm (do cộng đồng báo cáo), giới hạn giờ online liên tục (nhắc nghỉ sau 10 giờ).
 - Khách: thông tin shipper đầy đủ trước khi giao, chia sẻ hành trình, ẩn địa chỉ sau giao, kênh báo cáo hành vi không phù hợp 24/7.
 - Thực phẩm: túi niêm phong (tem dán "Đã niêm phong bởi quán"), hướng dẫn ATTP cho quán, thùng giữ nhiệt cho shipper.
-- Thuốc: chỉ bán OTC tự do; thuốc kê đơn yêu cầu ảnh đơn thuốc và **dược sĩ của nhà thuốc xác nhận** (một dạng Cổng A tăng cường), tuân thủ quy định về kinh doanh dược.
-- Hàng cấm: danh sách chặn (rượu bia cho người dưới 18 tuổi cần xác minh tuổi khi nhận, thuốc lá điện tử, hàng cấm theo pháp luật).
+- Thuốc: chỉ nhà thuốc có giấy phép, chỉ thuốc không kê đơn & sản phẩm chăm sóc sức khoẻ; **không bán thuốc kê đơn**; đơn có thuốc bắt buộc mã PIN khi nhận; tuân thủ quy định về kinh doanh dược (cần tư vấn pháp lý trước khi mở ngành hàng).
+- Hàng cấm/hạn chế: **không kinh doanh rượu bia ở MVP và bản 1.0** (chỉ cân nhắc sau khi có xác minh tuổi khi nhận và tư vấn pháp lý); chặn thuốc lá, thuốc lá điện tử, bình gas qua shipper hệ thống, hàng cấm theo pháp luật.
 
 ## 7.3. Tính năng sáng tạo — "Chất riêng" của Ship Quanh Tôi
 
@@ -79,7 +79,7 @@
    Tập hợp quán mở khuya, nhà thuốc 24h, tạp hoá 24h, với cam kết luôn có shipper trực.
 
 7. **🧺 "Đi chợ hộ"**
-   Khách gửi danh sách tự do (chữ/ảnh/giọng nói) cho chợ hoặc tạp hoá; người bán/shipper **gọi video xác nhận chọn hàng** (rau, thịt), báo giá thực, khách duyệt rồi mới giao.
+   Khách gửi danh sách tự do (chữ/ảnh/giọng nói) cho chợ hoặc tạp hoá; người bán **chụp ảnh hàng thực tế + chat xác nhận** (rau, thịt), báo giá thực, khách duyệt rồi mới giao. *(Bỏ gọi video: tốn thời gian người bán, mạng yếu khó dùng.)*
 
 8. **💬 "Hỏi quán trước khi đặt"**
    Nút chat nhanh: "Hôm nay có bánh mì pate không?", "Làm ít cay được không?" — quán trả lời trong app; tăng tỷ lệ chuyển đổi cho quán nhỏ có menu thay đổi theo ngày.
@@ -96,7 +96,7 @@
 12. **🤖 Trợ lý AI cho quán** *(chi tiết toàn bộ ứng dụng AI: [Phần 12](12-tich-hop-ai.md))*
     Tạo menu từ ảnh, viết mô tả món hấp dẫn, gợi ý giá & combo theo dữ liệu khu vực, cảnh báo "Hôm nay mưa — nên chuẩn bị thêm món nóng", tóm tắt đánh giá khách tuần qua.
 
-13. **🎁 "Treo món" — Lan toả yêu thương**
+13. **🎁 "Treo món" — Lan toả yêu thương** *(giai đoạn sau, P2)*
     Khách có thể "treo" một suất cơm/ly nước cho shipper hoặc người khó khăn trong khu vực; quán và nền tảng đồng góp. Xây dựng hình ảnh thương hiệu nhân văn.
 
 ## 7.4. Hỗ trợ khách hàng (CSKH)

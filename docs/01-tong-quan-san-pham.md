@@ -18,7 +18,7 @@
 | # | Khác biệt | Ý nghĩa |
 |---|-----------|---------|
 | 1 | **Mọi đơn đều có NGƯỜI THẬT xác nhận** | Không có đơn "treo" chờ máy. Quán bấm *Nhận đơn* (hoặc gọi lại khách), shipper bấm *Nhận chuyến*. Khách luôn biết **ai** đang xử lý đơn của mình (tên, ảnh, SĐT ẩn danh). |
-| 2 | **Hai chế độ giao linh hoạt** | Quán tự chọn: *Hệ thống giao*, *Quán tự giao*, hoặc *Lai* (quán giao trong bán kính X km, xa hơn chuyển cho shipper hệ thống). |
+| 2 | **Bốn chế độ giao linh hoạt** | Quán tự chọn: *Hệ thống giao*, *Quán tự giao*, *Lai* (quán giao trong bán kính X km, xa hơn chuyển cho shipper hệ thống), hoặc *Tự giao có dự phòng hệ thống*. |
 | 3 | **Siêu gần — siêu nhanh** | Ưu tiên quán ≤ 3 km, hiển thị *thời gian đến tay* thực tế (chuẩn bị + di chuyển) chứ không chỉ khoảng cách. |
 | 4 | **Không chỉ đồ ăn** | Nhu yếu phẩm: nước bình, gas, đá, thuốc không kê đơn, tã sữa, văn phòng phẩm, hoa, sửa chữa nhỏ… |
 | 5 | **Thân thiện với quán nhỏ** | Quán vỉa hè, tạp hoá chỉ cần 1 smartphone. Có chế độ "Menu bằng ảnh", nhập món bằng giọng nói, nhận đơn bằng cuộc gọi tự động. |
@@ -57,8 +57,8 @@
 | 🍜 Đồ ăn | Cơm, phở, bún, bánh mì, ăn vặt | Thời gian chuẩn bị, giữ nóng |
 | 🧋 Đồ uống | Trà sữa, cà phê, nước ép | Tuỳ chọn size, đá, đường |
 | 🛒 Tạp hoá | Mì gói, trứng, dầu ăn, gia vị | Tồn kho, thay thế hàng |
-| 💧 Nhu yếu phẩm nặng | Nước bình 20L, gas, gạo, đá cây | Phụ phí hàng nặng, shipper có xe phù hợp, thu vỏ bình |
-| 💊 Nhà thuốc | Thuốc không kê đơn, khẩu trang, test nhanh | Chỉ thuốc OTC; thuốc kê đơn cần ảnh đơn & dược sĩ xác nhận |
+| 💧 Nhu yếu phẩm nặng | Nước bình 20L, gas, gạo, đá cây | Phụ phí hàng nặng, shipper có xe phù hợp, thu vỏ bình. **Gas chỉ do cửa hàng gas có giấy phép tự giao** (nhân viên của cửa hàng lắp đặt, đảm bảo an toàn) — shipper hệ thống không chở bình gas |
+| 💊 Nhà thuốc | Thuốc không kê đơn, khẩu trang, test nhanh, nhiệt kế | Chỉ nhà thuốc có giấy phép; chỉ thuốc không kê đơn & sản phẩm chăm sóc sức khoẻ; **không bán thuốc kê đơn** trên nền tảng; đơn có thuốc cần nhà thuốc xác nhận và cần mã PIN khi nhận |
 | 👶 Mẹ & bé | Tã, sữa | Giao gấp ban đêm |
 | 🌸 Hoa & quà | Hoa tươi, bánh kem | Hẹn giờ giao, lời nhắn |
 | 📎 Văn phòng phẩm | In ấn, photo | Upload file in |
@@ -74,7 +74,7 @@
 | Chênh lệch phí ship | Phí ship khách trả – thu nhập shipper | 10–20% |
 | Quảng cáo trong app | Quán trả tiền để lên top "Quanh bạn" | Đấu giá CPC theo khu vực |
 | Gói thành viên "SQT+" | Miễn phí ship đơn ≥ X, ưu đãi riêng | 29.000đ/tháng |
-| Gói phần mềm cho quán | POS, quản lý kho, báo cáo nâng cao | 99.000–199.000đ/tháng (tuỳ chọn) |
+| Gói phần mềm cho quán *(giai đoạn sau)* | Quản lý kho, báo cáo nâng cao | 99.000–199.000đ/tháng (tuỳ chọn) — chức năng nhận đơn & quản lý cơ bản **luôn miễn phí** |
 
 ## 1.7. Chỉ số thành công (North Star & KPI)
 

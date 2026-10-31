@@ -60,6 +60,7 @@ Cập nhật **gần realtime** (sau mỗi đơn, qua luồng sự kiện) cho p
 | 🏅 **Vàng** | ≥ 80 điểm | Huy hiệu vàng | Ưu tiên cao, thấy chuyến hẹn ngay, giữ 6 chuyến hẹn |
 | 🥈 **Bạc** | ≥ 65 điểm | Huy hiệu bạc | Tiêu chuẩn, giữ 4 chuyến hẹn |
 | 🥉 **Đồng** | ≥ 50 điểm | Huy hiệu đồng | Hạn chế: giữ 2 chuyến hẹn, ít đơn COD giá trị cao |
+| 🌱 **Tân binh** | < 30 đơn trong khu vực | Nhãn *Mới* | Quyền lợi như Đồng, được tăng hiển thị 14 ngày đầu; xếp cấp chính thức sau 30 đơn |
 | ⚠️ **Cần cải thiện** | < 50 điểm | Không hiển thị cho khách | Giảm hiển thị/ưu tiên, nhận kế hoạch cải thiện + khoá học; < 35 điểm trong 30 ngày → tạm ngưng & xem xét |
 
 Huy hiệu chuyên biệt (bên cạnh cấp): ⚡ *Xác nhận siêu tốc*, 🎯 *Chuẩn từng món*, ⏰ *Đúng hẹn 100%*, 🌧️ *Người hùng mưa bão*, ❤️ *Khách quen yêu thích*, 🧼 *Bếp sạch*.
@@ -76,7 +77,7 @@ Huy hiệu chuyên biệt (bên cạnh cấp): ⚡ *Xác nhận siêu tốc*, �
 | **Ghép shipper – quán** | Quán Vàng ưu tiên shipper Vàng giờ cao điểm (trải nghiệm đồng đều) |
 | **Thu nhập & chiết khấu** | Shipper: thưởng hệ số theo cấp; Quán: giảm chiết khấu 1–2% cho Kim cương/Vàng |
 | **Quyền COD / đơn giá trị cao** | Shipper & khách cần cấp tối thiểu |
-| **Khách hàng** | Khách cũng có điểm uy tín (ẩn với khách, quán/shipper thấy mức ★ đơn giản) để quán tự tin nhận đơn hẹn, đơn COD lớn |
+| **Khách hàng** | Khách **không bị xếp hạng hay chấm sao**; chỉ có chỉ số đơn giản, công khai với chính khách: số đơn hoàn thành, số lần bỏ đơn COD. Quán/shipper thấy dạng *"✔ 25 đơn thành công"* — đủ để tự tin nhận đơn hẹn/COD lớn |
 
 ## 11.6. "Bảng Vàng Khu Vực" ⭐ (sáng tạo)
 - Mỗi phường/khu có **bảng xếp hạng hằng tuần**: Top 10 quán, Top 10 shipper — hiển thị trong app (có thể tắt hiện tên với shipper).
@@ -130,5 +131,5 @@ CREATE TABLE trust_appeals (
   resolved_by BIGINT, resolved_at TIMESTAMPTZ
 );
 ```
-- Dịch vụ **Trust Service** tiêu thụ sự kiện đơn hàng (Kafka) → ghi `trust_events` → cập nhật điểm gần realtime (Redis) → đồng bộ `trust_scores` và chỉ mục tìm kiếm.
+- Dịch vụ **Trust Service** tiêu thụ sự kiện đơn hàng (event bus) → ghi `trust_events` → cập nhật điểm gần realtime (Redis) → đồng bộ `trust_scores` và chỉ mục tìm kiếm.
 - API: `GET /v1/me/trust` (đối tác), `GET /v1/stores/{id}/trust-badge`, `POST /v1/trust/appeals`, `GET /v1/zones/{cell}/leaderboard`.

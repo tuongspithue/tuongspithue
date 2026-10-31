@@ -43,7 +43,7 @@ Mục tiêu: **shipper nhận ≥ 80% phí ship khách trả**.
 | **Ví điện tử** (MoMo, ZaloPay, ShopeePay) | Khách → Tài khoản hệ thống (giữ tiền) → chia khi hoàn thành | Hoàn tiền tự động khi huỷ |
 | **VietQR / chuyển khoản** | QR động theo đơn, đối soát qua webhook ngân hàng/đối tác (VD: Casso, PayOS) | Mã đơn trong nội dung CK |
 | **Thẻ** (ATM nội địa, Visa/Master) | Qua cổng VNPay/OnePay, tokenization | Không lưu số thẻ (PCI-DSS do cổng đảm nhiệm) |
-| **Ví SQT** | Số dư hoàn tiền/nạp | Ưu tiên trừ trước |
+| **Tín dụng hoàn tiền SQT** | Chỉ phát sinh từ hoàn tiền/đền bù, **không nạp, không rút, không chuyển** | Tự động trừ trước nếu khách bật; có hạn dùng 12 tháng |
 
 ## 4.4. Luồng tiền COD (quan trọng để chống thất thoát)
 
@@ -53,7 +53,7 @@ Mục tiêu: **shipper nhận ≥ 80% phí ship khách trả**.
 3. Hệ thống trả quán qua kỳ thanh toán T+1 như đơn online.
 4. Shipper nộp COD: tự động **cấn trừ vào thu nhập** + chuyển khoản phần còn lại qua QR; hạn mức nợ COD tối đa (VD 2.000.000đ) — vượt hạn mức chỉ nhận đơn online.
 
-*Tuỳ chọn:* quán nhỏ muốn nhận tiền mặt ngay → bật "Shipper ứng tiền" (shipper trả quán khi lấy hàng; chỉ mời shipper có đủ tiền ứng & đã bật nhận đơn ứng tiền).
+*Đã loại bỏ* phương án "shipper ứng tiền cho quán" (gây khó tìm shipper, phát sinh tranh chấp tiền mặt). Quán cần tiền nhanh → dùng **"Rút tiền ngay"** doanh thu các đơn đã hoàn thành (phí nhỏ, về tài khoản trong vài phút).
 
 **Quán tự giao + COD:** tiền thuộc về quán; hệ thống ghi **công nợ chiết khấu** và cấn trừ vào các đơn online của quán hoặc thu theo kỳ.
 
@@ -75,6 +75,9 @@ Mục tiêu: **shipper nhận ≥ 80% phí ship khách trả**.
 - **Quán:** chốt sổ 23:59 hằng ngày → chuyển khoản T+1 (theo lô, API ngân hàng). Bảng kê chi tiết trong app.
 - **Shipper:** rút tiền bất kỳ lúc nào (tối thiểu 50.000đ), xử lý trong ngày.
 - **Đối soát cổng thanh toán:** job hằng ngày so sánh giao dịch nội bộ ↔ báo cáo cổng; chênh lệch → ticket Kế toán.
+- **Dòng tiền hợp pháp:** tiền khách trả online đi qua **cổng thanh toán/trung gian thanh toán được cấp phép** và tài khoản chuyên dùng; nền tảng **không tự vận hành ví điện tử**. Phương án chia tiền (split payment) của cổng được ưu tiên nếu có.
+- **Thuế với hộ kinh doanh & cá nhân bán hàng:** theo quy định quản lý thuế với hoạt động thương mại điện tử (Nghị định 117/2025/NĐ-CP và văn bản liên quan), sàn có chức năng thanh toán có thể phải **khấu trừ, nộp thay thuế GTGT/TNCN** cho hộ kinh doanh/cá nhân bán hàng trên sàn. Hệ thống cần: lưu mã số thuế/CCCD người bán, tính khấu trừ trên từng kỳ thanh toán, hiển thị rõ trên bảng kê, xuất chứng từ khấu trừ. *(Bắt buộc xác nhận với chuyên gia thuế trước khi vận hành.)*
+- **Thu nhập shipper:** xác định rõ mô hình hợp đồng (đối tác dịch vụ) và nghĩa vụ khấu trừ thuế TNCN theo quy định; có bảng kê năm cho shipper.
 - **Hoá đơn:** xuất hoá đơn điện tử cho phần chiết khấu/phí dịch vụ của nền tảng (theo quy định hoá đơn điện tử hiện hành); hỗ trợ tính thuế TNCN/khấu trừ cho hộ kinh doanh và shipper theo quy định thuế áp dụng cho sàn TMĐT (cần tư vấn pháp lý/kế toán khi triển khai).
 
 ## 4.7. Khuyến mãi & chống lạm dụng

@@ -23,7 +23,7 @@ Ký hiệu mức ưu tiên: **[P0]** bắt buộc cho MVP · **[P1]** bản 1.0 
 - [P1] **"Cần gấp"** (nút đỏ nổi): chỉ hiện quán giao được trong ≤ 20 phút.
 - [P1] **Gợi ý theo giờ**: sáng → bánh mì, cà phê; trưa → cơm; tối muộn → quán mở khuya, nhà thuốc 24h.
 - [P1] **Gợi ý theo thời tiết**: trời mưa → lẩu, đồ nóng, nhắc "phí ship mưa có thể tăng".
-- [P2] "Món hàng xóm hay đặt": món phổ biến nhất trong toà nhà / ngõ của bạn (ẩn danh hoá).
+- [P2] "Món hàng xóm hay đặt": món phổ biến nhất trong khu của bạn — chỉ tính theo khu vực ≥ 1 km², chỉ hiện khi có ≥ 20 đơn từ ≥ 10 khách khác nhau (không thể suy ra ai đặt gì).
 
 ### 2.1.3. Tìm kiếm
 - [P0] Tìm theo tên món, tên quán, ngành hàng; có **gợi ý tự động** và **sửa lỗi chính tả không dấu** ("bun bo" → "bún bò").
@@ -38,7 +38,7 @@ Ký hiệu mức ưu tiên: **[P0]** bắt buộc cho MVP · **[P1]** bản 1.0 
 - [P0] Giỏ hàng nổi dưới cùng: số món, tổng tiền.
 - [P1] Thông tin: giấy phép ATTP (nếu có), ảnh bếp/quầy thực tế, "Quán đã xác minh ✔".
 - [P1] Lịch sử đánh giá có ảnh; quán phản hồi đánh giá.
-- [P2] Livestream / ảnh "món hôm nay" do quán đăng.
+- [P2] Ảnh "món hôm nay" do quán đăng (không làm livestream — tốn tài nguyên, ít phù hợp quán nhỏ).
 
 ### 2.1.5. Giỏ hàng & Thanh toán (Checkout)
 - [P0] Mỗi giỏ thuộc **1 quán** (MVP). [P2] Đơn ghép nhiều quán gần nhau, 1 shipper.
@@ -47,6 +47,7 @@ Ký hiệu mức ưu tiên: **[P0]** bắt buộc cho MVP · **[P1]** bản 1.0 
   - **Giao ngay** (mặc định)
   - [P0] **Hẹn giờ lấy/giao** (sau 1–3 giờ hoặc chọn giờ, trong 7 ngày) — đơn hiện trực tiếp cho quán & shipper để họ chọn nhận; đơn ngay chờ lâu có thể chuyển sang hẹn giờ bằng 1 chạm → xem [Phần 10](10-don-hen-gio.md)
   - [P1] **Tự đến lấy** (miễn ship, quán chuẩn bị sẵn)
+- [P0] **Người nhận khác** (đặt hộ bố mẹ, bạn bè): tên + SĐT người nhận; shipper gọi người nhận, khách đặt vẫn theo dõi được.
 - [P0] Địa chỉ giao + **ghi chú cho shipper** (VD: "Hẻm 45, cổng xanh, gọi trước 5 phút") + ảnh chỉ đường tuỳ chọn.
 - [P0] Thanh toán: **Tiền mặt (COD)**, **Ví điện tử** (MoMo, ZaloPay, VNPay), **QR chuyển khoản (VietQR)**, [P1] thẻ ATM/Visa.
 - [P0] Mã khuyến mãi / voucher.
@@ -74,15 +75,16 @@ Thanh tiến trình rõ ràng, mỗi bước có **tên người xác nhận + g
 
 ### 2.1.7. Sau giao hàng
 - [P0] Đánh giá **tách riêng**: Quán (món ăn) và Shipper (thái độ, đúng giờ), kèm nhãn nhanh + ảnh.
-- [P0] **Báo sự cố**: thiếu món, sai món, đổ vỡ, giao trễ, không nhận được hàng → kèm ảnh → CSKH xử lý, hoàn tiền vào ví SQT hoặc nguồn thanh toán.
+- [P0] **Báo sự cố**: thiếu món, sai món, đổ vỡ, giao trễ, không nhận được hàng → kèm ảnh → CSKH xử lý, hoàn tiền về nguồn thanh toán gốc hoặc tín dụng hoàn tiền SQT (khách chọn).
 - [P0] **Đặt lại** đơn cũ bằng 1 chạm.
 - [P1] Hoá đơn điện tử (gửi email theo yêu cầu).
 
 ### 2.1.8. Tiện ích khác
-- [P0] Sổ địa chỉ, lịch sử đơn, ví SQT (số dư hoàn tiền), voucher của tôi.
+- [P0] Sổ địa chỉ, lịch sử đơn, voucher của tôi, **tín dụng hoàn tiền SQT** (chỉ dùng để mua hàng trên app, không nạp/rút/chuyển — tránh hoạt động như ví điện tử vốn cần giấy phép của Ngân hàng Nhà nước; khách luôn có quyền chọn hoàn về nguồn thanh toán gốc).
+- [P0] Cài đặt thông báo (bật/tắt khuyến mãi, giờ yên lặng), quản lý quyền dữ liệu, **xoá tài khoản ngay trong app** (yêu cầu của App Store/Google Play và quy định bảo vệ dữ liệu cá nhân).
 - [P1] Quán yêu thích, thông báo khi quán yêu thích mở cửa / có khuyến mãi.
 - [P1] **Đơn nhóm (Group order)**: tạo link, đồng nghiệp tự thêm món, chia tiền tự động.
-- [P2] **Đặt định kỳ**: "Mỗi thứ Hai giao 2 bình nước", "7h sáng mỗi ngày 1 cà phê sữa".
+- [P2] **Đặt định kỳ**: "Mỗi thứ Hai giao 2 bình nước", "7h sáng mỗi ngày 1 cà phê sữa" — mỗi lần là **một đơn hẹn giờ riêng**, vẫn phải được quán nhận và shipper giữ chuyến như bình thường.
 - [P2] Chương trình điểm thưởng "Hạt Gạo" — tích điểm đổi voucher.
 - [P1] Trung tâm trợ giúp + chat CSKH (bot trả lời câu hỏi thường gặp, chuyển người thật khi cần).
 
@@ -118,7 +120,7 @@ Thanh tiến trình rõ ràng, mỗi bước có **tên người xác nhận + g
   - ✅ **Nhận đơn** → chọn thời gian chuẩn bị (5 / 10 / 15 / 20 / 30 phút, gợi ý theo lịch sử).
   - ✏️ **Nhận với điều chỉnh**: một món hết → đề xuất món thay thế / bỏ món → gửi khách đồng ý (khách có 2 phút, không phản hồi thì theo lựa chọn "khi hết hàng" khách chọn lúc đặt).
   - ❌ **Từ chối** → bắt buộc chọn lý do (hết hàng, quá tải, sắp đóng cửa, ngoài vùng…).
-- [P0] **Chế độ tự nhận** (auto-accept) chỉ dành cho quán đạt điều kiện (tỷ lệ hoàn thành ≥ 98%, ≥ 200 đơn) — vẫn được tính là quán xác nhận vì quán đã **chủ động cam kết** bật chế độ này, và vẫn có chuông báo để nhân viên biết. *(Cấu hình được tắt toàn hệ thống nếu muốn tuân thủ tuyệt đối "xác nhận thủ công".)*
+- [P0] **Không có chế độ tự động nhận đơn.** Mọi đơn phải có người bấm nhận (trên app, qua phím IVR, hoặc Ops gọi xác nhận). Để quán đông khách thao tác nhanh: **"Nhận nhanh"** — 1 chạm nhận với thời gian chuẩn bị gợi ý sẵn.
 - [P0] **Dự phòng khi quán không phản hồi**: sau 90 giây chưa xử lý → **cuộc gọi tự động IVR** tới SĐT quán ("Bấm 1 nhận, 2 từ chối"); sau 3 phút → huỷ, báo khách & gợi ý quán tương tự.
 - [P1] In phiếu bếp qua **máy in nhiệt Bluetooth/LAN** tự động khi nhận đơn.
 - [P0] Tab **"Đơn hẹn 🟣"**: xem đơn hẹn giờ & yêu cầu mở trong khu vực theo thời gian thực, chọn Nhận / Đề xuất giờ khác / Từ chối, lịch năng lực theo khung 15 phút, xác nhận lại trước giờ → [Phần 10](10-don-hen-gio.md).
@@ -162,7 +164,7 @@ Thanh tiến trình rõ ràng, mỗi bước có **tên người xác nhận + g
 ### 2.3.1. Đăng ký & Xác minh
 - [P0] SĐT + OTP → eKYC CCCD + selfie (kiểm tra người thật — liveness).
 - [P0] Bằng lái xe, đăng ký xe, ảnh xe, biển số.
-- [P0] Lý lịch tư pháp (shipper hệ thống, có thể nộp sau trong 30 ngày) — tuỳ chính sách.
+- [P1] Lý lịch tư pháp: **không bắt buộc** khi đăng ký (tránh rào cản); nộp thì được huy hiệu "Đã xác minh nhân thân ✔" và được ưu tiên đơn giá trị cao.
 - [P0] Tài khoản ngân hàng/ví nhận tiền.
 - [P0] Khoá học online ngắn (15 phút) + bài kiểm tra: quy trình giao, an toàn thực phẩm, ứng xử, an toàn giao thông.
 - [P1] Nhận đồng phục / thùng giữ nhiệt (ký quỹ hoặc trả góp).
@@ -173,7 +175,7 @@ Thanh tiến trình rõ ràng, mỗi bước có **tên người xác nhận + g
 - [P0] Bản đồ nhiệt **khu vực nhiều đơn** & hệ số giá cao điểm.
 - [P1] Đăng ký ca trước (đảm bảo thu nhập tối thiểu theo ca nếu đạt điều kiện online).
 - [P1] Chế độ **"Về nhà"**: chỉ nhận đơn thuận đường về địa chỉ đã đặt.
-- [P0] Cài đặt loại xe: xe máy / xe đạp điện / xe ba gác (nhận hàng nặng: gas, nước bình).
+- [P0] Cài đặt loại xe: xe máy / xe máy điện / xe ba gác (hàng nặng: nước bình, gạo; **không nhận bình gas**). Bật/tắt nhận hàng nặng.
 
 ### 2.3.3. Nhận chuyến (Cổng B)
 - [P0] Lời mời chuyến hiển thị: điểm lấy, điểm giao, **tổng quãng đường**, **thu nhập dự kiến**, hình thức thanh toán (có phải ứng tiền COD không), loại hàng (nặng/dễ vỡ/thuốc), đếm ngược **20 giây**.
@@ -190,13 +192,15 @@ Thanh tiến trình rõ ràng, mỗi bước có **tên người xác nhận + g
   2. **Đã lấy hàng** — quét QR / nhập mã đơn, kiểm đủ món theo checklist, [tuỳ chọn] chụp ảnh túi hàng đã niêm phong
   3. **Đã đến điểm giao** (geofence 150 m)
   4. **Đã giao** — chụp ảnh giao hàng (bắt buộc nếu "để ở cửa"), nhập PIN (nếu có), thu COD
+- [P0] **GPS yếu (hẻm sâu, chung cư):** cho phép bấm *Đã đến* ngoài vùng geofence kèm **ảnh chụp** tại chỗ; đơn được gắn cờ để hậu kiểm, không chặn shipper.
+- [P0] **Phí chờ tại quán:** món chưa xong sau 10 phút kể từ giờ quán cam kết → shipper được trả phí chờ theo phút (nền tảng trả, ghi vào chỉ số đúng giờ của quán). Chờ > 25 phút → shipper được nhả chuyến không bị trừ điểm.
 - [P0] Gọi ẩn số / chat với khách & quán.
 - [P0] **Không liên lạc được khách**: bấm "Khách không nghe máy" → hệ thống gọi tự động + nhắn tin, chờ 5–10 phút có đếm giờ → CSKH quyết định (để lại bảo vệ, hoàn về quán…); shipper vẫn được trả phí.
 - [P0] **Nút SOS** khẩn cấp: gửi vị trí tới đội an toàn + số người thân.
 
 ### 2.3.5. Thu nhập & Ví
 - [P0] Thu nhập từng chuyến (cước + thưởng + tip), tổng theo ngày/tuần.
-- [P0] **Ví tài xế**: số dư thu nhập; **ví ký quỹ COD** (giới hạn tiền mặt đang cầm, VD 2 triệu, vượt thì phải nộp qua chuyển khoản trước khi nhận đơn COD mới).
+- [P0] **Số dư thu nhập** (khoản nền tảng nợ shipper, không phải ví điện tử); **hạn mức COD** (giới hạn tiền mặt đang cầm, VD 2 triệu, vượt thì phải nộp qua chuyển khoản trước khi nhận đơn COD mới).
 - [P0] Rút tiền về ngân hàng (miễn phí 1 lần/ngày).
 - [P1] Thưởng mốc (10/20/30 chuyến/ngày), thưởng giờ cao điểm, thưởng trời mưa.
 - [P1] Bảo hiểm tai nạn theo chuyến.
@@ -229,3 +233,5 @@ Thanh tiến trình rõ ràng, mỗi bước có **tên người xác nhận + g
 - [P0] Đối soát & chi trả: quán (T+1), shipper (hằng ngày/tuần), nộp COD, xuất file chuyển khoản hàng loạt.
 - [P1] Dashboard kinh doanh: GMV, số đơn, AOV, tỷ lệ huỷ, CAC, retention, cohort.
 - [P1] Quản lý nội dung: banner, danh mục, bài viết trợ giúp, thông báo đẩy marketing.
+- [P0] **Danh mục hàng cấm/hạn chế** và kiểm duyệt món mới (thuốc kê đơn, rượu bia, thuốc lá, hàng cấm theo pháp luật bị chặn tự động theo từ khoá + duyệt tay).
+- [P0] **Trang trạng thái hệ thống** & công cụ gửi thông báo sự cố tới khách/quán/shipper; công tắc **chế độ vận hành suy giảm** (xem Phần 5, mục 5.11).

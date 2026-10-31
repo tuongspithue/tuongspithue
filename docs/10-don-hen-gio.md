@@ -27,7 +27,7 @@ Hôm nay  ▸  11:30  11:45  12:00 🔥  12:15  12:30  ...
              ô xám: quán đóng/kín lịch)
 ```
 - Hai kiểu hẹn: **"Giờ shipper đến lấy"** (pickup) hoặc **"Giờ tôi nhận hàng"** (delivery) — hệ thống tự quy đổi.
-- Khung giờ 15 phút, tối đa **7 ngày** tới; có **"Đặt định kỳ"** (mỗi ngày/tuần).
+- Hẹn **sớm nhất 45 phút** kể từ lúc đặt (sớm hơn là đơn ngay), khung 15 phút, tối đa **7 ngày** tới; có **"Đặt định kỳ"** (mỗi ngày/tuần).
 - Hiển thị **xác suất được nhận** của từng khung giờ (do AI dự báo — Phần 12): *"Khả năng cao có quán & shipper nhận ✔"*.
 - Sau khi đặt, đơn hiện thẻ **tím "Hẹn 12:00"** với các trạng thái:
   1. ⏳ *Đang chờ quán nhận* → 2. ✔ *Quán Bà Sáu đã nhận (cam kết chuẩn bị xong 11:55)* → 3. ⏳ *Đang chờ shipper giữ chuyến* → 4. ✔ *Anh Minh đã giữ chuyến* → 5. Đến giờ chạy như đơn thường.
@@ -50,7 +50,7 @@ Tab **"Đơn hẹn 🟣"** trong app quán, có chấm đỏ đếm số đơn �
 
 ```
 ┌─ ĐƠN HẸN ĐANG CHỜ BẠN ──────────────────────────┐
-│ 🟣 Lấy lúc 12:00 (còn 2g15p)       Khách ★4.9 🏅 │
+│ 🟣 Lấy lúc 12:00 (còn 2g15p)       Khách ✔ 25 đơn │
 │ 3 cơm sườn, 2 trà đá · 165.000đ · 1,2 km        │
 │ Hạn trả lời: 14:32 ⏳                            │
 │ [ ✅ NHẬN ]   [ 🕑 Đề xuất giờ khác ]   [ ✖ ]   │
@@ -70,7 +70,7 @@ Tab **"Chuyến hẹn 🟣"** trong app tài xế — danh sách/bản đồ cá
 ```
 ┌─ 🟣 12:00 · Cơm Tấm Bà Sáu → Toà A2 Sunrise ─────┐
 │ 2,1 km · Thu nhập 24.000đ (+3.000 thưởng hẹn)    │
-│ Quán ★4.8 🏅Vàng · Khách ★4.9 · Thanh toán: Ví   │
+│ Quán ★4.8 🏅Vàng · Khách ✔25 đơn · Đã thanh toán │
 │ Cách bạn hiện tại: 1,4 km                        │
 │                         [ 🤚 GIỮ CHUYẾN NÀY ]    │
 └──────────────────────────────────────────────────┘
@@ -78,7 +78,7 @@ Lọc: [Hôm nay] [Trên đường về nhà] [Gần tôi] [Thu nhập cao]
 ```
 - **Ai thấy chuyến**: shipper đủ điều kiện (loại xe, hạn mức COD, **uy tín ≥ ngưỡng của khu vực**). Shipper **uy tín cao được thấy sớm hơn** (VD: hạng Vàng thấy ngay, Bạc sau 5 phút, Đồng sau 10 phút) — phần thưởng thực chất cho uy tín (Phần 11).
 - Với quán **tự giao**: chuyến hẹn hiện cho shipper của quán trước; hết hạn mới mở ra chợ hệ thống (nếu quán bật dự phòng).
-- **Giữ chuyến = cam kết**. Giới hạn số chuyến hẹn giữ đồng thời theo hạng uy tín (Đồng: 2, Bạc: 4, Vàng: 6) và không trùng khung giờ không khả thi (hệ thống kiểm tra lộ trình).
+- **Giữ chuyến = cam kết**. Giới hạn số chuyến hẹn giữ đồng thời theo hạng uy tín (Tân binh 🌱 & Đồng: 2, Bạc: 4, Vàng & Kim cương: 6; *Cần cải thiện*: không giữ chuyến hẹn) và không trùng khung giờ không khả thi (hệ thống kiểm tra lộ trình).
 - Nếu **chưa ai giữ** khi còn 60 phút → tăng thưởng tự động; còn 30 phút → chuyển sang **điều phối chủ động** như đơn ngay (mời trực tiếp theo vòng, Phần 3). Còn 15 phút → Ops can thiệp.
 - **Xác nhận lại trước giờ (T−20 phút)**: shipper bấm *"Tôi sẵn sàng"* và phải online, cách quán ≤ ETA hợp lý. Không xác nhận → mất chuyến, trừ điểm uy tín, chuyến được mời lại ngay với ưu tiên cao.
 - **Huỷ chuyến hẹn**: trước T−2 giờ không phạt (tối đa 2 lần/tuần); sau đó trừ điểm tuỳ mức độ sát giờ.
@@ -105,8 +105,8 @@ stateDiagram-v2
 Sau `SHIPPER_DA_NHAN`, đơn đi tiếp theo máy trạng thái chuẩn ở Phần 3.
 
 ## 10.7. Thanh toán & chính sách cho đơn hẹn
-- Thanh toán online: **giữ tiền (authorize/tạm giữ ví)** khi quán nhận; trừ thật khi giao. Huỷ hợp lệ → hoàn ngay.
-- COD cho đơn hẹn chỉ mở với khách **uy tín ≥ Bạc** (chống bom hàng đặt trước).
+- Thanh toán online: **trừ tiền khi đặt** (giống đơn ngay, vì không phải ví/cổng nào cũng hỗ trợ tạm giữ tiền); quán từ chối, hết hạn hoặc huỷ hợp lệ → **hoàn tiền tự động** về nguồn thanh toán gốc.
+- COD cho đơn hẹn chỉ mở với khách đã có **≥ 3 đơn hoàn thành và không bỏ đơn COD trong 90 ngày** (chống bom hàng đặt trước).
 - Đơn giá trị cao/chuẩn bị lâu (bánh kem, cỗ): quán có thể yêu cầu **đặt cọc** (VD 30%).
 - Phí ship được **khoá tại thời điểm đặt**; hẹn ngoài cao điểm có thể được **giảm phí ship** (khuyến khích dàn tải).
 
@@ -159,7 +159,7 @@ Sau `SHIPPER_DA_NHAN`, đơn đi tiếp theo máy trạng thái chuẩn ở Ph�
   ```
 - Giữ chuyến dùng **UPDATE có điều kiện + version** để đảm bảo **1 chuyến chỉ 1 shipper giữ** dù nhiều người bấm cùng lúc; người chậm hơn nhận thông báo "Chuyến vừa có người giữ" kèm gợi ý chuyến tương tự.
 - Kênh WebSocket mới: `scheduled-board:zone:{h3_cell}` (shipper), `store:{id}:scheduled` (quán); sự kiện `trip_posted`, `trip_claimed`, `trip_released`, `bonus_updated`.
-- Toàn bộ mốc nhắc (hạn trả lời, nhắc làm món, T−30, T−20, tăng thưởng) là **job hẹn giờ bền vững** (Temporal/BullMQ), không mất khi khởi động lại máy chủ.
+- Toàn bộ mốc nhắc (hạn trả lời, nhắc làm món, T−30, T−20, tăng thưởng) là **job hẹn giờ bền vững** (BullMQ + job quét đối chiếu từ PostgreSQL), không mất khi khởi động lại máy chủ.
 
 ## 10.9. API bổ sung
 | Method | Path | Mô tả |
