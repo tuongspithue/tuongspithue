@@ -1,0 +1,17 @@
+name: sqt_core
+description: Phần dùng chung cho ba app Ship Quanh Tôi — gọi API, phiên đăng nhập, giao diện theo design token, nhãn tiếng Việt.
+version: 0.1.0
+publish_to: none
+resolution: workspace
+environment:
+  sdk: ^3.6.0
+  flutter: ">=3.27.0"
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2.0
+  shared_preferences: ^2.3.0
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0

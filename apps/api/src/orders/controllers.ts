@@ -141,6 +141,13 @@ export class RiderController {
     private readonly scheduled: ScheduledService,
   ) {}
 
+  /** Chuyến đang làm và chuyến hẹn đã giữ của shipper. */
+  @Get('trips')
+  @Roles('RIDER')
+  trips(@CurrentUser() user: AuthUser) {
+    return this.rider.trips(user);
+  }
+
   /** Chợ chuyến hẹn (Phần 10.5). */
   @Get('scheduled-board')
   @Roles('RIDER')

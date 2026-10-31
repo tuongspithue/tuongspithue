@@ -1,0 +1,41 @@
+import 'package:flutter/material.dart';
+
+/// Màu theo ý nghĩa — Phần 9.2. Trạng thái luôn đi kèm biểu tượng + chữ, không chỉ màu.
+class SqtColors {
+  static const primary = Color(0xFFFF6B2C);
+  static const confirmed = Color(0xFF1DB954);
+  static const waiting = Color(0xFFFFB020);
+  static const scheduled = Color(0xFF7C5CFF);
+  static const danger = Color(0xFFE5484D);
+}
+
+/// [large] = app quán/shipper: chữ tối thiểu 16, nút ≥ 56 dp (Phần 7.1, 9.9).
+ThemeData sqtTheme({required Brightness brightness, bool large = false}) {
+  final scheme = ColorScheme.fromSeed(seedColor: SqtColors.primary, brightness: brightness, primary: SqtColors.primary, error: SqtColors.danger);
+  final base = ThemeData(colorScheme: scheme, useMaterial3: true, brightness: brightness);
+  final minButton = Size(64, large ? 56 : 48);
+  return base.copyWith(
+    textTheme: large ? base.textTheme.apply(fontSizeFactor: 1.1) : base.textTheme,
+    filledButtonTheme: FilledButtonThemeData(style: FilledButton.styleFrom(minimumSize: minButton, shape: const StadiumBorder())),
+    outlinedButtonTheme: OutlinedButtonThemeData(style: OutlinedButton.styleFrom(minimumSize: minButton, shape: const StadiumBorder())),
+    cardTheme: const CardThemeData(margin: EdgeInsets.symmetric(vertical: 6), shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16)))),
+    inputDecorationTheme: const InputDecorationTheme(border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12)))),
+  );
+}
+
+Color stateColor(String state) {
+  if (state == 'HOAN_THANH') return SqtColors.confirmed;
+  if (state == 'DA_HUY' || state == 'CAN_CAN_THIEP' || state == 'GIAO_THAT_BAI') return SqtColors.danger;
+  if (state.startsWith('HEN_')) return SqtColors.scheduled;
+  if (state.startsWith('CHO_') || state == 'DANG_TIM_SHIPPER') return SqtColors.waiting;
+  return SqtColors.confirmed;
+}
+
+IconData stateIcon(String state) {
+  if (state == 'HOAN_THANH') return Icons.check_circle;
+  if (state == 'DA_HUY' || state == 'GIAO_THAT_BAI') return Icons.cancel;
+  if (state == 'CAN_CAN_THIEP') return Icons.support_agent;
+  if (state.startsWith('HEN_')) return Icons.schedule;
+  if (state.startsWith('CHO_') || state == 'DANG_TIM_SHIPPER') return Icons.hourglass_top;
+  return Icons.delivery_dining;
+}

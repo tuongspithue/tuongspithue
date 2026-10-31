@@ -161,6 +161,10 @@ describe('luồng đầy đủ: đặt đơn → Cổng A → Cổng B → giao 
     // Cổng B.
     const taken = await t.http().post(`/v1/rider/offers/${offer.id}/accept`).set(auth(riderA.token)).expect(200);
     expect(taken.body.state).toBe('SHIPPER_DA_NHAN');
+    const trips = await t.http().get('/v1/rider/trips').set(auth(riderA.token)).expect(200);
+    expect(trips.body.trips.map((x: any) => x.id)).toEqual([order.id]);
+    const myStores = await t.http().get('/v1/merchant/stores').set(auth(merchant)).expect(200);
+    expect(myStores.body.stores.map((x: any) => x.id)).toEqual([storeId]);
     await t.http().post(`/v1/rider/offers/${offer.id}/accept`).set(auth(riderA.token)).expect(409);
 
     // Đến quán: xa quá mà không có ảnh → chặn; ở gần → được.

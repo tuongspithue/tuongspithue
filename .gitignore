@@ -6,3 +6,9 @@ coverage/
 .DS_Store
 .next/
 *.tsbuildinfo
+# Flutter / Dart
+.dart_tool/
+mobile/**/build/
+.flutter-plugins
+.flutter-plugins-dependencies
+pubspec_overrides.yaml

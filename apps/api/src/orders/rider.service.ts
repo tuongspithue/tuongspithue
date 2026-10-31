@@ -8,6 +8,7 @@ import { DATABASE, Database } from '../database/database';
 import { DispatchService } from './dispatch';
 import { Actor, OrderLifecycle, OrderRow, SYSTEM_ACTOR } from './lifecycle';
 import { NotificationsService } from './notifications';
+import { OrdersService } from './orders.service';
 
 export interface StepInput extends LatLng {
   /** Ảnh chụp tại chỗ khi GPS yếu — cho phép xác nhận ngoài geofence, đơn bị gắn cờ hậu kiểm (Phần 2.3.4). */
@@ -23,6 +24,7 @@ export class RiderService {
     private readonly lifecycle: OrderLifecycle,
     private readonly dispatch: DispatchService,
     private readonly notifications: NotificationsService,
+    private readonly orders: OrdersService,
   ) {}
 
   private actor(riderId: number): Actor {
@@ -56,6 +58,18 @@ export class RiderService {
       await client.query(`INSERT INTO user_roles (user_id, role) VALUES ($1, 'RIDER') ON CONFLICT DO NOTHING`, [userId]);
     });
     return { status: 'PENDING' };
+  }
+
+  async trips(user: { id: number; roles: any[] }) {
+    const { rows } = await this.db.query(
+      `SELECT id FROM orders WHERE rider_id = $1
+         AND state IN ('SHIPPER_DA_NHAN','SHIPPER_DEN_QUAN','DA_LAY_HANG','DANG_GIAO','DA_DEN_NOI','HEN_SHIPPER_DA_GIU','HEN_SAN_SANG')
+       ORDER BY COALESCE(scheduled_pickup_at, created_at)`,
+      [user.id],
+    );
+    const trips = [];
+    for (const r of rows) trips.push(await this.orders.view(this.db, Number(r.id), user as any));
+    return { trips };
   }
 
   async updateLocation(riderId: number, at: LatLng) {

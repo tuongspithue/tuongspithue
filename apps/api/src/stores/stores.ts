@@ -129,6 +129,14 @@ export class StoresService {
     });
   }
 
+  /** Các quán người dùng đang làm việc (chủ hoặc nhân viên). */
+  async mine(user: AuthUser) {
+    const ids = user.roles.filter((r) => r.role === 'MERCHANT_OWNER' || r.role === 'MERCHANT_STAFF').map((r) => r.scopeId);
+    if (ids.length === 0) return { stores: [] };
+    const { rows } = await this.db.query(`SELECT ${STORE_COLUMNS} FROM stores s WHERE s.id = ANY($1) ORDER BY s.id`, [ids]);
+    return { stores: rows.map(storeJson) };
+  }
+
   async update(user: AuthUser, storeId: number, dto: UpdateStoreDto) {
     await this.assertWorksAt(user, storeId);
     const store = await this.db.one('SELECT status FROM stores WHERE id = $1', [storeId]);
@@ -248,6 +256,11 @@ export class StoresController {
   @Get('stores/:id')
   detail(@Param('id', ParseIntPipe) id: number) {
     return this.stores.detail(id);
+  }
+
+  @Get('merchant/stores')
+  mine(@CurrentUser() user: AuthUser) {
+    return this.stores.mine(user);
   }
 
   @Post('merchant/stores')

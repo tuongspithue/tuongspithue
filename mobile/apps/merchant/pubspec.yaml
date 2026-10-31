@@ -1,0 +1,19 @@
+name: sqt_merchant
+description: Ship Quanh Tôi — app merchant.
+publish_to: none
+version: 0.1.0+1
+resolution: workspace
+environment:
+  sdk: ^3.6.0
+dependencies:
+  flutter:
+    sdk: flutter
+  sqt_core:
+    path: ../../packages/sqt_core
+  http: ^1.2.0
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+flutter:
+  uses-material-design: true
