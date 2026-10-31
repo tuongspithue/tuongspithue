@@ -63,6 +63,9 @@ api_js() { (cd apps/api && node "dist/src/database/$1.js" "${@:2}"); }
 
 # Build lại máy chủ từ mã mới nhất (sau git pull) — seed/code/start đều chạy bản vừa build.
 build_api() {
+  # Sau git pull có thể có thư viện mới (VD bản đồ của Admin): cài bổ sung trước khi build.
+  echo "==> Cập nhật thư viện"
+  pnpm install --frozen-lockfile >"$STATE/logs/install.log" 2>&1 || { echo "!! Cài thư viện lỗi, xem $STATE/logs/install.log"; exit 1; }
   echo "==> Build máy chủ API"
   pnpm --filter @sqt/domain build >/dev/null
   pnpm --filter @sqt/api build >/dev/null
@@ -138,23 +141,26 @@ echo "==> Bật API ($API_URL)"
 start_bg api apps/api env PORT=3000 node dist/src/main.js
 wait_http "http://localhost:3000/health" "API"
 
-# Admin Console và web app khách gắn địa chỉ API lúc build: chỉ build lại khi địa chỉ đổi (Codespace mới).
-if [ "$(cat "$STATE/admin.built" 2>/dev/null)" != "$API_URL" ] || [ ! -d apps/admin/.next ]; then
+# Admin Console và web app khách gắn địa chỉ API lúc build: build lại khi địa chỉ đổi (Codespace mới)
+# hoặc khi mã nguồn đổi (sau git pull) — so bằng mã phiên bản thư mục trong git.
+ADMIN_KEY="$API_URL $(git rev-parse HEAD:apps/admin 2>/dev/null)"
+WEB_KEY="$API_URL $(git rev-parse HEAD:mobile 2>/dev/null)"
+if [ "$(cat "$STATE/admin.built" 2>/dev/null)" != "$ADMIN_KEY" ] || [ ! -d apps/admin/.next ]; then
   echo "==> Build Admin Console (lần đầu ~2 phút)"
   NEXT_PUBLIC_API_URL="$API_URL" NEXT_TELEMETRY_DISABLED=1 pnpm --filter @sqt/admin build >"$STATE/logs/admin-build.log" 2>&1 \
     || { echo "!! Build Admin lỗi, xem $STATE/logs/admin-build.log"; exit 1; }
-  echo "$API_URL" >"$STATE/admin.built"
+  echo "$ADMIN_KEY" >"$STATE/admin.built"
 fi
 echo "==> Bật Admin Console ($ADMIN_URL)"
 start_bg admin apps/admin env NEXT_TELEMETRY_DISABLED=1 node_modules/.bin/next start -p 3001
 wait_http "http://localhost:3001/login" "Admin Console"
 
 WEB_DIR=mobile/apps/customer/build/web
-if [ "$(cat "$STATE/web.built" 2>/dev/null)" != "$API_URL" ] || [ ! -f "$WEB_DIR/index.html" ]; then
+if [ "$(cat "$STATE/web.built" 2>/dev/null)" != "$WEB_KEY" ] || [ ! -f "$WEB_DIR/index.html" ]; then
   echo "==> Build web app khách (lần đầu ~3 phút)"
   (cd mobile/apps/customer && flutter build web --release --no-web-resources-cdn --dart-define=API_URL="$API_URL") >"$STATE/logs/web-build.log" 2>&1 \
     || { echo "!! Build web app lỗi, xem $STATE/logs/web-build.log"; exit 1; }
-  echo "$API_URL" >"$STATE/web.built"
+  echo "$WEB_KEY" >"$STATE/web.built"
 fi
 echo "==> Bật web app khách ($APP_URL)"
 start_bg web . node scripts/serve-static.mjs "$WEB_DIR" 8080

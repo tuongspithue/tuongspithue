@@ -37,6 +37,13 @@ class CoreModule implements OnApplicationShutdown {
 class HealthController {
   constructor(@Inject(DATABASE) private readonly db: Database) {}
 
+  /** Trang gốc: báo API đang chạy, để người mở nhầm địa chỉ API trên trình duyệt không tưởng là lỗi. */
+  @Public()
+  @Get()
+  root() {
+    return { name: 'Ship Quanh Tôi API', status: 'ok', note: 'Đây là máy chủ dữ liệu cho web app và các app, không phải trang để xem. Kiểm tra: /health' };
+  }
+
   @Public()
   @Get('health')
   async health() {
