@@ -82,6 +82,7 @@ Mỗi bước là một **thẻ có avatar người xác nhận**, giờ, và th
 - *(1.0 – Tăng trưởng)* **Đặt bằng giọng nói / chat AI**: "Cho mình 2 ly cà phê sữa đá ít đường giao lên văn phòng" → giỏ hàng được điền sẵn, khách chỉ bấm xác nhận.
 - **"Như mọi lần"**: thẻ đầu trang chủ chứa 3 đơn hay đặt, 1 chạm đặt lại.
 - **Nút sticky "Đặt hàng"** luôn hiển thị tổng tiền cuối cùng — không bất ngờ phí.
+- **Ghi chú món bằng chip**: dưới mỗi món trong giỏ là hàng chip bấm chọn (`Không hành` `Ít đá`…) + ô gõ/micro; chip từ sở thích đã lưu hiện sẵn với dấu ✓ nhạt. Chip dị ứng màu đỏ có biểu tượng ⚠.
 - **Hoàn tác (Undo)** 5 giây sau khi xoá món/huỷ thao tác.
 - **Lỗi thân thiện**: "Quán vừa hết Cơm sườn 😢 — thử Cơm sườn bì chả (giá tương tự)?" kèm nút chọn ngay.
 
@@ -89,7 +90,8 @@ Mỗi bước là một **thẻ có avatar người xác nhận**, giờ, và th
 - **Chế độ Đơn giản**: màn hình chỉ có bảng đơn dạng cột (Mới → Đang làm → Chờ lấy → Xong), mỗi đơn là thẻ lớn, **vuốt phải để nhận**, nút "Xong món" to.
 - **Chế độ máy tính bảng / đặt quầy**: hiển thị như bảng bếp (Kitchen Display), chữ to, tự xoay ngang.
 - **Hướng dẫn bằng video ngắn 30 giây** ngay trong app, tiếng Việt, có người thật.
-- **Đọc đơn bằng giọng nói**: "Đơn mới: 2 phở bò tái, 1 trà đá, 95 nghìn" — tay đang làm bếp vẫn nghe được.
+- **Ghi chú nổi bật trên thẻ đơn**: ghi chú từng món in đậm ngay dưới món; dị ứng là dải đỏ trên đầu thẻ, phải vuốt *"Đã đọc"* mới nhận được đơn.
+- **Đọc đơn bằng giọng nói**: "Đơn mới: 2 phở bò tái, một tô không hành, 1 trà đá, 95 nghìn" — tay đang làm bếp vẫn nghe được.
 
 **Shipper**
 - **Vuốt để xác nhận** từng bước (tránh bấm nhầm khi chạy xe), nút lớn ở nửa dưới màn hình.

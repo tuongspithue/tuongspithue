@@ -33,7 +33,7 @@
 | Tốc độ xác nhận | 10% | Thời gian trung vị từ đơn tới → nhận |
 | Chuẩn bị đúng giờ | 15% | % đơn sẵn sàng đúng thời gian quán cam kết |
 | Chất lượng món (đánh giá khách) | 25% | Sao Bayes + nhãn ("ngon", "đúng mô tả") |
-| Chính xác đơn hàng | 15% | % đơn không bị báo thiếu/sai món |
+| Chính xác đơn hàng | 15% | % đơn không bị báo thiếu/sai món **hoặc làm sai ghi chú của khách** |
 | Giữ cam kết đơn hẹn | 10% | % đơn hẹn đã nhận được làm đúng giờ, xác nhận lại T−30 |
 | Đánh giá của shipper | 5% | Đóng gói, sẵn sàng khi tới, thái độ |
 | Khiếu nại có căn cứ | trừ điểm | Vệ sinh, giá chênh, thái độ |

@@ -10,7 +10,7 @@ Ký hiệu mức ưu tiên: **[P0]** bắt buộc cho MVP · **[P1]** bản 1.0 
 - [P0] Đăng nhập bằng **số điện thoại + OTP** (SMS/Zalo ZNS), không cần mật khẩu.
 - [P1] Đăng nhập Google / Apple / Zalo.
 - [P0] Cho phép **xem quán khi chưa đăng nhập**; chỉ yêu cầu đăng nhập khi bấm *Đặt hàng*.
-- [P1] Hồ sơ: tên, ảnh, ngày sinh (tặng voucher sinh nhật), sở thích ăn uống (chay, không cay, dị ứng…).
+- [P1] Hồ sơ: tên, ảnh, ngày sinh (tặng voucher sinh nhật), **sở thích ăn uống** (chay, không cay, ít ngọt, dị ứng…) — dùng để gợi ý sẵn ghi chú cho từng món (xem 2.1.4a).
 
 ### 2.1.2. Màn hình chính "Quanh tôi"
 - [P0] Xin quyền vị trí → hiển thị **địa chỉ hiện tại** trên đầu, cho phép đổi nhanh (Nhà / Công ty / địa chỉ đã lưu / ghim trên bản đồ).
@@ -34,11 +34,38 @@ Ký hiệu mức ưu tiên: **[P0]** bắt buộc cho MVP · **[P1]** bản 1.0 
 ### 2.1.4. Trang quán
 - [P0] Ảnh bìa, giờ mở cửa, địa chỉ, khoảng cách, ★ và số đánh giá, phí ship ước tính, thời gian chuẩn bị trung bình.
 - [P0] Menu theo nhóm, mỗi món: ảnh, tên, mô tả, giá, nhãn *Bán chạy / Mới / Cay / Chay*, trạng thái *Hết hàng*.
-- [P0] **Tuỳ chọn món (modifier)**: size, topping, mức đá/đường, ghi chú riêng cho món.
+- [P0] **Tuỳ chọn món (modifier)**: size, topping, mức đá/đường (có thể tính thêm tiền, do quán định nghĩa).
+- [P0] **Ghi chú riêng cho từng món** theo sở thích người đặt — chi tiết ở 2.1.4a.
 - [P0] Giỏ hàng nổi dưới cùng: số món, tổng tiền.
 - [P1] Thông tin: giấy phép ATTP (nếu có), ảnh bếp/quầy thực tế, "Quán đã xác minh ✔".
 - [P1] Lịch sử đánh giá có ảnh; quán phản hồi đánh giá.
 - [P2] Ảnh "món hôm nay" do quán đăng (không làm livestream — tốn tài nguyên, ít phù hợp quán nhỏ).
+
+### 2.1.4a. Ghi chú theo sở thích cho từng món
+
+Mỗi món trong giỏ đều có ô **"Ghi chú cho món này"**, để khách nói rõ mình muốn món đó thế nào.
+
+**Cách nhập — nhanh và dễ:**
+- [P0] **Chip ghi chú nhanh** bấm chọn, do quán gợi ý theo từng món và hệ thống gợi ý theo ngành. VD với phở: `Không hành` `Ít bánh` `Nhiều nước` `Tái riêng`; với trà sữa: `Ít ngọt` `Không đá` `Đá riêng`; với cơm: `Thêm nước mắm` `Không dưa leo`.
+- [P0] **Ô chữ tự do** tối đa 150 ký tự: *"Cho mình xin thêm ớt tươi, để riêng"*.
+- [P1] **Nói thay gõ**: bấm micro để đọc ghi chú (Phần 12, giọng nói).
+- [P1] **Sở thích đã lưu tự điền sẵn**: hồ sơ ghi *"Không ăn hành"* → món có hành tự gợi ý chip `Không hành` (khách bỏ chọn được). App hỏi một lần: *"Lưu 'Ít ngọt' cho các lần đặt trà sữa sau?"*.
+- [P0] **Ghi chú khác nhau cho từng phần cùng món**: đặt 2 bánh mì, 1 cái *không cay*, 1 cái *nhiều cay* → giỏ tách thành 2 dòng riêng, mỗi dòng một ghi chú (nút *"Tách để ghi chú riêng"*).
+- [P0] **Ghi chú chung cho cả đơn** (VD *"Gói riêng từng phần"*, *"Không lấy túi nilon"*), tách biệt với ghi chú cho shipper.
+- [P0] **Đặt lại đơn cũ giữ nguyên ghi chú** của từng món.
+
+**Cảnh báo dị ứng — quan trọng về an toàn:**
+- [P0] Chip riêng màu đỏ **`⚠ Dị ứng: …`** (đậu phộng, hải sản, sữa, gluten, trứng…). Ghi chú dị ứng hiển thị **nổi bật nhất** trên màn hình quán, phiếu bếp và được đọc to trong cuộc gọi IVR.
+- [P0] Quán **phải bấm xác nhận riêng** *"Đã đọc ghi chú dị ứng"* khi nhận đơn có dị ứng; nếu không đảm bảo được thì từ chối món đó qua *Nhận với điều chỉnh*. App ghi rõ cho khách: *ghi chú dị ứng là yêu cầu gửi quán, quán xác nhận trực tiếp* — nền tảng không thay quán cam kết.
+
+**Ghi chú không được làm thay đổi giá:**
+- Ghi chú là **miễn phí**. Yêu cầu nào tốn thêm tiền (thêm trứng, thêm thịt) phải là **tuỳ chọn có giá** do quán định nghĩa.
+- Nếu khách ghi một yêu cầu tốn thêm chi phí, quán dùng **Nhận với điều chỉnh** để đề xuất giá mới → **khách đồng ý** mới áp dụng (cùng luồng 2 phút ở 2.2.3). Quán không được tự cộng tiền.
+- Quán có thể bật **"Không nhận ghi chú"** cho một số món (VD món đóng gói sẵn); khi đó ô ghi chú ẩn và khách thấy lý do.
+
+**Kiểm soát nội dung:**
+- Lọc tự động số điện thoại, đường link, từ ngữ thô tục trong ghi chú (bộ lọc từ khoá; AI kiểm duyệt văn bản ở bản 1.0 nếu Admin bật).
+- Ghi chú chỉ quán (và shipper với ghi chú chung liên quan đóng gói) xem được; không hiển thị công khai.
 
 ### 2.1.5. Giỏ hàng & Thanh toán (Checkout)
 - [P0] Mỗi giỏ thuộc **1 quán** (MVP). [P2] Đơn ghép nhiều quán gần nhau, 1 shipper.
@@ -107,6 +134,7 @@ Thanh tiến trình rõ ràng, mỗi bước có **tên người xác nhận + g
 
 ### 2.2.2. Quản lý Menu
 - [P0] Thêm/sửa món: ảnh, tên, giá, mô tả, nhóm, tuỳ chọn (size/topping), giới hạn số lượng/ngày.
+- [P0] **Chip ghi chú nhanh cho từng món**: quán tạo sẵn các lựa chọn hay gặp (VD `Không hành`, `Ít đá`) để khách bấm chọn; bật/tắt **"Không nhận ghi chú"** cho từng món.
 - [P0] **Bật/tắt "Hết hàng"** bằng 1 chạm (công tắc lớn) — tự bật lại ngày mai (tuỳ chọn).
 - [P1] **Tạo menu từ danh sách chữ**: quán dán/gõ danh sách món kèm giá → AI chuẩn hoá thành menu nháp → quán kiểm tra và đăng. *(Đọc menu từ ảnh chụp bằng AI: tạm gác — Phần 12.9.)*
 - [P1] Nhập món bằng giọng nói.
@@ -115,14 +143,15 @@ Thanh tiến trình rõ ràng, mỗi bước có **tên người xác nhận + g
 
 ### 2.2.3. Nhận & Xác nhận đơn (Cổng A) — **chức năng quan trọng nhất**
 - [P0] Đơn mới đến: **chuông lớn lặp lại + rung + màn hình toàn phần** (kể cả khi khoá máy), không tắt cho đến khi xử lý.
-- [P0] Màn hình đơn mới hiển thị: danh sách món + tuỳ chọn + ghi chú, tổng tiền, hình thức thanh toán, khoảng cách tới khách, **đồng hồ đếm ngược** (mặc định 3 phút).
+- [P0] Màn hình đơn mới hiển thị: danh sách món + tuỳ chọn + **ghi chú của từng món ngay dưới tên món** (chip in đậm, ghi chú dị ứng màu đỏ ở đầu đơn) + ghi chú chung, tổng tiền, hình thức thanh toán, khoảng cách tới khách, **đồng hồ đếm ngược** (mặc định 3 phút).
 - [P0] Thao tác:
   - ✅ **Nhận đơn** → chọn thời gian chuẩn bị (5 / 10 / 15 / 20 / 30 phút, gợi ý theo lịch sử).
   - ✏️ **Nhận với điều chỉnh**: một món hết → đề xuất món thay thế / bỏ món → gửi khách đồng ý (khách có 2 phút, không phản hồi thì theo lựa chọn "khi hết hàng" khách chọn lúc đặt).
   - ❌ **Từ chối** → bắt buộc chọn lý do (hết hàng, quá tải, sắp đóng cửa, ngoài vùng…).
 - [P0] **Không có chế độ tự động nhận đơn.** Mọi đơn phải có người bấm nhận (trên app, qua phím IVR, hoặc Ops gọi xác nhận). Để quán đông khách thao tác nhanh: **"Nhận nhanh"** — 1 chạm nhận với thời gian chuẩn bị gợi ý sẵn.
 - [P0] **Dự phòng khi quán không phản hồi**: sau 90 giây chưa xử lý → **cuộc gọi tự động IVR** tới SĐT quán ("Bấm 1 nhận, 2 từ chối"); 150 giây → Ops gọi; sau 3 phút → huỷ, báo khách & gợi ý quán tương tự (chi tiết Phần 3.3).
-- [P1] In phiếu bếp qua **máy in nhiệt Bluetooth/LAN** tự động khi nhận đơn.
+- [P1] In phiếu bếp qua **máy in nhiệt Bluetooth/LAN** tự động khi nhận đơn; ghi chú từng món in ngay dưới món, dị ứng in đậm có khung ở đầu phiếu.
+- [P0] Cuộc gọi IVR đọc cả ghi chú: *"Món 1: phở tái, ghi chú: không hành. Lưu ý dị ứng đậu phộng."* (ghi chú dài: *"có ghi chú, vui lòng xem trên app"*).
 - [P0] Tab **"Đơn hẹn 🟣"**: xem đơn hẹn giờ & yêu cầu mở trong khu vực theo thời gian thực, chọn Nhận / Đề xuất giờ khác / Từ chối, lịch năng lực theo khung 15 phút, xác nhận lại trước giờ → [Phần 10](10-don-hen-gio.md).
 - [P0] Bấm **"Đã chuẩn bị xong"** → báo shipper & khách.
 - [P0] **Bàn giao**: shipper quét **mã QR trên phiếu/app quán** hoặc nhập mã đơn 4 số → xác nhận đúng đơn, tránh nhầm lẫn.

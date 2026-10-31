@@ -103,6 +103,7 @@ stateDiagram-v2
 | 150s | Đơn vào hàng đợi Ops (nếu khu vực có Ops trực) — Ops gọi trực tiếp quán |
 | 180s | Huỷ tự động, **hoàn tiền 100%**, khách nhận voucher xin lỗi + gợi ý 3 quán tương tự có món tương tự |
 
+- **Nhận đơn = cam kết làm theo ghi chú của từng món.** Ghi chú nào không làm được thì quán phải dùng *Nhận với điều chỉnh* (khách đồng ý) chứ không được bỏ qua. Đơn có ghi chú dị ứng cần thêm thao tác *"Đã đọc ghi chú dị ứng"* trước khi nhận.
 - Quán bị **lỡ đơn** nhiều: lần 1 nhắc nhở; ≥ 3 lần/ngày → **tự động chuyển "Tạm nghỉ"** 30 phút và báo chủ quán (tránh khách tiếp tục đặt vào quán không người trực).
 - Khách luôn thấy trạng thái: *"Đang chờ quán xác nhận… (1:24)"* và nút *Huỷ miễn phí*.
 - **Xác nhận ghi nhận người thật**: lưu `confirmed_by_user_id`, kênh (`APP` / `IVR` / `OPS_CALL`), thời gian. Với IVR, lưu bản ghi âm cuộc gọi làm bằng chứng.
@@ -160,6 +161,8 @@ score = w1 * (1 / ETA_tới_quán)
 
 | Tình huống | Cách xử lý |
 |---|---|
+| Ghi chú tốn thêm chi phí (VD *"thêm trứng"*) | Quán đề xuất giá mới qua *Nhận với điều chỉnh* → khách đồng ý mới áp dụng; không đồng ý thì quán làm đúng món gốc hoặc từ chối món |
+| Quán làm sai ghi chú (VD có hành dù ghi *không hành*) | Khách báo sự cố kèm ảnh → hoàn tiền món theo chính sách; tính vào chỉ số *Chính xác đơn hàng* của quán. Sai ghi chú dị ứng: xử lý mức nghiêm trọng cao nhất, CSKH cấp 2 liên hệ ngay |
 | Hết 1 món sau khi đã nhận đơn | Quán bấm "Điều chỉnh" → khách duyệt thay thế / hoàn tiền phần món |
 | Giá thực tế khác (hàng tạp hoá tính theo cân) | Đơn "giá ước tính": thanh toán online thu theo giá ước tính +15%, sau khi quán nhập giá thực + ảnh cân thì **hoàn phần chênh tự động**; COD thu theo giá thực. Giá thực vượt +15% → khách phải xác nhận lại |
 | Shipper bị tai nạn giữa đường | SOS → Ops liên hệ, đổi shipper khác tới vị trí; hàng hỏng → hoàn tiền cho khách, quán vẫn được trả |

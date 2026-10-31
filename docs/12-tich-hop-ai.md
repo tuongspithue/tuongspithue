@@ -30,7 +30,7 @@ Không phải bài toán nào cũng nên giao cho mô hình ngôn ngữ lớn (L
 | 1 | Tìm kiếm hiểu ý: không dấu, sai chính tả, đồng nghĩa ("trà sữa" ≈ "milk tea") | Khách | Tìm kiếm lai: từ khoá + embedding | P1 |
 | 2 | Gợi ý món thay thế khi hết hàng, món kèm/combo | Khách, Quán | Embedding món + quy tắc giá | P1 |
 | 3 | **Trợ lý "Hỏi Quanh"** (chat/giọng nói) đề xuất quán & món, điền sẵn giỏ hàng | Khách | **Groq LLM** + công cụ nội bộ | P1 |
-| 4 | Bóc tách **"Yêu cầu mở"** / ghi chú tự do thành danh sách món có cấu trúc | Khách, Quán | **Groq LLM** (JSON) | P1 |
+| 4 | Bóc tách **"Yêu cầu mở"** / ghi chú tự do thành danh sách món có cấu trúc; nhận ra ghi chú có dấu hiệu **dị ứng** (VD *"mình bị dị ứng tôm"*) để gợi ý khách gắn chip ⚠ | Khách, Quán | **Groq LLM** (JSON) | P1 |
 | 5 | Đặt hàng & ra lệnh bằng giọng nói | Khách, Quán, Shipper | **Groq Whisper** + Groq LLM hiểu ý | P1 |
 | 6 | ~~Tạo menu từ ảnh~~ → **tạm gác** (12.9). Thay bằng: quán **dán/gõ danh sách món dạng chữ** (VD *"Cơm sườn 35k, Cơm gà 40k…"*) → AI chuẩn hoá thành menu nháp để quán duyệt | Quán | **LLM (mặc định Groq)** | P1 |
 | 7 | Viết mô tả món hấp dẫn, gợi ý tên combo | Quán | **Groq LLM** | P1 |

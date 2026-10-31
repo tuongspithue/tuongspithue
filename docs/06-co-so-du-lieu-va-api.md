@@ -105,6 +105,8 @@ CREATE TABLE menu_items (
   is_available BOOLEAN NOT NULL DEFAULT true,
   daily_limit  INT,
   is_weight_based BOOLEAN DEFAULT false,
+  quick_notes  TEXT[],                   -- chip ghi chú nhanh quán gợi ý: {'Không hành','Ít bánh'}
+  notes_disabled BOOLEAN NOT NULL DEFAULT false,  -- món không nhận ghi chú
   sort_order   INT DEFAULT 0
 );
 
@@ -150,6 +152,9 @@ CREATE TABLE orders (
   dropoff_location   GEOGRAPHY(POINT, 4326) NOT NULL,
   dropoff_address    TEXT NOT NULL,
   dropoff_note       TEXT,
+  order_note         VARCHAR(200),                  -- ghi chú chung cho cả đơn (đóng gói…)
+  allergy_ack_by     BIGINT REFERENCES users(id),   -- người ở quán bấm "Đã đọc ghi chú dị ứng"
+  allergy_ack_at     TIMESTAMPTZ,
   recipient_name     VARCHAR(120),                  -- người nhận khác (đặt hộ)
   recipient_phone    VARCHAR(15),
   rider_wait_fee     BIGINT NOT NULL DEFAULT 0,     -- phí chờ tại quán
@@ -188,7 +193,9 @@ CREATE TABLE order_items (
   unit_price BIGINT NOT NULL,
   quantity   INT NOT NULL CHECK (quantity > 0),
   modifiers  JSONB,
-  note       TEXT,
+  note       VARCHAR(150),             -- ghi chú tự do của khách cho món này
+  note_tags  TEXT[],                   -- chip đã chọn: {'Không hành','Ít đá'}
+  allergens  TEXT[],                   -- dị ứng: {'PEANUT','SEAFOOD'}; hiển thị nổi bật
   substitution_policy VARCHAR(20) DEFAULT 'CONTACT_ME' -- CONTACT_ME, SIMILAR_OK, REMOVE
 );
 
@@ -306,7 +313,7 @@ Quy ước: `/v1`, JSON, tiền tệ bằng **số nguyên đồng**, thời gia
 | POST | `/v1/orders/{id}/review` | Đánh giá quán & shipper |
 | POST | `/v1/orders/{id}/issues` | Báo sự cố + ảnh |
 | GET | `/v1/me/capabilities` | Quyền chức năng hiệu lực của người dùng (COD, hẹn giờ…) để app ẩn/hiện đúng (Phần 15) |
-| PATCH | `/v1/me/preferences` | Cỡ chữ, giao diện đơn giản, ưu tiên nhắn tin thay gọi điện, ngôn ngữ, thông báo (Phần 9.9) |
+| PATCH | `/v1/me/preferences` | Sở thích ăn uống & ghi chú hay dùng theo loại món (VD trà sữa → *Ít ngọt*), dị ứng; cỡ chữ, giao diện đơn giản, ưu tiên nhắn tin thay gọi điện, ngôn ngữ, thông báo (Phần 9.9) |
 | DELETE | `/v1/me` | Xoá tài khoản (giữ dữ liệu giao dịch tối thiểu theo luật, ẩn danh phần còn lại) |
 
 **Ví dụ tạo đơn**
@@ -319,8 +326,10 @@ Idempotency-Key: 6f1c2b0e-...
   "payment_method": "MOMO",
   "items": [
     { "item_id": 501, "quantity": 2, "modifiers": [{"group_id": 7, "option_ids": [2]}],
-      "note": "Ít đá", "substitution_policy": "CONTACT_ME" }
+      "note": "Cho mình xin ống hút giấy", "note_tags": ["Ít đá", "Ít ngọt"], "allergens": [],
+      "substitution_policy": "CONTACT_ME" }
   ],
+  "order_note": "Gói riêng từng ly",
   "voucher_code": "QUANHTOI10",
   "cutlery": false
 }
@@ -338,7 +347,7 @@ Idempotency-Key: 6f1c2b0e-...
 | Method | Path | Mô tả |
 |---|---|---|
 | GET | `/v1/merchant/stores/{id}/orders?state=` | Danh sách đơn |
-| POST | `/v1/merchant/orders/{id}/accept` | `{prep_time_min}` — **Cổng A** |
+| POST | `/v1/merchant/orders/{id}/accept` | `{prep_time_min, allergy_ack}` — **Cổng A**; bắt buộc `allergy_ack: true` nếu đơn có dị ứng |
 | POST | `/v1/merchant/orders/{id}/propose-changes` | Đề xuất thay/bỏ món |
 | POST | `/v1/merchant/orders/{id}/reject` | `{reason}` |
 | POST | `/v1/merchant/orders/{id}/ready` | Món sẵn sàng |
