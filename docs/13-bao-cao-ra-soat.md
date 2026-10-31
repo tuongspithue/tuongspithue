@@ -75,6 +75,7 @@
 | Điểm uy tín shipper & quán khu vực đặc biệt quan trọng | Phần 11 (dùng ở 3.4, 5.5, 10.5) | ✅ |
 | AI gợi ý, tư vấn, vận hành thông minh — **dùng Groq** | Phần 12 | ✅ |
 | Trang admin tuỳ biến cài đặt mềm dẻo, nhìn tổng quan & chi tiết vận hành | Phần 14 | ✅ |
+| Admin phân quyền chức năng người dùng, chủ động đánh giá, xếp loại, đặt mức ưu tiên trong tác vụ | Phần 15 | ✅ |
 
 ## 13.5. Việc cần xác nhận trước khi bắt đầu xây dựng
 

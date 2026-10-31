@@ -19,6 +19,7 @@
 - App shipper: đăng ký + eKYC, online/offline, **nhận chuyến**, quy trình 4 bước có geofence, ảnh giao hàng, thu nhập, COD.
 - Admin Console (Phần 14, mức MVP): dashboard tổng quan, bản đồ trực tiếp, hàng đợi đơn có vấn đề, hồ sơ 360°, duyệt hồ sơ, gán tay, hoàn tiền, **trung tâm cấu hình phân tầng** có phiên bản & hoàn tác, feature flags, xác thực 2 lớp.
 - Backend: modular monolith (NestJS), PostgreSQL+PostGIS, Redis + BullMQ, WebSocket, outbox, ledger, chế độ vận hành suy giảm.
+- Phân quyền chức năng từng người dùng, nâng/hạ/khoá cấp có lý do & thời hạn, nhãn cơ bản (Phần 15, mức MVP).
 - **AI Gateway + tài khoản Groq** dựng sẵn để thử nghiệm nội bộ (chưa phát hành tính năng AI cho người dùng).
 - **Mục tiêu ra mắt thí điểm:** 150 quán, 80 shipper, 300 đơn/ngày sau 4 tuần.
 

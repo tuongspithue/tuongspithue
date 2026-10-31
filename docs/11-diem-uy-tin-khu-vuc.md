@@ -98,6 +98,8 @@ Huy hiệu chuyên biệt (bên cạnh cấp): ⚡ *Xác nhận siêu tốc*, �
  Còn 4 điểm nữa để lên 💎 Kim cương!       [Xem lịch sử thay đổi]
 ```
 
+> **Admin điều chỉnh:** ngoài điểm tự động, Admin có thể thêm phiếu đánh giá chủ động (thành phần "Đánh giá của nền tảng", trọng số tối đa 15%), nâng/hạ/khoá cấp, gắn nhãn và điều chỉnh ưu tiên theo tác vụ — xem [Phần 15](15-phan-quyen-xep-loai-uu-tien.md).
+
 ## 11.8. Bổ sung kỹ thuật
 ```sql
 CREATE TABLE trust_scores (

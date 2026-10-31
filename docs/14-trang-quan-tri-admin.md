@@ -103,7 +103,7 @@ Gồm số đơn, GMV, giá trị đơn trung bình, doanh thu nền tảng, t�
   - **Hành động**: liên hệ các bên, gán hoặc đổi shipper, huỷ có bồi hoàn, hoàn tiền một phần, tặng voucher xin lỗi, tạo ticket. Hành động nào cũng bắt buộc nhập lý do.
 
 ### Quán / Shipper / Khách hàng
-Mỗi hồ sơ gồm: thông tin & giấy tờ eKYC; trạng thái hiện tại; **biểu đồ hiệu suất** (đơn, tỷ lệ xác nhận, đúng giờ, huỷ, ★); **điểm uy tín** chi tiết theo từng thành phần và lịch sử thay đổi; tài chính (doanh thu/thu nhập, công nợ COD, các kỳ thanh toán); ticket & khiếu nại; cờ gian lận; ghi chú nội bộ; nhật ký thao tác.
+Mỗi hồ sơ gồm: thông tin & giấy tờ eKYC; **tab "Quyền & Xếp loại"** (Phần 15); trạng thái hiện tại; **biểu đồ hiệu suất** (đơn, tỷ lệ xác nhận, đúng giờ, huỷ, ★); **điểm uy tín** chi tiết theo từng thành phần và lịch sử thay đổi; tài chính (doanh thu/thu nhập, công nợ COD, các kỳ thanh toán); ticket & khiếu nại; cờ gian lận; ghi chú nội bộ; nhật ký thao tác.
 
 Hành động trên hồ sơ: duyệt hoặc từ chối hồ sơ, yêu cầu bổ sung, tạm khoá hoặc mở khoá (có thời hạn), chỉnh hạn mức COD, đổi chiết khấu riêng, gắn nhãn (VD "Quán chiến lược", "Cần theo dõi"), gửi thông báo riêng.
 
@@ -215,6 +215,8 @@ THÌ   chuyển quán sang "Tạm nghỉ" 30 phút  VÀ  nhắn chủ quán  VÀ
 - Dữ liệu báo cáo lấy từ **kho dữ liệu phân tích** (ClickHouse/BigQuery) tách khỏi CSDL vận hành, để báo cáo nặng không làm chậm hệ thống đặt hàng.
 
 ---
+
+> Phân quyền chức năng, đánh giá, xếp loại và ưu tiên **của người dùng** (khách, quán, shipper) được mô tả chi tiết ở [Phần 15](15-phan-quyen-xep-loai-uu-tien.md); mục này nói về phân quyền **nhân viên nội bộ**.
 
 ## 14.9. 🔐 Phân quyền linh hoạt & Nhật ký
 
