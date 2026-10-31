@@ -74,6 +74,8 @@ const storeJson = (r: any) => ({
   deliveryMode: r.delivery_mode,
   prepTimeDefaultMin: r.prep_time_default_min,
   ...(r.distance_m !== undefined ? { distanceM: Math.round(Number(r.distance_m)) } : {}),
+  // Uy tín hiển thị ngay trên thẻ quán (Phần 9.4, 11.5).
+  trust: { tier: r.trust_tier ?? 'ROOKIE', stars: r.trust_stars === null || r.trust_stars === undefined ? null : Number(r.trust_stars), reviewCount: r.trust_reviews ?? 0 },
 });
 
 const itemJson = (r: any) => ({
@@ -87,7 +89,10 @@ const itemJson = (r: any) => ({
   notesDisabled: r.notes_disabled,
 });
 
-const STORE_COLUMNS = `s.*, ST_Y(s.location::geometry) AS lat, ST_X(s.location::geometry) AS lng`;
+const STORE_COLUMNS = `s.*, ST_Y(s.location::geometry) AS lat, ST_X(s.location::geometry) AS lng,
+  (SELECT tier FROM trust_scores WHERE subject_type = 'STORE' AND subject_id = s.id) AS trust_tier,
+  (SELECT stars FROM trust_scores WHERE subject_type = 'STORE' AND subject_id = s.id) AS trust_stars,
+  (SELECT review_count FROM trust_scores WHERE subject_type = 'STORE' AND subject_id = s.id) AS trust_reviews`;
 
 @Injectable()
 export class StoresService {
@@ -102,7 +107,7 @@ export class StoresService {
       const { rows } = await client.query(
         `INSERT INTO stores (owner_user_id, name, category, location, address_text, phone, prep_time_default_min, delivery_radius_m)
          VALUES ($1, $2, $3, ${point(4, 5)}, $6, $7, $8, $9)
-         RETURNING *, ST_Y(location::geometry) AS lat, ST_X(location::geometry) AS lng`,
+         RETURNING *, ST_Y(location::geometry) AS lat, ST_X(location::geometry) AS lng, NULL AS trust_tier, NULL AS trust_stars, 0 AS trust_reviews`,
         [user.id, dto.name, dto.category, dto.lng, dto.lat, dto.address, dto.phone, dto.prepTimeDefaultMin ?? 15, dto.deliveryRadiusM ?? 5000],
       );
       await client.query(`INSERT INTO user_roles (user_id, role, scope_id) VALUES ($1, 'MERCHANT_OWNER', $2)`, [

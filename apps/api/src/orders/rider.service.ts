@@ -131,9 +131,16 @@ export class RiderService {
   async release(riderId: number, orderId: number, reason: string) {
     return this.db.tx(async (client) => {
       const order = await this.lockOwn(client, riderId, orderId);
+      // Đã tới quán ≥ 25 phút mà món chưa xong thì được nhả không bị trừ điểm (Phần 2.3.4).
+      const { rows } = await client.query<{ waited: number }>(
+        `SELECT extract(epoch FROM now() - max(created_at)) / 60 AS waited FROM order_events
+         WHERE order_id = $1 AND event = 'RIDER_ARRIVED_STORE' AND actor_id = $2`,
+        [order.id, riderId],
+      );
+      const excused = order.prep_state !== 'READY' && Number(rows[0]?.waited ?? 0) >= this.config.business.maxStoreWaitMinutes;
       const released = await this.lifecycle.apply(client, order, OrderEvent.RIDER_RELEASE, this.actor(riderId), {
         set: { rider_id: null, rider_accepted_at: null },
-        payload: { reason },
+        payload: { reason, excused },
       });
       const after = await this.dispatch.sendWave(client, released, 1);
       await this.notifications.enqueue(client, order.customer_id, 'PUSH', 'RIDER_CHANGED', { orderId });

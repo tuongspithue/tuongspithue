@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { TrustService } from '../trust/trust.service';
 import { ActorRole, OrderEvent, OrderState, TransitionContext, transition } from '@sqt/domain';
 import { PoolClient } from 'pg';
 import { BusinessError } from '../common/errors';
@@ -35,8 +36,13 @@ const UPDATABLE = new Set([
  * Nơi duy nhất thay đổi trạng thái đơn (Phần 3.2, quy tắc 1–2): kiểm tra bảng chuyển hợp lệ ở
  * gói domain, ghi sự kiện bất biến vào order_events và outbox trong cùng transaction.
  */
+/** Sự kiện làm thay đổi điểm uy tín của quán/shipper (Phần 11). */
+const TRUST_EVENTS = new Set<string>(['MERCHANT_ACCEPT', 'MERCHANT_REJECT', 'MERCHANT_TIMEOUT', 'RIDER_RELEASE', 'RIDER_RECONFIRM_MISSED', 'DELIVERED']);
+
 @Injectable()
 export class OrderLifecycle {
+  constructor(private readonly trust: TrustService) {}
+
   async lock(client: PoolClient, orderId: number): Promise<OrderRow> {
     const { rows } = await client.query<OrderRow>('SELECT * FROM orders WHERE id = $1 FOR UPDATE', [orderId]);
     if (!rows[0]) throw new BusinessError('ORDER_NOT_FOUND', 'Không tìm thấy đơn', 404);
@@ -74,6 +80,10 @@ export class OrderLifecycle {
       [order.id, result.to, ...columns.map((c) => set[c])],
     );
     await this.recordEvent(client, order.id, order.state, result.to, event, actor, opts.payload, opts.at);
+    if (TRUST_EVENTS.has(event) || result.to === 'HOAN_THANH') {
+      await this.trust.enqueue(client, 'STORE', order.store_id);
+      if (order.rider_id) await this.trust.enqueue(client, 'RIDER', order.rider_id);
+    }
     if (result.to === 'DA_HUY' && order.is_scheduled && order.scheduled_pickup_at) {
       // Trả lại chỗ trong lịch năng lực của quán (Phần 10.4).
       await client.query(

@@ -1,5 +1,6 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
-import { OrderEvent, OrderState } from '@sqt/domain';
+import { BOARD_DELAY_MINUTES, MAX_SCHEDULED_CLAIMS, OrderEvent, OrderState } from '@sqt/domain';
+import { TrustService } from '../trust/trust.service';
 import { PoolClient } from 'pg';
 import { AuthUser, worksAtStore } from '../common/auth';
 import { BusinessError } from '../common/errors';
@@ -40,6 +41,7 @@ export class ScheduledService implements OnModuleInit {
     private readonly jobs: JobsService,
     private readonly dispatch: DispatchService,
     private readonly notifications: NotificationsService,
+    private readonly trust: TrustService,
   ) {}
 
   private get rules() {
@@ -277,7 +279,11 @@ export class ScheduledService implements OnModuleInit {
 
   // ---------------- Shipper: chợ chuyến hẹn ----------------
 
-  async board(riderId: number) {
+  /** Shipper uy tín cao thấy chuyến sớm hơn; nhóm "Cần cải thiện" không thấy chợ (Phần 10.5). */
+  async board(riderId: number, now: Date = new Date()) {
+    const trust = await this.trust.get(this.db, 'RIDER', riderId);
+    const delay = BOARD_DELAY_MINUTES[trust.tier];
+    if (delay === null) return { tier: trust.tier, trips: [] };
     const { rows } = await this.db.query(
       `SELECT o.id, o.code, o.scheduled_pickup_at, o.delivery_fee, o.board_bonus, o.payment_method, o.total, o.distance_m,
               s.name AS store_name, s.address_text AS store_address, ST_Distance(s.location, r.location) AS to_store_m
@@ -285,11 +291,13 @@ export class ScheduledService implements OnModuleInit {
        WHERE o.state = 'HEN_TREN_CHO_CHUYEN' AND r.status = 'APPROVED' AND r.location IS NOT NULL
          AND ST_DWithin(s.location, r.location, $2)
          AND (o.payment_method <> 'COD' OR r.cod_balance + o.total <= r.cod_limit)
+         AND o.posted_to_board_at <= $3::timestamptz - make_interval(mins => $4)
        ORDER BY o.scheduled_pickup_at
        LIMIT 100`,
-      [riderId, this.rules.boardRadiusM],
+      [riderId, this.rules.boardRadiusM, now, delay],
     );
     return {
+      tier: trust.tier,
       trips: rows.map((r) => ({
         orderId: Number(r.id),
         pickupAt: r.scheduled_pickup_at,
@@ -318,7 +326,7 @@ export class ScheduledService implements OnModuleInit {
         `SELECT scheduled_pickup_at FROM orders WHERE rider_id = $1 AND state IN ('HEN_SHIPPER_DA_GIU', 'HEN_SAN_SANG')`,
         [riderId],
       );
-      const limit = this.rules.maxClaims;
+      const limit = MAX_SCHEDULED_CLAIMS[(await this.trust.get(client, 'RIDER', riderId)).tier];
       if (mine.length >= limit) throw new BusinessError('CLAIM_LIMIT', `Bạn đang giữ tối đa ${limit} chuyến hẹn`, 409);
       const conflict = mine.some((m) => Math.abs(new Date(m.scheduled_pickup_at).getTime() - pickupAt.getTime()) < this.rules.claimGapMinutes * MINUTE);
       if (conflict) throw new BusinessError('CLAIM_CONFLICT', 'Bạn đã giữ một chuyến khác quá sát giờ này', 409);

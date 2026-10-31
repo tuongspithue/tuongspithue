@@ -9,6 +9,8 @@ import { OrderLifecycle } from './lifecycle';
 import { NotificationsService } from './notifications';
 import { OrdersService } from './orders.service';
 import { RiderService } from './rider.service';
+import { TrustService } from '../trust/trust.service';
+import { TrustController } from '../trust/trust.controller';
 
 /**
  * Giả lập cổng thanh toán khi phát triển. Webhook thật (MoMo, VietQR…) xác thực chữ ký và
@@ -28,8 +30,8 @@ export class DevPaymentController {
 }
 
 @Module({
-  controllers: [SlotsController, CustomerOrdersController, MerchantOrdersController, OpsOrdersController, RiderController, DevPaymentController],
-  providers: [OrderLifecycle, JobsService, NotificationsService, DispatchService, OrdersService, RiderService, IdempotencyService, ScheduledService],
+  controllers: [SlotsController, CustomerOrdersController, MerchantOrdersController, OpsOrdersController, RiderController, DevPaymentController, TrustController],
+  providers: [OrderLifecycle, JobsService, NotificationsService, DispatchService, OrdersService, RiderService, IdempotencyService, ScheduledService, TrustService],
   exports: [JobsService, OrdersService],
 })
 export class OrdersModule {}

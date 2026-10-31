@@ -23,6 +23,7 @@ export interface AppConfig {
     storeGeofenceM: number;
     dropoffGeofenceM: number;
     pinThreshold: number;
+    maxStoreWaitMinutes: number;
     /** Đơn hẹn giờ — Phần 10. Thời gian tính bằng phút, so với giờ lấy hàng tại quán. */
     scheduled: {
       minLeadMinutes: number;
@@ -41,7 +42,6 @@ export interface AppConfig {
       boardUnclaimedAtMinutes: number;
       boardRadiusM: number;
       slotStartMinutes: number;
-      maxClaims: number;
       claimGapMinutes: number;
       freeReleaseHours: number;
       codMinCompletedOrders: number;
@@ -74,6 +74,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       storeGeofenceM: 100,
       dropoffGeofenceM: 150,
       pinThreshold: 1_000_000,
+      maxStoreWaitMinutes: 25,
       scheduled: {
         minLeadMinutes: 45,
         maxDaysAhead: 7,
@@ -91,7 +92,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
         boardUnclaimedAtMinutes: 30,
         boardRadiusM: 5_000,
         slotStartMinutes: 15,
-        maxClaims: 2,
         claimGapMinutes: 30,
         freeReleaseHours: 2,
         codMinCompletedOrders: 3,

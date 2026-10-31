@@ -3,6 +3,7 @@ import { OrderEvent, OrderState } from '@sqt/domain';
 import { PoolClient } from 'pg';
 import { APP_CONFIG, AppConfig } from '../config';
 import { BusinessError } from '../common/errors';
+import { ROOKIE_DEFAULT_SCORE } from '@sqt/domain';
 import { point } from '../common/geo';
 import { DATABASE, Database } from '../database/database';
 import { JobsService } from './jobs';
@@ -66,6 +67,7 @@ export class DispatchService implements OnModuleInit {
       const { rows } = await client.query<{ user_id: string; distance_m: number }>(
         `SELECT r.user_id, ST_Distance(r.location, s.location) AS distance_m
          FROM riders r JOIN stores s ON s.id = $1
+         LEFT JOIN trust_scores ts ON ts.subject_type = 'RIDER' AND ts.subject_id = r.user_id
          WHERE r.status = 'APPROVED' AND r.is_online AND r.location IS NOT NULL
            AND r.location_at > $2::timestamptz - interval '2 minutes'
            AND ST_DWithin(r.location, s.location, $3)
@@ -73,9 +75,10 @@ export class DispatchService implements OnModuleInit {
            AND NOT EXISTS (SELECT 1 FROM orders o WHERE o.rider_id = r.user_id AND o.state = ANY($5))
            AND NOT EXISTS (SELECT 1 FROM dispatch_offers d WHERE d.rider_id = r.user_id AND d.order_id = $6)
            AND NOT EXISTS (SELECT 1 FROM dispatch_offers d WHERE d.rider_id = r.user_id AND d.status = 'SENT' AND d.expires_at > $2)
-         ORDER BY distance_m
+         -- Khoảng cách điều chỉnh theo uy tín: điểm 100 như gần hơn 20%, điểm 0 như xa hơn 20% (Phần 3.4.1, w3).
+         ORDER BY ST_Distance(r.location, s.location) * (1 - (LEAST(GREATEST(COALESCE(ts.score, $8), 0), 100) - 50) / 250)
          LIMIT $7`,
-        [order.store_id, now, cfg.radiusM, codNeeded, ACTIVE_RIDER_STATES, order.id, cfg.maxRiders],
+        [order.store_id, now, cfg.radiusM, codNeeded, ACTIVE_RIDER_STATES, order.id, cfg.maxRiders, ROOKIE_DEFAULT_SCORE],
       );
       if (rows.length === 0) continue;
 

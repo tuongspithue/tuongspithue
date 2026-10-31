@@ -39,9 +39,10 @@ async function resetTrips() {
   await t.pool.query(
     `TRUNCATE dispatch_offers, scheduled_jobs, notifications, outbox, idempotency_keys RESTART IDENTITY;
      ALTER TABLE order_events DISABLE TRIGGER order_events_immutable;
-     DELETE FROM order_events; DELETE FROM order_items; DELETE FROM orders;
+     DELETE FROM reviews; DELETE FROM order_events; DELETE FROM order_items; DELETE FROM orders;
      ALTER TABLE order_events ENABLE TRIGGER order_events_immutable;
-     UPDATE riders SET is_online = false, cod_balance = 0;`,
+     UPDATE riders SET is_online = false, cod_balance = 0;
+     DELETE FROM trust_scores;`,
   );
 }
 
@@ -203,6 +204,35 @@ describe('luồng đầy đủ: đặt đơn → Cổng A → Cổng B → giao 
       'DELIVERED:RIDER:APP',
     ]);
     expect(view.body.allergyAcknowledged).toBe(true);
+    expect(view.body.riderTier).toBe('ROOKIE');
+
+    // Đánh giá tách riêng quán và shipper; điểm uy tín tính lại.
+    await t.http().post(`/v1/orders/${order.id}/review`).set(auth(customer)).send({ store: { stars: 5, tags: ['Ngon'] }, rider: { stars: 4 } }).expect(201);
+    await t.http().post(`/v1/orders/${order.id}/review`).set(auth(customer)).send({ store: { stars: 1 } }).expect(409);
+    await t.jobs.runDue();
+    const riderTrust = await t.http().get('/v1/me/trust').set(auth(riderA.token)).expect(200);
+    expect(riderTrust.body).toMatchObject({ subject: 'RIDER', tier: 'ROOKIE', completed: 1, reviewCount: 1 });
+    expect(riderTrust.body.components.completion).toBe(100);
+    const reviews = await t.http().get(`/v1/stores/${storeId}/reviews`).expect(200);
+    expect(reviews.body.reviewCount).toBe(1);
+    // Sao Bayes kéo về trung bình chung khi mới có ít đánh giá.
+    expect(reviews.body.stars).toBeGreaterThan(4.5);
+    expect(reviews.body.stars).toBeLessThan(5);
+    const storeTrust = await t.http().get('/v1/me/trust').query({ storeId }).set(auth(merchant)).expect(200);
+    expect(storeTrust.body.components.acceptance).toBe(100);
+    await t.http().get('/v1/me/trust').query({ storeId }).set(auth(customer)).expect(403);
+  });
+
+  it('chỉ đánh giá được đơn đã giao xong', async () => {
+    const order = await placeOrder();
+    await t.http().post(`/v1/orders/${order.id}/review`).set(auth(customer)).send({ store: { stars: 5 } }).expect(409);
+  });
+
+  it('quán bỏ lỡ đơn thì tỷ lệ nhận đơn giảm', async () => {
+    const order = await placeOrder();
+    await t.jobs.runDue(new Date(Date.now() + 181_000));
+    const { rows } = await t.pool.query(`SELECT components FROM trust_scores WHERE subject_type = 'STORE' AND subject_id = $1`, [storeId]);
+    expect(rows[0].components.acceptance).toBe(0);
   });
 
   it('nhật ký sự kiện không sửa/xoá được', async () => {

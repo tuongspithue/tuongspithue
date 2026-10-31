@@ -62,6 +62,14 @@ async function paidScheduled(at: Date, extra: Record<string, unknown> = {}) {
   return res.body;
 }
 
+async function setTier(riderId: number, tier: string) {
+  await t.pool.query(
+    `INSERT INTO trust_scores (subject_type, subject_id, score, tier, components, completed) VALUES ('RIDER', $1, 85, $2, '{}', 100)
+     ON CONFLICT (subject_type, subject_id) DO UPDATE SET tier = EXCLUDED.tier`,
+    [riderId, tier],
+  );
+}
+
 const state = async (orderId: number) =>
   (await t.http().get(`/v1/orders/${orderId}`).set(auth(customer)).expect(200)).body;
 
@@ -105,7 +113,8 @@ beforeEach(async () => {
      DELETE FROM order_events; DELETE FROM order_items; DELETE FROM orders;
      ALTER TABLE order_events ENABLE TRIGGER order_events_immutable;
      UPDATE riders SET is_online = false, cod_balance = 0;
-     UPDATE stores SET slot_capacity = 4;`,
+     UPDATE stores SET slot_capacity = 4;
+     DELETE FROM trust_scores;`,
   );
 });
 
@@ -195,6 +204,10 @@ describe('chợ chuyến hẹn (Cổng B) và xác nhận lại', () => {
     const order = await paidScheduled(slotAfter(90));
     expect((await accept(order.id)).body.state).toBe('HEN_TREN_CHO_CHUYEN');
 
+    // Tân binh thấy chuyến sau 10 phút; cấp Vàng thấy ngay (Phần 10.5).
+    const rookieBoard = await t.http().get('/v1/rider/scheduled-board').set(auth(riderA.token)).expect(200);
+    expect(rookieBoard.body).toMatchObject({ tier: 'ROOKIE', trips: [] });
+    await setTier(riderA.userId, 'GOLD');
     const board = await t.http().get('/v1/rider/scheduled-board').set(auth(riderA.token)).expect(200);
     expect(board.body.trips).toHaveLength(1);
     expect(board.body.trips[0]).toMatchObject({ orderId: order.id, storeName: 'Bánh Kem Hồng', cashToCollect: 0 });
@@ -263,6 +276,12 @@ describe('chợ chuyến hẹn (Cổng B) và xác nhận lại', () => {
     await accept(o2.id);
     await t.http().post(`/v1/rider/scheduled-trips/${o1.id}/claim`).set(auth(riderA.token)).expect(200);
     expect((await t.http().post(`/v1/rider/scheduled-trips/${o2.id}/claim`).set(auth(riderA.token))).body.error.code).toBe('CLAIM_CONFLICT');
+
+    // Nhóm "Cần cải thiện" không thấy chợ chuyến hẹn và không giữ được chuyến.
+    await setTier(riderB.userId, 'IMPROVE');
+    await t.http().post('/v1/rider/status').set(auth(riderB.token)).send({ online: true, ...offset(400) }).expect(200);
+    expect((await t.http().get('/v1/rider/scheduled-board').set(auth(riderB.token))).body.trips).toHaveLength(0);
+    expect((await t.http().post(`/v1/rider/scheduled-trips/${o2.id}/claim`).set(auth(riderB.token))).body.error.code).toBe('CLAIM_LIMIT');
 
     const released = await t.http().post(`/v1/rider/scheduled-trips/${o1.id}/release`).set(auth(riderA.token)).send({ reason: 'Bận việc gia đình' }).expect(200);
     expect(released.body).toMatchObject({ state: 'HEN_TREN_CHO_CHUYEN', late: false });

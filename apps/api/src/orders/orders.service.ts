@@ -389,6 +389,12 @@ export class OrdersService implements OnModuleInit {
       throw new BusinessError('ORDER_NOT_FOUND', 'Không tìm thấy đơn', 404);
     }
     const items = await q.query('SELECT * FROM order_items WHERE order_id = $1 ORDER BY id', [orderId]);
+    // Khách thấy cấp uy tín của shipper; quán/shipper thấy số đơn thành công của khách (Phần 11.5).
+    const extra = await q.query(
+      `SELECT (SELECT tier FROM trust_scores WHERE subject_type = 'RIDER' AND subject_id = $1) AS rider_tier,
+              (SELECT count(*)::int FROM orders WHERE customer_id = $2 AND state = 'HOAN_THANH') AS customer_done`,
+      [o.rider_id, o.customer_id],
+    );
     const events = await q.query(
       `SELECT e.event, e.from_state, e.to_state, e.actor_role, e.channel, e.created_at, u.full_name
        FROM order_events e LEFT JOIN users u ON u.id = e.actor_id WHERE e.order_id = $1 ORDER BY e.id`,
@@ -402,6 +408,8 @@ export class OrdersService implements OnModuleInit {
       deliveryMode: o.delivery_mode,
       storeId: Number(o.store_id),
       riderId: o.rider_id ? Number(o.rider_id) : null,
+      riderTier: o.rider_id ? (extra.rows[0].rider_tier ?? 'ROOKIE') : null,
+      ...(isCustomer ? {} : { customerCompletedOrders: extra.rows[0].customer_done }),
       paymentMethod: o.payment_method,
       subtotal: Number(o.subtotal),
       deliveryFee: Number(o.delivery_fee),
