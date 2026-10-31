@@ -1,6 +1,6 @@
 # Phần 1 — Tổng quan sản phẩm "Ship Quanh Tôi"
 
-> Phiên bản tài liệu: 1.0 · Ngày: 31/10/2026 · Trạng thái: Bản đặc tả để xây dựng
+> Phiên bản tài liệu: 1.1 · Ngày: 31/10/2026 · Trạng thái: **Đã chốt để xây dựng** (xem kết quả rà soát cuối ở Phần 13.7)
 
 ---
 
@@ -28,15 +28,15 @@
 
 | Vai trò | Ứng dụng | Mô tả |
 |---------|----------|-------|
-| **Người mua (Khách)** | App *Ship Quanh Tôi* (iOS/Android) + Web đặt nhanh | Tìm quán, đặt món, thanh toán, theo dõi, đánh giá. |
+| **Người mua (Khách)** | App *Ship Quanh Tôi* (iOS/Android); bản 1.0 thêm **Zalo Mini App** và **Web đặt nhanh** (mở link/QR là đặt, không cần cài app) | Tìm quán, đặt món, thanh toán, theo dõi, đánh giá. |
 | **Chủ quán (Merchant Owner)** | App *SQT Đối Tác* + Web quản trị quán | Quản lý menu, giờ mở cửa, đơn hàng, nhân viên, doanh thu, khuyến mãi. |
 | **Nhân viên quán (Merchant Staff)** | App *SQT Đối Tác* (quyền giới hạn) | Nhận/xác nhận đơn, chuẩn bị món, bàn giao. |
 | **Shipper của quán (Store Rider)** | App *SQT Tài Xế* (chế độ "Shipper của quán") | Người do quán đăng ký, chỉ nhận đơn của quán đó. |
 | **Shipper hệ thống (Platform Rider)** | App *SQT Tài Xế* | Đối tác tự do đã xác minh, nhận chuyến từ nhiều quán. |
-| **Điều phối viên (Dispatcher/Ops)** | Web vận hành | Theo dõi bản đồ thời gian thực, can thiệp đơn bị kẹt, gán tay. |
-| **CSKH (Support)** | Web vận hành + tổng đài | Xử lý khiếu nại, hoàn tiền, tranh chấp. |
-| **Quản trị (Admin)** | Web quản trị | Duyệt đối tác, cấu hình phí, khu vực, chính sách, báo cáo. |
-| **Kế toán (Finance)** | Web quản trị | Đối soát, chi trả, hoá đơn. |
+| **Điều phối viên (Dispatcher/Ops)** | Admin Console | Theo dõi bản đồ thời gian thực, can thiệp đơn bị kẹt, gán tay. |
+| **CSKH (Support)** | Admin Console + tổng đài | Xử lý khiếu nại, hoàn tiền, tranh chấp. |
+| **Quản trị (Admin)** | Admin Console | Duyệt đối tác, cấu hình phí, khu vực, chính sách, báo cáo. |
+| **Kế toán (Finance)** | Admin Console | Đối soát, chi trả, hoá đơn. |
 
 ## 1.4. Nguyên tắc "Người thật xác nhận" (Human Confirmation Principle)
 
@@ -46,7 +46,7 @@
 2. Mỗi đơn có **2 cổng xác nhận (gate)**:
    - **Cổng A – Quán xác nhận món:** quán xác nhận *còn hàng, giá đúng, thời gian chuẩn bị*.
    - **Cổng B – Người giao xác nhận chuyến:** shipper (hệ thống hoặc của quán) xác nhận *sẽ đến lấy và giao*.
-3. Đặc biệt — **Quán không dùng app thường xuyên** (quán nhỏ, chủ lớn tuổi): hệ thống hỗ trợ **xác nhận qua cuộc gọi tự động (IVR)** — "Bấm 1 để nhận đơn, bấm 2 để từ chối" — hoặc **shipper hệ thống đến quán xác nhận thay** (mô hình "đi chợ hộ": shipper tới quán, kiểm hàng, chụp ảnh hoá đơn). Dù cách nào, **luôn có người thật chịu trách nhiệm** và được ghi nhận trong nhật ký đơn.
+3. Đặc biệt — **Quán không dùng app thường xuyên** (quán nhỏ, chủ lớn tuổi): hệ thống hỗ trợ **xác nhận qua cuộc gọi tự động (IVR)** — "Bấm 1 để nhận đơn, bấm 2 để từ chối" — hoặc *(giai đoạn sau, P2)* **shipper hệ thống xác nhận tại quán** cho quán đã đăng ký chế độ này: shipper tới quán, cùng người bán kiểm hàng, chụp ảnh hoá đơn và bấm xác nhận thay; người xác nhận được ghi là shipper đó. Dù cách nào, **luôn có người thật chịu trách nhiệm** và được ghi nhận trong nhật ký đơn.
 4. Khách thấy rõ **ai đã xác nhận, lúc mấy giờ** trên màn hình theo dõi đơn.
 5. Mọi bước xác nhận đều có **giới hạn thời gian (SLA)** và **phương án dự phòng** — xem Phần 3.
 
@@ -64,6 +64,11 @@
 | 📎 Văn phòng phẩm | In ấn, photo | Upload file in |
 | 🔧 Dịch vụ nhỏ | Sửa khoá, thay bình gas, giặt ủi | Đặt lịch, báo giá trước |
 | 🐶 Thú cưng | Thức ăn, cát vệ sinh | Hàng nặng |
+
+**Thứ tự mở ngành hàng** (để bản đầu tiên gọn và ổn định):
+- **MVP:** Đồ ăn, Đồ uống, Tạp hoá, Nước bình & đá, Mẹ & bé.
+- **Bản 1.0:** Nhà thuốc (kèm mã PIN khi nhận), Gas (chỉ cửa hàng gas tự giao), Hoa & quà, Thú cưng.
+- **Giai đoạn sau:** Văn phòng phẩm (in ấn có tải file), Dịch vụ nhỏ (đặt lịch, báo giá trước).
 
 ## 1.6. Mô hình doanh thu
 

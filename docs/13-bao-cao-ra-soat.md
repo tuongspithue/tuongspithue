@@ -75,6 +75,7 @@
 | Điểm uy tín shipper & quán khu vực đặc biệt quan trọng | Phần 11 (dùng ở 3.4, 5.5, 10.5) | ✅ |
 | AI gợi ý, tư vấn, vận hành thông minh — **dùng Groq** | Phần 12 | ✅ |
 | Trang admin tuỳ biến cài đặt mềm dẻo, nhìn tổng quan & chi tiết vận hành | Phần 14 | ✅ |
+| Khả năng tiếp cận của mọi người dùng | Phần 9.9 | ✅ |
 | Admin phân quyền chức năng người dùng, chủ động đánh giá, xếp loại, đặt mức ưu tiên trong tác vụ | Phần 15 | ✅ |
 
 ## 13.5. Việc cần xác nhận trước khi bắt đầu xây dựng
@@ -100,3 +101,49 @@
 | AI (Groq) | Trung bình–Cao | Kiến trúc đã chốt; tên model & hạn mức cần xác nhận trên console Groq |
 
 **Bước tiếp theo đề xuất:** (1) chốt 6 điểm ở 13.5 → (2) thiết kế Figma 3 app theo Phần 9 → (3) viết đặc tả OpenAPI từ Phần 6 → (4) khởi động MVP theo Phần 8.
+
+---
+
+## 13.7. Rà soát cuối & chốt bản đặc tả (v1.1)
+
+Lần rà soát này đọc lại toàn bộ 15 phần theo bốn góc: **logic luồng**, **tính năng**, **nhất quán số liệu**, **khả năng tiếp cận**. Mọi chỉnh sửa đã được cập nhật trực tiếp vào từng phần.
+
+### Logic luồng (máy trạng thái & chính sách)
+| Vấn đề tìm thấy | Đã sửa | Phần |
+|---|---|---|
+| Đơn **khách tự đến lấy** chưa có trạng thái riêng | Thêm `CHO_KHACH_DEN_LAY` → hoàn thành khi khách đọc mã đơn; chỉ cần Cổng A | 3.2, 2.1.5, 6.4 |
+| Shipper **nhả chuyến khi chờ món > 25 phút** không có đường quay lại | Thêm chuyển `SHIPPER_DEN_QUAN → DANG_TIM_SHIPPER` | 3.2 |
+| **Sự cố giữa đường** (tai nạn, SOS) không có trạng thái | Thêm `DANG_GIAO → CAN_CAN_THIEP` | 3.2 |
+| Hết 2 phút khách không trả lời đề xuất thay món — chưa rõ kết quả | Áp dụng lựa chọn "khi hết hàng" khách đã chọn lúc đặt; chỉ huỷ cả đơn khi mọi món đều hết | 3.2 |
+| Đơn hẹn: thiếu nhánh khách huỷ, quán không xác nhận lại T−30, shipper không xác nhận T−20 | Bổ sung đủ các chuyển trạng thái | 10.6 |
+| Khách **từ chối nhận hàng COD** sau khi shipper đã lấy hàng: chưa rõ ai chịu tiền | Quán & shipper vẫn được trả đủ, nền tảng chịu; khách bị ghi nhận và tắt COD sau 2 lần/90 ngày | 3.5 |
+| Đơn **giá ước tính** (hàng cân) vẫn dùng "giữ tiền", mâu thuẫn chính sách không tạm giữ | Thu theo ước tính +15%, hoàn chênh tự động; COD thu giá thực | 3.6 |
+| "Yêu cầu mở": chưa rõ thanh toán lúc nào, báo giá có phải là xác nhận không | Báo giá = Cổng A; khách thanh toán sau khi chọn; chỉ dùng cho đơn hẹn | 10.3 |
+| Huỷ miễn phí đơn hẹn: điều kiện "hoặc" gây hiểu nhầm | Áp dụng mốc đến trước (quán bắt đầu làm / 30 phút trước giờ hẹn); sửa giờ = quán nhận lại | 10.2 |
+| Thứ tự mốc thời gian Cổng A lệch (150s đứng trước 120s); 2.4 ghi "> 2 phút" | Sắp lại 0 → 45 → 90 → 120 → 150 → 180 giây; thống nhất ở 2.2.3, 2.4, 10.1 | 3.3 |
+| Dispatch chưa dùng quyền chức năng & điều chỉnh ưu tiên của Phần 15 | Thêm điều kiện loại trừ theo quyền và cộng điều chỉnh ưu tiên | 3.4.1 |
+| Chợ chuyến hẹn thiếu thời điểm hiển thị cho Kim cương & Tân binh | Kim cương & Vàng ngay, Bạc 5 phút, Đồng & Tân binh 10 phút, tính theo cấp hiệu lực | 10.5 |
+| Trọng số điểm uy tín không còn tổng 100% khi thêm "Đánh giá của nền tảng" | Các trọng số khác co theo tỷ lệ | 11.2 |
+
+### Tính năng & nhất quán
+| Vấn đề tìm thấy | Đã sửa | Phần |
+|---|---|---|
+| Còn dấu vết chức năng đã bỏ: "gợi ý giá" bằng AI, "làm đẹp ảnh bằng AI", "ví", "shipper ứng tiền", "giữ tiền" | Xoá hoặc thay bằng phương án đã chốt | 3, 4, 5, 7, 9 |
+| Danh sách ví điện tử khác nhau giữa các phần | MVP: COD + VietQR + MoMo; bản 1.0 thêm ZaloPay, ShopeePay, thẻ | 2.1.5, 4.3, 8 |
+| Mã PIN ở mức P1 nhưng ngành thuốc nhắc như có từ đầu | Chốt **thứ tự mở ngành hàng**: thuốc & gas mở ở bản 1.0 cùng PIN | 1.5, 2.1.6, 8 |
+| "Shipper hệ thống xác nhận thay quán" chưa rõ phạm vi | Chuyển sang P2, chỉ cho quán đăng ký chế độ này, ghi rõ người xác nhận | 1.4 |
+| Thời gian chờ khi khách không nghe máy: "5–10 phút" và "10 phút" | Thống nhất 10 phút, cấu hình được | 2.3.4, 3.6 |
+| Tham chiếu sai "chính sách huỷ (Phần 5)" | Sửa thành Phần 3.5 | 2.1.6 |
+| Vai trò nội bộ còn ghi "Web vận hành / Web quản trị" | Thống nhất **Admin Console** | 1.3, 5.2 |
+| Thiếu module Config, Entitlement, AI Gateway trong kiến trúc; thiếu API quyền, cài đặt, xoá tài khoản, nhả chuyến, bàn giao tự lấy | Bổ sung | 5.3, 6.4 |
+| Phạm vi MVP lớn so với 3 tháng | Kéo MVP thành 4 tháng (2–5), dời 1.0 sang tháng 6–8 | 8.1 |
+| "Shipper Quen", "Gom Đơn Toà Nhà" chưa gắn giai đoạn | Gắn giai đoạn Tăng trưởng | 7.3 |
+
+### Khả năng tiếp cận (mới)
+- Thêm **mục 9.9**: kênh đặt hàng cho người không cài app (Zalo Mini App, Web đặt nhanh, đặt hộ, đặt qua tổng đài); hỗ trợ khiếm thị, mù màu, khiếm thính (kể cả **shipper khiếm thính**), khó khăn vận động, nhạy cảm chuyển động; máy yếu, mạng yếu; mục tiêu **WCAG 2.1 AA** và cách kiểm chứng.
+- Thêm **bảng thuật ngữ** trong README để người đọc không chuyên kỹ thuật dễ hiểu tài liệu.
+
+### Kết luận
+- Bản đặc tả **v1.1 được chốt để bắt đầu xây dựng**: đủ để thiết kế giao diện, viết đặc tả API chi tiết (OpenAPI) và lập kế hoạch MVP.
+- Các điểm còn phụ thuộc bên ngoài vẫn là 6 mục ở **13.5** (pháp lý & thuế, thông tin Groq, khu vực thí điểm, mức phí, cổng thanh toán, hợp đồng shipper). Đây là quyết định kinh doanh/pháp lý, không chặn việc bắt đầu thiết kế và dựng khung kỹ thuật.
+- Từ nay, mọi thay đổi đặc tả đi qua pull request và được ghi vào bảng thay đổi của Phần 13.

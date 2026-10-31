@@ -46,10 +46,10 @@ Ký hiệu mức ưu tiên: **[P0]** bắt buộc cho MVP · **[P1]** bản 1.0 
 - [P0] Chọn hình thức giao:
   - **Giao ngay** (mặc định)
   - [P0] **Hẹn giờ lấy/giao** (sau 1–3 giờ hoặc chọn giờ, trong 7 ngày) — đơn hiện trực tiếp cho quán & shipper để họ chọn nhận; đơn ngay chờ lâu có thể chuyển sang hẹn giờ bằng 1 chạm → xem [Phần 10](10-don-hen-gio.md)
-  - [P1] **Tự đến lấy** (miễn ship, quán chuẩn bị sẵn)
+  - [P1] **Tự đến lấy** (miễn ship, quán chuẩn bị sẵn; có thể hẹn giờ đến lấy). Đơn vẫn cần quán xác nhận (Cổng A); không có Cổng B vì không có người giao — khách đọc mã đơn khi nhận tại quầy.
 - [P0] **Người nhận khác** (đặt hộ bố mẹ, bạn bè): tên + SĐT người nhận; shipper gọi người nhận, khách đặt vẫn theo dõi được.
 - [P0] Địa chỉ giao + **ghi chú cho shipper** (VD: "Hẻm 45, cổng xanh, gọi trước 5 phút") + ảnh chỉ đường tuỳ chọn.
-- [P0] Thanh toán: **Tiền mặt (COD)**, **Ví điện tử** (MoMo, ZaloPay, VNPay), **QR chuyển khoản (VietQR)**, [P1] thẻ ATM/Visa.
+- [P0] Thanh toán: **Tiền mặt (COD)**, **QR chuyển khoản (VietQR)**, **1 ví điện tử** (MoMo). [P1] Thêm ZaloPay, ShopeePay, thẻ ATM/Visa qua cổng VNPay/OnePay.
 - [P0] Mã khuyến mãi / voucher.
 - [P1] Dụng cụ ăn uống: *Không lấy đũa thìa* (chọn mặc định xanh).
 - [P1] Tip cho shipper (trước hoặc sau giao).
@@ -69,8 +69,8 @@ Thanh tiến trình rõ ràng, mỗi bước có **tên người xác nhận + g
 
 - [P0] Bản đồ vị trí shipper cập nhật mỗi 3–5 giây.
 - [P0] **Gọi điện ẩn số** (số trung gian) và **chat trong app** với quán & shipper; có tin nhắn nhanh ("Tôi xuống ngay", "Để ở bảo vệ giúp").
-- [P0] Huỷ đơn: miễn phí trước khi quán xác nhận; sau đó theo chính sách (Phần 5).
-- [P1] **Mã nhận hàng 4 số (PIN)** cho đơn giá trị cao / thuốc — khách đọc PIN cho shipper mới hoàn tất.
+- [P0] Huỷ đơn: miễn phí trước khi quán xác nhận; sau đó theo chính sách ở Phần 3.5.
+- [P1] **Mã nhận hàng 4 số (PIN)** cho đơn giá trị cao và đơn có thuốc (ngành Nhà thuốc mở từ bản 1.0) — khách hoặc người nhận đọc PIN cho shipper mới hoàn tất.
 - [P1] Chia sẻ link theo dõi cho người khác (đặt hộ bố mẹ).
 
 ### 2.1.7. Sau giao hàng
@@ -121,7 +121,7 @@ Thanh tiến trình rõ ràng, mỗi bước có **tên người xác nhận + g
   - ✏️ **Nhận với điều chỉnh**: một món hết → đề xuất món thay thế / bỏ món → gửi khách đồng ý (khách có 2 phút, không phản hồi thì theo lựa chọn "khi hết hàng" khách chọn lúc đặt).
   - ❌ **Từ chối** → bắt buộc chọn lý do (hết hàng, quá tải, sắp đóng cửa, ngoài vùng…).
 - [P0] **Không có chế độ tự động nhận đơn.** Mọi đơn phải có người bấm nhận (trên app, qua phím IVR, hoặc Ops gọi xác nhận). Để quán đông khách thao tác nhanh: **"Nhận nhanh"** — 1 chạm nhận với thời gian chuẩn bị gợi ý sẵn.
-- [P0] **Dự phòng khi quán không phản hồi**: sau 90 giây chưa xử lý → **cuộc gọi tự động IVR** tới SĐT quán ("Bấm 1 nhận, 2 từ chối"); sau 3 phút → huỷ, báo khách & gợi ý quán tương tự.
+- [P0] **Dự phòng khi quán không phản hồi**: sau 90 giây chưa xử lý → **cuộc gọi tự động IVR** tới SĐT quán ("Bấm 1 nhận, 2 từ chối"); 150 giây → Ops gọi; sau 3 phút → huỷ, báo khách & gợi ý quán tương tự (chi tiết Phần 3.3).
 - [P1] In phiếu bếp qua **máy in nhiệt Bluetooth/LAN** tự động khi nhận đơn.
 - [P0] Tab **"Đơn hẹn 🟣"**: xem đơn hẹn giờ & yêu cầu mở trong khu vực theo thời gian thực, chọn Nhận / Đề xuất giờ khác / Từ chối, lịch năng lực theo khung 15 phút, xác nhận lại trước giờ → [Phần 10](10-don-hen-gio.md).
 - [P0] Bấm **"Đã chuẩn bị xong"** → báo shipper & khách.
@@ -178,7 +178,7 @@ Thanh tiến trình rõ ràng, mỗi bước có **tên người xác nhận + g
 - [P0] Cài đặt loại xe: xe máy / xe máy điện / xe ba gác (hàng nặng: nước bình, gạo; **không nhận bình gas**). Bật/tắt nhận hàng nặng.
 
 ### 2.3.3. Nhận chuyến (Cổng B)
-- [P0] Lời mời chuyến hiển thị: điểm lấy, điểm giao, **tổng quãng đường**, **thu nhập dự kiến**, hình thức thanh toán (có phải ứng tiền COD không), loại hàng (nặng/dễ vỡ/thuốc), đếm ngược **20 giây**.
+- [P0] Lời mời chuyến hiển thị: điểm lấy, điểm giao, **tổng quãng đường**, **thu nhập dự kiến**, hình thức thanh toán (có thu tiền mặt COD không, bao nhiêu), loại hàng (nặng/dễ vỡ/thuốc), đếm ngược **20 giây**.
 - [P0] **Nhận chuyến** / **Bỏ qua** (bỏ qua không bị phạt nhưng ảnh hưởng nhẹ tới ưu tiên nếu bỏ quá nhiều).
 - [P1] Ghép đơn: nhận thêm 1 đơn cùng quán/cùng hướng (tối đa 2–3 đơn), hệ thống tính lại lộ trình.
 - [P0] Huỷ sau khi nhận: phải nêu lý do; huỷ nhiều → giảm điểm tin cậy.
@@ -188,14 +188,14 @@ Thanh tiến trình rõ ràng, mỗi bước có **tên người xác nhận + g
 ### 2.3.4. Thực hiện chuyến
 - [P0] Dẫn đường (mở Google Maps / bản đồ tích hợp).
 - [P0] Các bước bắt buộc, có kiểm tra vị trí (geofence):
-  1. **Đã đến quán** (chỉ bấm được khi trong bán kính 100 m quán)
+  1. **Đã đến quán** (bấm được khi trong bán kính 100 m quán; ngoài vùng này xem mục GPS yếu bên dưới)
   2. **Đã lấy hàng** — quét QR / nhập mã đơn, kiểm đủ món theo checklist, [tuỳ chọn] chụp ảnh túi hàng đã niêm phong
   3. **Đã đến điểm giao** (geofence 150 m)
   4. **Đã giao** — chụp ảnh giao hàng (bắt buộc nếu "để ở cửa"), nhập PIN (nếu có), thu COD
 - [P0] **GPS yếu (hẻm sâu, chung cư):** cho phép bấm *Đã đến* ngoài vùng geofence kèm **ảnh chụp** tại chỗ; đơn được gắn cờ để hậu kiểm, không chặn shipper.
 - [P0] **Phí chờ tại quán:** món chưa xong sau 10 phút kể từ giờ quán cam kết → shipper được trả phí chờ theo phút (nền tảng trả, ghi vào chỉ số đúng giờ của quán). Chờ > 25 phút → shipper được nhả chuyến không bị trừ điểm.
 - [P0] Gọi ẩn số / chat với khách & quán.
-- [P0] **Không liên lạc được khách**: bấm "Khách không nghe máy" → hệ thống gọi tự động + nhắn tin, chờ 5–10 phút có đếm giờ → CSKH quyết định (để lại bảo vệ, hoàn về quán…); shipper vẫn được trả phí.
+- [P0] **Không liên lạc được khách**: bấm "Khách không nghe máy" → hệ thống gọi tự động + nhắn tin, chờ **10 phút** (cấu hình được) có đếm giờ → CSKH quyết định (để lại bảo vệ, hoàn về quán…); shipper vẫn được trả phí.
 - [P0] **Nút SOS** khẩn cấp: gửi vị trí tới đội an toàn + số người thân.
 
 ### 2.3.5. Thu nhập & Ví
@@ -213,7 +213,7 @@ Thanh tiến trình rõ ràng, mỗi bước có **tên người xác nhận + g
 
 - [P0] **Bản đồ trực tiếp** toàn thành phố: đơn theo màu trạng thái, shipper online, quán đang mở.
 - [P0] **Hàng đợi "Đơn có vấn đề"** (tự động phát hiện):
-  - Quán chưa xác nhận > 2 phút
+  - Quán chưa xác nhận sau 150 giây
   - Không tìm được shipper > 5 phút
   - Shipper đứng yên > 10 phút khi đang giao
   - Giao trễ > 15 phút so với ETA

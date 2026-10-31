@@ -37,7 +37,7 @@ flowchart LR
       A2[App Đối Tác Quán]
       A3[App Tài Xế]
       W1[Web Quán]
-      W2[Web Ops/Admin]
+      W2[Admin Console]
     end
 
     A1 & A2 & A3 & W1 & W2 --> GW[API Gateway / BFF<br/>Auth, rate-limit, versioning]
@@ -91,6 +91,9 @@ flowchart LR
 | **Notification** | Template, kênh, retry, IVR | notifications, ivr_calls |
 | **Review & Trust** | Đánh giá, điểm tin cậy, cờ gian lận | reviews, trust_scores, fraud_flags |
 | **Support** | Ticket, sự cố, bồi hoàn, audit | tickets, incidents, audit_logs |
+| **Config & Rule Engine** | Cấu hình phân tầng, feature flags, luật tự động (Phần 14) | config_definitions, config_values, automation_rules |
+| **Entitlement** | Quyền chức năng, điều chỉnh cấp & ưu tiên của từng người dùng (Phần 15) | entitlement_*, tier_overrides, priority_adjustments, labels |
+| **AI Gateway** | Gọi Groq, dự phòng, cache, che dữ liệu cá nhân (Phần 12) | ai_logs |
 
 ## 5.4. Luồng realtime vị trí shipper
 1. App tài xế gửi GPS **mỗi 4s khi đang có chuyến**, **mỗi 15–30s khi rảnh** (tiết kiệm pin), gom lô khi mạng yếu.
@@ -114,7 +117,7 @@ flowchart LR
 ## 5.6. Độ tin cậy & tính nhất quán
 - **Transactional Outbox**: ghi thay đổi đơn + bản ghi `outbox` trong cùng 1 transaction → worker đẩy lên event bus (Redis Streams ở MVP, Kafka khi lớn) → đảm bảo không mất sự kiện.
 - **Idempotency** cho mọi API ghi và mọi consumer (bảng `processed_events`).
-- **Saga** cho luồng thanh toán–đơn: giữ tiền → tạo đơn → (huỷ) hoàn tiền bù trừ.
+- **Saga** cho luồng thanh toán–đơn: thu tiền → tạo đơn → (bị từ chối/huỷ) hoàn tiền bù trừ.
 - **Retry có backoff + dead-letter queue** cho thông báo, webhook thanh toán.
 - **Circuit breaker** & timeout cho dịch vụ bên ngoài (bản đồ, SMS, cổng thanh toán); có nhà cung cấp dự phòng cho SMS/OTP và bản đồ.
 - **Bộ hẹn giờ SLA** (Cổng A, Cổng B, giao trễ) chạy bằng **delayed job** bền vững (**BullMQ trên Redis có bật lưu trữ AOF**, kèm job quét đối chiếu mỗi phút từ PostgreSQL để không job nào bị mất) — không dùng `setTimeout` trong RAM.

@@ -15,7 +15,7 @@ sequenceDiagram
     actor T as Shipper
 
     K->>S: Đặt hàng (giỏ, địa chỉ, thanh toán)
-    S->>S: Kiểm tra giá, khu vực, giữ tiền (nếu online)
+    S->>S: Kiểm tra giá, khu vực, thu tiền (nếu thanh toán online)
     S->>Q: 🔔 Đơn mới (đếm ngược 3 phút)
     Q->>S: ✅ Nhận đơn + thời gian chuẩn bị (CỔNG A)
     S->>K: "Quán Chị Lan đã nhận đơn"
@@ -51,12 +51,15 @@ stateDiagram-v2
     CHO_THANH_TOAN --> DA_HUY: Hết hạn 10 phút / thất bại
 
     CHO_QUAN_XAC_NHAN --> CHO_KHACH_DUYET_THAY_DOI: Quán đề xuất thay món
-    CHO_KHACH_DUYET_THAY_DOI --> QUAN_DA_NHAN: Khách đồng ý / hết giờ & khách cho phép thay
-    CHO_KHACH_DUYET_THAY_DOI --> DA_HUY: Khách từ chối
+    CHO_KHACH_DUYET_THAY_DOI --> QUAN_DA_NHAN: Khách đồng ý / hết 2 phút → áp dụng lựa chọn "khi hết hàng" của khách
+    CHO_KHACH_DUYET_THAY_DOI --> DA_HUY: Khách huỷ cả đơn / mọi món đều hết
     CHO_QUAN_XAC_NHAN --> QUAN_DA_NHAN: ✅ Cổng A (app / IVR / Ops gọi xác nhận)
     CHO_QUAN_XAC_NHAN --> DA_HUY: Quán từ chối / hết giờ / khách huỷ
 
-    QUAN_DA_NHAN --> DANG_TIM_SHIPPER
+    QUAN_DA_NHAN --> DANG_TIM_SHIPPER: Giao bởi shipper
+    QUAN_DA_NHAN --> CHO_KHACH_DEN_LAY: Khách tự đến lấy
+    CHO_KHACH_DEN_LAY --> HOAN_THANH: Khách đọc mã đơn tại quầy
+    CHO_KHACH_DEN_LAY --> DA_HUY: Quá giờ hẹn lấy 60 phút (khách chịu tiền món)
     DANG_TIM_SHIPPER --> SHIPPER_DA_NHAN: ✅ Cổng B
     DANG_TIM_SHIPPER --> CAN_CAN_THIEP: Hết các vòng tìm
     CAN_CAN_THIEP --> SHIPPER_DA_NHAN: Ops gán tay / quán tự giao
@@ -65,7 +68,9 @@ stateDiagram-v2
     SHIPPER_DA_NHAN --> SHIPPER_DEN_QUAN
     SHIPPER_DA_NHAN --> DANG_TIM_SHIPPER: Shipper huỷ chuyến
     SHIPPER_DEN_QUAN --> DA_LAY_HANG: Quét QR + món sẵn sàng
+    SHIPPER_DEN_QUAN --> DANG_TIM_SHIPPER: Chờ món > 25 phút, shipper nhả chuyến
     DA_LAY_HANG --> DANG_GIAO
+    DANG_GIAO --> CAN_CAN_THIEP: Sự cố (tai nạn, SOS, hỏng xe)
     DANG_GIAO --> DA_DEN_NOI
     DA_DEN_NOI --> HOAN_THANH: Giao thành công
     DA_DEN_NOI --> GIAO_THAT_BAI: Không liên lạc được khách
@@ -94,8 +99,8 @@ stateDiagram-v2
 | 0s | Đẩy thông báo + chuông toàn màn hình trên **tất cả thiết bị** của quán (chủ + nhân viên có quyền nhận đơn) |
 | 45s | Nhắc lại chuông, gửi SMS/Zalo ZNS cho chủ quán |
 | 90s | **Gọi IVR tự động**: "Quán có đơn mới 2 món, 85.000đ. Bấm 1 để nhận, bấm 2 để từ chối." → bấm 1 → hỏi thời gian chuẩn bị (bấm 1: 10 phút, 2: 20 phút, 3: 30 phút) |
-| 150s | Đơn vào hàng đợi Ops (nếu khu vực có Ops trực) — Ops gọi trực tiếp quán |
 | 120s | Hiện gợi ý cho khách: **"Chuyển sang hẹn giờ"** (giữ nguyên giỏ) hoặc chọn quán tương tự |
+| 150s | Đơn vào hàng đợi Ops (nếu khu vực có Ops trực) — Ops gọi trực tiếp quán |
 | 180s | Huỷ tự động, **hoàn tiền 100%**, khách nhận voucher xin lỗi + gợi ý 3 quán tương tự có món tương tự |
 
 - Quán bị **lỡ đơn** nhiều: lần 1 nhắc nhở; ≥ 3 lần/ngày → **tự động chuyển "Tạm nghỉ"** 30 phút và báo chủ quán (tránh khách tiếp tục đặt vào quán không người trực).
@@ -124,7 +129,9 @@ score = w1 * (1 / ETA_tới_quán)
       + w4 * công_bằng (ưu tiên người đã lâu chưa có chuyến)
       − w5 * phạt (quá giới hạn COD, loại xe không phù hợp hàng nặng)
 ```
-Điều kiện loại trừ: không đủ ký quỹ COD, loại xe không phù hợp, đang bị tạm khoá, đang có ≥ 2 đơn.
+Điều kiện loại trừ: vượt hạn mức COD, loại xe không phù hợp, không có quyền nhận loại đơn này (Phần 15.2), đang bị tạm khoá, đã đủ số đơn ghép tối đa được phép.
+
+Điểm `score` sau đó được cộng **điều chỉnh ưu tiên của Admin** (nếu có, trong biên độ cho phép — Phần 15.5).
 
 ### 3.4.2. Chế độ "Quán tự giao"
 1. Đơn hiển thị trên app của **mọi shipper của quán đang trực tuyến** → ai bấm nhận trước được (hoặc chủ quán gán tay).
@@ -144,7 +151,7 @@ score = w1 * (1 / ETA_tới_quán)
 | Khách | Trước khi quán nhận | Miễn phí, hoàn 100% |
 | Khách | Sau khi quán nhận, trước khi quán bắt đầu làm (≤ 2 phút) | Miễn phí (giới hạn 3 lần/tháng) |
 | Khách | Quán đã làm món | Trả tiền món (quán nhận) + phí ship nếu shipper đã đến quán |
-| Khách | Shipper đã lấy hàng | Không hoàn tiền; COD từ chối nhận nhiều lần → khoá COD |
+| Khách | Shipper đã lấy hàng | Thanh toán online: không hoàn tiền. COD: không thu được tiền → quán và shipper **vẫn được trả đủ** (nền tảng chịu), khách bị ghi nhận *bỏ đơn COD*; 2 lần trong 90 ngày → tắt COD |
 | Quán | Bất kỳ lúc nào sau khi nhận | Hoàn 100% cho khách, quán bị trừ điểm uy tín; ≥ 3%/tuần → cảnh báo, giảm hiển thị |
 | Shipper | Sau khi nhận | Tìm lại shipper; trừ điểm tin cậy; có lý do chính đáng (tai nạn, hỏng xe) → không phạt |
 | Hệ thống | Không tìm được shipper / quán | Hoàn 100% + voucher xin lỗi |
@@ -154,9 +161,9 @@ score = w1 * (1 / ETA_tới_quán)
 | Tình huống | Cách xử lý |
 |---|---|
 | Hết 1 món sau khi đã nhận đơn | Quán bấm "Điều chỉnh" → khách duyệt thay thế / hoàn tiền phần món |
-| Giá thực tế khác (hàng tạp hoá tính theo cân) | Đơn "giá ước tính": khách giữ tiền tối đa +15%; quán nhập giá thực + ảnh cân → khách xác nhận |
+| Giá thực tế khác (hàng tạp hoá tính theo cân) | Đơn "giá ước tính": thanh toán online thu theo giá ước tính +15%, sau khi quán nhập giá thực + ảnh cân thì **hoàn phần chênh tự động**; COD thu theo giá thực. Giá thực vượt +15% → khách phải xác nhận lại |
 | Shipper bị tai nạn giữa đường | SOS → Ops liên hệ, đổi shipper khác tới vị trí; hàng hỏng → hoàn tiền cho khách, quán vẫn được trả |
-| Khách không có ở nhà | Gọi 3 lần + nhắn tin + chờ 10 phút → theo chỉ dẫn khách (bảo vệ, hàng xóm) hoặc hoàn về quán, khách chịu phí ship |
+| Khách không có ở nhà | Gọi 3 lần + nhắn tin + chờ 10 phút (cấu hình được) → theo chỉ dẫn khách (bảo vệ, hàng xóm) hoặc hoàn về quán, khách chịu phí ship |
 | Mất mạng ở app quán/shipper | App lưu hành động offline & đồng bộ lại; IVR là kênh dự phòng cho quán; shipper có thể gọi tổng đài để Ops cập nhật hộ |
 | Thanh toán online thành công nhưng callback chậm | Đơn ở `CHO_THANH_TOAN`; job đối chiếu với cổng thanh toán mỗi 30s; không trùng tiền nhờ idempotency |
 | Hai đơn đặt trùng (khách bấm 2 lần) | Idempotency-Key trên checkout; cảnh báo "Bạn vừa đặt đơn giống hệt 1 phút trước" |

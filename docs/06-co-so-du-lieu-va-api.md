@@ -305,6 +305,9 @@ Quy ước: `/v1`, JSON, tiền tệ bằng **số nguyên đồng**, thời gia
 | POST | `/v1/orders/{id}/substitution-response` | Đồng ý/từ chối thay món |
 | POST | `/v1/orders/{id}/review` | Đánh giá quán & shipper |
 | POST | `/v1/orders/{id}/issues` | Báo sự cố + ảnh |
+| GET | `/v1/me/capabilities` | Quyền chức năng hiệu lực của người dùng (COD, hẹn giờ…) để app ẩn/hiện đúng (Phần 15) |
+| PATCH | `/v1/me/preferences` | Cỡ chữ, giao diện đơn giản, ưu tiên nhắn tin thay gọi điện, ngôn ngữ, thông báo (Phần 9.9) |
+| DELETE | `/v1/me` | Xoá tài khoản (giữ dữ liệu giao dịch tối thiểu theo luật, ẩn danh phần còn lại) |
 
 **Ví dụ tạo đơn**
 ```http
@@ -339,6 +342,7 @@ Idempotency-Key: 6f1c2b0e-...
 | POST | `/v1/merchant/orders/{id}/propose-changes` | Đề xuất thay/bỏ món |
 | POST | `/v1/merchant/orders/{id}/reject` | `{reason}` |
 | POST | `/v1/merchant/orders/{id}/ready` | Món sẵn sàng |
+| POST | `/v1/merchant/orders/{id}/handover` | Bàn giao cho khách tự đến lấy (nhập mã đơn) |
 | POST | `/v1/merchant/orders/{id}/assign-rider` | Gán shipper của quán / "Tôi tự giao" |
 | PATCH | `/v1/merchant/stores/{id}` | Mở/đóng, đông khách, chế độ giao |
 | PATCH | `/v1/merchant/menu-items/{id}` | Sửa món, bật/tắt hết hàng |
@@ -353,7 +357,8 @@ Idempotency-Key: 6f1c2b0e-...
 | POST | `/v1/rider/locations` | Gửi lô điểm GPS `[{lat,lng,ts,acc,speed}]` |
 | POST | `/v1/rider/offers/{id}/accept` | **Cổng B** |
 | POST | `/v1/rider/offers/{id}/decline` | Bỏ qua |
-| POST | `/v1/rider/orders/{id}/arrived-store` | Kiểm tra geofence |
+| POST | `/v1/rider/orders/{id}/arrived-store` | Kiểm tra geofence; ngoài vùng thì kèm `photo_url` và bị gắn cờ hậu kiểm |
+| POST | `/v1/rider/orders/{id}/release` | Nhả chuyến (VD chờ món > 25 phút) kèm lý do |
 | POST | `/v1/rider/orders/{id}/picked-up` | `{qr_token}` |
 | POST | `/v1/rider/orders/{id}/arrived-dropoff` | Kiểm tra geofence |
 | POST | `/v1/rider/orders/{id}/delivered` | `{photo_url, pin, cod_collected}` |

@@ -38,6 +38,8 @@
 | Đánh giá của shipper | 5% | Đóng gói, sẵn sàng khi tới, thái độ |
 | Khiếu nại có căn cứ | trừ điểm | Vệ sinh, giá chênh, thái độ |
 
+**Đánh giá của nền tảng** (phiếu kiểm tra thực địa, khách bí mật — Phần 15.3): khi đối tác có phiếu còn hiệu lực, thành phần này chiếm tối đa 15% và **các trọng số khác co lại theo tỷ lệ** để tổng vẫn là 100%.
+
 **Tính toán:** mỗi chỉ số được chuẩn hoá về 0–100 theo **phân vị trong khu vực** (ô H3 cấp 7 ≈ 5 km², hoặc quận), rồi cộng có trọng số, làm mượt theo thời gian:
 ```
 chỉ_số_đã_phai = Σ (giá_trị_sự_kiện × e^(−tuổi_ngày / 30)) / Σ e^(−tuổi_ngày / 30)
@@ -76,7 +78,7 @@ Huy hiệu chuyên biệt (bên cạnh cấp): ⚡ *Xác nhận siêu tốc*, �
 | **Yêu cầu mở** | Chỉ quán ≥ ngưỡng được báo giá; báo giá xếp theo uy tín |
 | **Ghép shipper – quán** | Quán Vàng ưu tiên shipper Vàng giờ cao điểm (trải nghiệm đồng đều) |
 | **Thu nhập & chiết khấu** | Shipper: thưởng hệ số theo cấp; Quán: giảm chiết khấu 1–2% cho Kim cương/Vàng |
-| **Quyền COD / đơn giá trị cao** | Shipper & khách cần cấp tối thiểu |
+| **Quyền COD / đơn giá trị cao** | Shipper cần cấp tối thiểu; khách cần đủ điều kiện số đơn thành công (khách không có cấp) |
 | **Khách hàng** | Khách **không bị xếp hạng hay chấm sao**; chỉ có chỉ số đơn giản, công khai với chính khách: số đơn hoàn thành, số lần bỏ đơn COD. Quán/shipper thấy dạng *"✔ 25 đơn thành công"* — đủ để tự tin nhận đơn hẹn/COD lớn |
 
 ## 11.6. "Bảng Vàng Khu Vực" ⭐ (sáng tạo)
