@@ -9,78 +9,41 @@ import 'bridge.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
-/// Lần đầu mở trên điện thoại bằng trình duyệt: yêu cầu thêm vào màn hình chính.
-/// Trên iPhone, thông báo đẩy chỉ hoạt động khi app đã được thêm vào màn hình chính.
-/// Trên máy tính (để thử) cho phép tiếp tục trên trình duyệt.
-class InstallGate extends StatefulWidget {
-  const InstallGate({super.key, required this.appName, required this.child});
-  final String appName;
-  final Widget child;
+/// Gợi ý (không bắt buộc) thêm web app vào màn hình chính. Khách không phải cài gì để đặt hàng;
+/// riêng iPhone cần thêm vào màn hình chính thì mới nhận được thông báo đẩy.
+class InstallTip extends StatefulWidget {
+  const InstallTip({super.key});
 
   @override
-  State<InstallGate> createState() => _InstallGateState();
+  State<InstallTip> createState() => _InstallTipState();
 }
 
-class _InstallGateState extends State<InstallGate> {
-  bool _skipped = false;
+class _InstallTipState extends State<InstallTip> {
+  late bool _hidden = !Browser.isWeb || Browser.isStandalone || !Browser.isMobile || (!Browser.isIos && !Browser.canPromptInstall);
 
   @override
   Widget build(BuildContext context) {
-    if (!Browser.isWeb || Browser.isStandalone || _skipped) return widget.child;
+    if (_hidden) return const SizedBox.shrink();
     final ios = Browser.isIos;
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 440),
-            child: ListView(padding: const EdgeInsets.all(24), shrinkWrap: true, children: [
-              const Icon(Icons.add_to_home_screen, size: 72, color: SqtColors.primary),
-              const SizedBox(height: 12),
-              Text('Thêm ${widget.appName} vào màn hình chính', textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineSmall),
-              const SizedBox(height: 12),
-              const Text('Để nhận thông báo đơn hàng và mở nhanh như một ứng dụng.', textAlign: TextAlign.center),
-              const SizedBox(height: 20),
-              if (ios) ...[
-                const _Step(n: 1, text: 'Bấm nút Chia sẻ (ô vuông có mũi tên lên) ở thanh dưới của Safari'),
-                const _Step(n: 2, text: 'Chọn "Thêm vào MH chính"'),
-                const _Step(n: 3, text: 'Mở app từ biểu tượng mới trên màn hình chính'),
-                const SizedBox(height: 8),
-                const Text('Lưu ý: phải mở bằng Safari.', textAlign: TextAlign.center, style: TextStyle(fontStyle: FontStyle.italic)),
-              ] else if (Browser.canPromptInstall)
-                FilledButton.icon(
-                  icon: const Icon(Icons.install_mobile),
-                  label: const Text('Cài vào màn hình chính'),
-                  onPressed: () async {
-                    if (await Browser.promptInstall()) setState(() => _skipped = true);
-                  },
-                )
-              else ...[
-                const _Step(n: 1, text: 'Mở menu ⋮ của Chrome'),
-                const _Step(n: 2, text: 'Chọn "Thêm vào màn hình chính" hoặc "Cài đặt ứng dụng"'),
-                const _Step(n: 3, text: 'Mở app từ biểu tượng mới trên màn hình chính'),
-              ],
-              if (!Browser.isMobile) ...[
-                const SizedBox(height: 16),
-                TextButton(onPressed: () => setState(() => _skipped = true), child: const Text('Đang dùng máy tính — tiếp tục trên trình duyệt')),
-              ],
-            ]),
-          ),
-        ),
+    return Card(
+      child: ListTile(
+        leading: const Icon(Icons.add_to_home_screen, color: SqtColors.primary),
+        title: const Text('Nhận thông báo khi đơn có cập nhật?'),
+        subtitle: Text(ios ? 'Bấm Chia sẻ (ô vuông có mũi tên lên) → "Thêm vào MH chính", rồi mở lại từ biểu tượng.' : 'Thêm vào màn hình chính để mở nhanh lần sau.'),
+        trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+          if (!ios)
+            TextButton(
+              onPressed: () async {
+                await Browser.promptInstall();
+                setState(() => _hidden = true);
+              },
+              child: const Text('THÊM'),
+            ),
+          IconButton(tooltip: 'Để sau', icon: const Icon(Icons.close), onPressed: () => setState(() => _hidden = true)),
+        ]),
       ),
     );
   }
-}
-
-class _Step extends StatelessWidget {
-  const _Step({required this.n, required this.text});
-  final int n;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) => ListTile(
-        leading: CircleAvatar(backgroundColor: SqtColors.primary, foregroundColor: Colors.white, child: Text('$n')),
-        title: Text(text),
-      );
 }
 
 /// Bật thông báo đẩy (phải do người dùng bấm — yêu cầu của iPhone). Ẩn khi đã bật hoặc không hỗ trợ.

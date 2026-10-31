@@ -245,6 +245,15 @@ describe('luồng đầy đủ: đặt đơn → Cổng A → Cổng B → giao 
     expect(rows[0].components.acceptance).toBe(0);
   });
 
+  it('shipper tải ảnh bằng chứng lên; chỉ nhận ảnh; khách không tải được', async () => {
+    process.env.UPLOAD_DIR = require('os').tmpdir() + '/sqt-uploads-test';
+    const png = Buffer.from('89504e470d0a1a0a0000000d4948445200000001000000010806000000', 'hex');
+    const res = await t.http().post('/v1/uploads').set(auth(riderA.token)).attach('file', png, { filename: 'giao.png', contentType: 'image/png' }).expect(201);
+    expect(res.body.url).toMatch(/\/uploads\/\d{4}\/\d{2}\/\d+-[0-9a-f]+\.png$/);
+    await t.http().post('/v1/uploads').set(auth(riderA.token)).attach('file', Buffer.from('x'), { filename: 'a.txt', contentType: 'text/plain' }).expect(415);
+    await t.http().post('/v1/uploads').set(auth(customer)).attach('file', png, { filename: 'a.png', contentType: 'image/png' }).expect(403);
+  });
+
   it('nhật ký sự kiện không sửa/xoá được', async () => {
     const order = await placeOrder();
     await expect(t.pool.query('UPDATE order_events SET actor_role = $1 WHERE order_id = $2', ['OPS', order.id])).rejects.toThrow(

@@ -1,4 +1,4 @@
-# HTTPS tự động (Let's Encrypt) cho 5 tên miền. GPS và thông báo đẩy trên điện thoại BẮT BUỘC dùng HTTPS.
+# HTTPS tự động (Let's Encrypt) cho 3 tên miền: web app khách, Admin Console, API. GPS và thông báo đẩy trên điện thoại BẮT BUỘC dùng HTTPS.
 {
 	email {$ACME_EMAIL}
 }
@@ -14,16 +14,6 @@
 
 {$DOMAIN_APP} {
 	root * /srv/customer
-	import pwa
-}
-
-{$DOMAIN_STORE} {
-	root * /srv/merchant
-	import pwa
-}
-
-{$DOMAIN_RIDER} {
-	root * /srv/rider
 	import pwa
 }
 

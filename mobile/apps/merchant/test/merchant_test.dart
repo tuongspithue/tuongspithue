@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:sqt_core/sqt_core.dart';
+import 'package:sqt_partner/sqt_partner.dart';
 import 'package:sqt_merchant/screens/board.dart';
 
 http.Response json(Object body, [int status = 200]) => http.Response.bytes(utf8.encode(jsonEncode(body)), status);
@@ -26,6 +27,9 @@ Map<String, dynamic> order(String state, {bool allergens = true}) => {
     };
 
 void main() {
+  late FakePartnerDevice device;
+  setUp(() => PartnerDevice.instance = device = FakePartnerDevice());
+
   testWidgets('đơn mới có dị ứng: hiện cảnh báo đỏ, phải tick đã đọc mới nhận được; gửi đúng thời gian chuẩn bị', (tester) async {
     var state = 'CHO_QUAN_XAC_NHAN';
     Map<String, dynamic>? accepted;
@@ -43,12 +47,15 @@ void main() {
       }),
     );
     await api.restore();
-    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.physicalSize = const Size(1080, 2700);
     addTearDown(tester.view.reset);
     await tester.pumpWidget(MaterialApp(home: BoardScreen(api: api, store: const {'id': 1, 'name': 'Phở Cô Lan', 'isOpen': true})));
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text('🔔 Mới (1)'), findsOneWidget);
+    // Quán đang mở: dịch vụ nền kêu chuông đã được bật cho đúng quán.
+    expect(device.watching, isTrue);
+    expect(device.storeId, 1);
     expect(find.textContaining('Dị ứng: Đậu phộng'), findsOneWidget);
     expect(find.text('Không hành'), findsOneWidget);
     expect(find.textContaining('Khách ✔ 12 đơn'), findsOneWidget);

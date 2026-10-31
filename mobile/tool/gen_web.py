@@ -1,4 +1,4 @@
-"""Sinh tệp web (PWA) cho 3 app: index.html, manifest.json, biểu tượng, sqt.js, sw.js.
+"""Sinh tệp web (PWA) cho app khách (quán & shipper dùng app cài đặt): index.html, manifest.json, biểu tượng, sqt.js, sw.js.
 
 Chạy lại sau khi sửa mobile/web_shared: python3 mobile/tool/gen_web.py
 """
@@ -12,8 +12,6 @@ ROOT = Path(__file__).resolve().parents[1]
 SHARED = ROOT / "web_shared"
 APPS = {
     "customer": ("Ship Quanh Tôi", "Quanh Tôi", "Đặt món & nhu yếu phẩm quanh bạn, có người thật xác nhận", "#FF6B2C", "🛵"),
-    "merchant": ("SQT Đối Tác", "SQT Quán", "Nhận và xử lý đơn cho quán", "#1DB954", "Q"),
-    "rider": ("SQT Tài Xế", "SQT Tài Xế", "Nhận chuyến và giao hàng", "#7C5CFF", "S"),
 }
 FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 

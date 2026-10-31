@@ -7,7 +7,7 @@
 ### Giai đoạn 0 — Chuẩn bị (Tháng 1)
 - Nghiên cứu 1 khu vực thí điểm (VD: 2–3 phường có mật độ dân cư & văn phòng cao).
 - Phỏng vấn 30 quán, 20 shipper, 50 khách → xác thực giả thuyết.
-- Thiết kế UX/UI (Figma) cho 3 app + prototype bấm thử.
+- Thiết kế UX/UI (Figma) cho 3 app (web app khách; app cài đặt quán & shipper) + prototype bấm thử.
 - Thành lập pháp nhân, đăng ký **sàn giao dịch thương mại điện tử** với Bộ Công Thương, hợp đồng mẫu, chính sách bảo mật & điều khoản.
 - Ký hợp đồng cổng thanh toán, SMS/ZNS, eKYC, tổng đài IVR, bản đồ.
 

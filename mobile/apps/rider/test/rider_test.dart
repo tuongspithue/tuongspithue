@@ -5,11 +5,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:sqt_core/sqt_core.dart';
+import 'package:sqt_partner/sqt_partner.dart';
 import 'package:sqt_rider/screens/home.dart';
 
 http.Response json(Object body, [int status = 200]) => http.Response.bytes(utf8.encode(jsonEncode(body)), status);
 
 void main() {
+  late FakePartnerDevice device;
+  setUp(() => PartnerDevice.instance = device = FakePartnerDevice());
+
   testWidgets('nhận lời mời chuyến; tới quán khi GPS yếu thì xác nhận kèm ảnh', (tester) async {
     var accepted = false;
     final arrivedBodies = <Map<String, dynamic>>[];
@@ -70,7 +74,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 200));
 
     expect(arrivedBodies.length, 2);
-    expect(arrivedBodies.last['photoUrl'], isNotNull);
+    expect(arrivedBodies.last['photoUrl'], device.photoUrl);
     expect(arrivedBodies.last['lat'], 10.7769);
   });
 }

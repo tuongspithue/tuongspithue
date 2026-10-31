@@ -4,7 +4,7 @@ import 'package:sqt_core/sqt_core.dart';
 import 'screens/board.dart';
 
 void main() {
-  runApp(MerchantApp(api: ApiClient(tokens: PrefsTokenStore('sqt-merchant-token'))));
+  runApp(MerchantApp(api: ApiClient(tokens: PrefsTokenStore(kMerchantTokenKey))));
 }
 
 /// App quán — chữ to, nút lớn cho người lớn tuổi (Phần 7.1, 9.5).
@@ -19,7 +19,7 @@ class MerchantApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: sqtTheme(brightness: Brightness.light, large: true),
       darkTheme: sqtTheme(brightness: Brightness.dark, large: true),
-      home: InstallGate(appName: 'SQT Đối Tác', child: _Gate(api: api)),
+      home: _Gate(api: api),
     );
   }
 }

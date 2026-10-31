@@ -25,7 +25,7 @@ Nền tảng giao hàng **siêu địa phương**: người dùng mở app là t
 | 13 | [Báo cáo rà soát & hoàn thiện](docs/13-bao-cao-ra-soat.md) | Những gì đã loại bỏ, bổ sung, sửa cho nhất quán; ma trận đối chiếu yêu cầu; các việc cần xác nhận trước khi xây dựng |
 | 14 | [Trang quản trị Admin](docs/14-trang-quan-tri-admin.md) | Dashboard tổng quan tuỳ biến, bản đồ trực tiếp có tua lại, trung tâm sự cố, hồ sơ 360°, **trung tâm cấu hình phân tầng** (theo khu/ngành/đối tác/thời gian), Rule Builder, xem trước tác động, duyệt 4 mắt, phiên bản & hoàn tác, báo cáo kéo thả, phân quyền tuỳ chỉnh |
 | 15 | [Phân quyền, xếp loại & ưu tiên](docs/15-phan-quyen-xep-loai-uu-tien.md) | Admin chủ động phân quyền chức năng từng khách/quán/shipper, đánh giá thực địa & khách bí mật, nâng/hạ/khoá cấp, nhãn phân loại, điều chỉnh mức ưu tiên theo từng tác vụ (có biên độ, thời hạn, duyệt, nhật ký, khiếu nại) |
-| 16 | [Hướng dẫn triển khai & thử nghiệm](docs/16-huong-dan-thu-nghiem.md) | Đưa bản web lên máy chủ (Docker + HTTPS tự động), tài khoản thử, cài lên màn hình chính trên iPhone/Android, kịch bản thử, giới hạn của bản web |
+| 16 | [Hướng dẫn triển khai & thử nghiệm](docs/16-huong-dan-thu-nghiem.md) | Đưa máy chủ lên (Docker + HTTPS tự động), lấy APK app quán/shipper, tài khoản thử, kịch bản thử, giới hạn đã biết |
 
 ## ⚡ Tóm tắt nhanh
 
@@ -44,7 +44,7 @@ Nền tảng giao hàng **siêu địa phương**: người dùng mở app là t
 
 ## 🧪 Thử nghiệm bản web
 
-Xem [Phần 16](docs/16-huong-dan-thu-nghiem.md): `docker compose -f infra/docker-compose.prod.yml --env-file infra/.env.prod up -d --build` dựng toàn bộ hệ thống với HTTPS tự động; ba app dùng trên điện thoại bằng cách **thêm vào màn hình chính**. Gọi/SMS/Zalo mở app trên máy, thông báo qua Web Push miễn phí.
+Xem [Phần 16](docs/16-huong-dan-thu-nghiem.md): `docker compose -f infra/docker-compose.prod.yml --env-file infra/.env.prod up -d --build` dựng máy chủ với HTTPS tự động. **Khách dùng web app** (mở link là đặt); **quán và shipper cài app Android** (APK build sẵn trên GitHub Actions) để chuông kêu kể cả khi khoá máy. Gọi/SMS/Zalo mở app trên máy, thông báo qua Web Push miễn phí.
 
 ## 💻 Mã nguồn
 

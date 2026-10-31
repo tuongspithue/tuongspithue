@@ -1,6 +1,6 @@
-# Phần 16 — Hướng dẫn triển khai & thử nghiệm bản web
+# Phần 16 — Hướng dẫn triển khai & thử nghiệm
 
-> Giai đoạn thử nghiệm dùng **bản web cài lên màn hình chính** (PWA) cho cả khách, quán và shipper. Liên hệ Zalo/SMS/Gọi **mở app trên điện thoại**, thông báo dùng **Web Push miễn phí** — không cần dịch vụ trả phí. App cài đặt (Android/iOS) làm ở giai đoạn sau.
+> **Khách hàng dùng web app** (mở link là đặt, không bắt cài). **Quán và shipper dùng app cài đặt (Android trước)** để chuông kêu kịp thời kể cả khi khoá máy — điều bản web không làm được. Liên hệ Zalo/SMS/Gọi **mở app trên điện thoại**; không dùng dịch vụ trả phí (không SMS brandname, không Firebase).
 
 ---
 
@@ -9,15 +9,16 @@
 | Thứ | Ghi chú |
 |---|---|
 | 1 máy chủ (VPS) | 2 vCPU, 4 GB RAM là đủ cho thử nghiệm; cài Docker + Docker Compose |
-| 1 tên miền | Tạo 5 bản ghi A trỏ về IP máy chủ: `app.`, `quan.`, `taixe.`, `admin.`, `api.` |
-| HTTPS | Tự động (Caddy + Let's Encrypt). **Bắt buộc** để điện thoại cho dùng GPS và thông báo đẩy |
+| 1 tên miền | Tạo 3 bản ghi A trỏ về IP máy chủ: `app.` (khách), `admin.`, `api.` |
+| HTTPS | Tự động (Caddy + Let's Encrypt). **Bắt buộc** để trình duyệt của khách cho dùng GPS và thông báo đẩy |
+| Điện thoại Android | Cho quán và shipper thử app cài đặt (Android 8 trở lên) |
 
-## 16.2. Triển khai
+## 16.2. Triển khai máy chủ
 
 ```bash
 git clone <repo> && cd <repo>
 cp infra/.env.prod.example infra/.env.prod      # điền tên miền, mật khẩu, khoá
-# Tạo khoá thông báo đẩy (chạy trên máy có Node 22 + pnpm), chép 3 dòng vào infra/.env.prod:
+# Tạo khoá thông báo đẩy cho web app khách (chạy trên máy có Node 22 + pnpm), chép 3 dòng vào infra/.env.prod:
 pnpm install && pnpm --filter @sqt/api vapid
 docker compose -f infra/docker-compose.prod.yml --env-file infra/.env.prod up -d --build
 
@@ -26,16 +27,21 @@ docker compose -f infra/docker-compose.prod.yml --env-file infra/.env.prod exec 
   -e SEED_LAT=10.7769 -e SEED_LNG=106.7009 api node dist/src/database/seed.js
 ```
 
-Sau khi chạy:
-
 | Địa chỉ | Dùng cho |
 |---|---|
-| `https://app.<tên miền>` | Khách hàng |
-| `https://quan.<tên miền>` | Quán |
-| `https://taixe.<tên miền>` | Shipper |
+| `https://app.<tên miền>` | Khách hàng (web app) |
 | `https://admin.<tên miền>` | Admin Console (máy tính) |
+| `https://api.<tên miền>` | API — app quán & shipper gọi thẳng vào đây; ảnh chụp lưu ở `/uploads` |
 
-## 16.3. Tài khoản thử (sau khi chạy dữ liệu mẫu)
+## 16.3. Lấy file cài app quán & shipper (APK)
+
+1. Trên GitHub: **Settings → Secrets and variables → Actions → Variables** → tạo biến `API_URL` = `https://api.<tên miền>`.
+2. Mỗi lần đẩy code, GitHub Actions tự build. Vào **Actions → lần chạy mới nhất → Artifacts**, tải `sqt-merchant-apk` (app quán) và `sqt-rider-apk` (app shipper).
+3. Gửi file `app-release.apk` qua Zalo/Drive cho quán và shipper; trên máy bấm mở file → cho phép **"Cài ứng dụng không rõ nguồn"** → Cài đặt.
+
+> Bản thử ký bằng khoá debug. Trước khi đưa lên Google Play cần tạo khoá ký riêng (keystore) và cấu hình trong `android/app/build.gradle.kts`.
+
+## 16.4. Tài khoản thử (sau khi chạy dữ liệu mẫu)
 
 | Vai trò | Số điện thoại |
 |---|---|
@@ -46,50 +52,50 @@ Sau khi chạy:
 
 **Mã OTP:** trong giai đoạn thử nghiệm (`TEST_PHASE=true`, `OTP_DEV_ECHO=true`), mã hiện ngay trên màn hình đăng nhập — chưa gửi SMS. **Phải tắt trước khi mở cho người dùng thật** (xem 16.6).
 
-## 16.4. Lần đầu mở trên điện thoại
+## 16.5. Lần đầu sử dụng
 
-| Máy | Cách cài | Ghi chú |
-|---|---|---|
-| **iPhone** | Mở bằng **Safari** → nút Chia sẻ → **Thêm vào MH chính** → mở từ biểu tượng | iOS 16.4 trở lên mới có thông báo đẩy; chỉ hoạt động khi mở từ màn hình chính |
-| **Android** | Mở bằng **Chrome** → bấm **Cài vào màn hình chính** (hoặc menu ⋮ → Cài đặt ứng dụng) | Thông báo đẩy hoạt động cả khi chưa cài, nhưng nên cài |
+**Khách (web app):** mở `https://app.<tên miền>` bằng Chrome/Safari → đăng nhập số điện thoại → cho phép **vị trí** để thấy quán quanh mình. Khi theo dõi đơn có thể bấm **Bật thông báo** (không bắt buộc). Gợi ý "Thêm vào màn hình chính" chỉ là tuỳ chọn.
 
-App tự hiện màn hình hướng dẫn này khi mở bằng trình duyệt trên điện thoại. Sau đó:
+**Quán và shipper (app cài đặt):**
 1. Đăng nhập bằng số điện thoại.
-2. Bấm **BẬT** ở dải "Bật thông báo…" và **Cho phép**.
-3. Cho phép **vị trí** khi được hỏi (khách: tìm quán quanh mình; shipper: gửi vị trí).
-4. **Quán**: bật công tắc **"Chuông báo đơn mới"** — chuông kêu lặp lại và màn hình luôn sáng khi trang đang mở; nên đặt 1 máy ở quầy.
-5. **Shipper**: bật **Trực tuyến** — app giữ màn hình sáng và gửi vị trí mỗi 15 giây khi đang mở.
+2. Cho phép **thông báo** khi được hỏi.
+3. Bấm **Kiểm tra máy** (dải trên cùng) và sửa hết các mục đỏ: thông báo, vị trí (shipper chọn **"Luôn cho phép"**), **không tối ưu pin cho app**. Máy Xiaomi/Oppo/Vivo còn phải bật **"Tự khởi chạy"** trong Cài đặt.
+4. Bấm **Thử chuông** rồi khoá máy ngay để chắc chắn chuông kêu khi màn hình tắt.
+5. **Quán**: bật công tắc **Đang mở** → app chạy nền, chuông kêu lặp lại tới khi có người nhận đơn, hiện cả trên màn hình khoá.
+6. **Shipper**: bật **Trực tuyến** → app chạy nền, kêu chuông khi có lời mời và gửi vị trí mỗi 15 giây kể cả khi đang mở Google Maps. Tắt Trực tuyến là dừng hẳn.
 
-## 16.5. Kịch bản thử nghiệm gợi ý
+## 16.6. Kịch bản thử nghiệm gợi ý
 
 | # | Kịch bản | Kết quả mong đợi |
 |---|---|---|
-| 1 | Khách đặt 2 món, 1 món ghi chú "Không hành" + dị ứng đậu phộng, trả tiền mặt | Quán nghe chuông + nhận thông báo; thẻ đơn có dải đỏ dị ứng |
+| 1 | Khách đặt 2 món, 1 món ghi chú "Không hành" + dị ứng đậu phộng, trả tiền mặt | Máy quán đổ chuông (kể cả đang khoá); thẻ đơn có dải đỏ dị ứng |
 | 2 | Quán bấm Nhận nhưng không tick "đã đọc dị ứng" | Nút Nhận đơn bị khoá |
 | 3 | Quán không làm gì | ~45 giây có nhắc; 90 giây đơn hiện ở Admin → Đơn hàng (có vấn đề) với nút **Gọi quán**; 180 giây tự huỷ, khách được báo |
 | 4 | Quán nhận đơn, shipper đang trực tuyến gần quán | Shipper nghe chuông lời mời; bấm **Nhận chuyến** |
-| 5 | Shipper bấm "Đã tới quán" khi còn ở xa | Báo đang ở xa; có lựa chọn xác nhận kèm ảnh |
+| 5 | Shipper bấm "Đã tới quán" khi còn ở xa | Báo đang ở xa; bấm **Chụp ảnh xác nhận** → mở camera, ảnh tải lên máy chủ, đơn được gắn cờ hậu kiểm |
 | 6 | Quán bấm **Xong món**, shipper nhập mã đơn trên túi | Chuyển "Đang giao"; khách thấy cập nhật |
 | 7 | Mỗi bên bấm **Gọi / SMS / Zalo** trong đơn | Mở app gọi/SMS/Zalo đúng số của bên kia; đơn xong thì nút biến mất |
 | 8 | Khách đặt **hẹn giờ** | Quán thấy ở tab Đơn hẹn; shipper thấy ở Chuyến hẹn (Tân binh thấy sau 10 phút) |
 | 9 | Đổi phí dịch vụ ở Admin → Cấu hình | Đơn mới áp dụng ngay; Lịch sử có bản cũ để hoàn tác |
-| 10 | Khoá app/tắt màn hình máy quán rồi đặt đơn | Vẫn có thông báo đẩy; **chuông lặp lại chỉ kêu khi trang đang mở** (giới hạn của bản web) |
+| 10 | Khoá máy quán (hoặc mở app khác) rồi đặt đơn | Chuông vẫn kêu lặp lại và hiện trên màn hình khoá; quán bấm nhận thì chuông tắt |
+| 11 | Shipper trực tuyến, chuyển sang Google Maps | Admin thấy vị trí shipper vẫn cập nhật |
 
-## 16.6. Giới hạn của bản web (đã biết)
+## 16.7. Giới hạn đã biết
 
-| Giới hạn | Ảnh hưởng | Cách xử lý trong giai đoạn thử |
+| Giới hạn | Ảnh hưởng | Cách xử lý |
 |---|---|---|
-| Không lấy được vị trí khi app chạy nền / khoá máy | Vị trí shipper ngừng cập nhật khi chuyển sang Google Maps | Giữ app mở khi chạy; hệ thống vẫn kiểm tra vị trí ở từng bước (tới quán, tới nơi) |
-| Thông báo đẩy chỉ kêu 1 tiếng | Quán có thể lỡ đơn khi không mở app | Bật chuông ở quầy; điều phối viên gọi quán sau 90 giây |
-| iPhone cần thêm vào màn hình chính mới có thông báo | Người dùng iPhone phải cài | App hướng dẫn ngay lần đầu mở |
+| App quán/shipper hỏi máy chủ mỗi 10 giây (không dùng Firebase) | Chuông có thể trễ tối đa ~10 giây; tốn chút pin/dữ liệu | Đủ cho thử nghiệm; khi lớn có thể thêm FCM |
+| Một số máy Android tự tắt app chạy nền | Quán/shipper lỡ đơn | Màn hình **Kiểm tra máy**; điều phối viên gọi quán sau 90 giây |
+| Bản iPhone của app quán/shipper chưa build | iOS hạn chế chạy nền, cần APNs/tài khoản Apple Developer | Làm sau Android; cấu hình Info.plist đã sẵn |
+| Khách dùng web: thông báo chỉ khi khách đã bấm cho phép | Khách có thể không biết đơn đổi trạng thái khi đóng trang | Trang đơn tự cập nhật khi mở lại; quán/shipper gọi khách qua nút Gọi/Zalo |
 | OTP hiện trên màn hình | **Chỉ dùng thử nội bộ**, ai cũng đăng nhập được số bất kỳ | Trước khi mở cho người thật: chọn kênh gửi OTP (xem Phần 13.5) và đặt `TEST_PHASE=false` |
 | Thanh toán online là giả lập | Chỉ thử với tiền mặt | Ký cổng thanh toán ở giai đoạn sau |
 
-## 16.7. Cập nhật & theo dõi
+## 16.8. Cập nhật & theo dõi
 
 ```bash
 git pull
 docker compose -f infra/docker-compose.prod.yml --env-file infra/.env.prod up -d --build
 docker compose -f infra/docker-compose.prod.yml logs -f api      # xem log API
 ```
-App web tự cập nhật ở lần mở tiếp theo (service worker không lưu đệm bản cũ).
+Web app của khách tự cập nhật ở lần mở tiếp theo. App quán/shipper: tải APK mới từ GitHub Actions và cài đè (giữ nguyên đăng nhập).

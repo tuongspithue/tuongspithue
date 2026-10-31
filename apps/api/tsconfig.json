@@ -1,5 +1,5 @@
 {
   "extends": "../../tsconfig.base.json",
-  "compilerOptions": { "outDir": "dist", "rootDir": ".", "types": ["node", "jest"], "esModuleInterop": true },
+  "compilerOptions": { "outDir": "dist", "rootDir": ".", "types": ["node", "jest", "multer"], "esModuleInterop": true },
   "include": ["src", "test"]
 }

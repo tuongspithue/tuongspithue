@@ -4,7 +4,7 @@ import 'package:sqt_core/sqt_core.dart';
 import 'screens/home.dart';
 
 void main() {
-  runApp(RiderApp(api: ApiClient(tokens: PrefsTokenStore('sqt-rider-token'))));
+  runApp(RiderApp(api: ApiClient(tokens: PrefsTokenStore(kRiderTokenKey))));
 }
 
 /// App tài xế — nút lớn ở nửa dưới màn hình, dùng được một tay (Phần 7.1, 9.5).
@@ -20,7 +20,7 @@ class RiderApp extends StatelessWidget {
       theme: sqtTheme(brightness: Brightness.light, large: true),
       darkTheme: sqtTheme(brightness: Brightness.dark, large: true),
       themeMode: ThemeMode.system,
-      home: InstallGate(appName: 'SQT Tài Xế', child: _Gate(api: api)),
+      home: _Gate(api: api),
     );
   }
 }

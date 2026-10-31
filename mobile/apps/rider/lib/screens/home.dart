@@ -1,9 +1,11 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:sqt_core/sqt_core.dart';
+import 'package:sqt_partner/sqt_partner.dart';
 
-/// Vị trí đang dùng. TODO(GPS): thay bằng vị trí thật từ thiết bị (geolocator) khi build Android/iOS.
+/// Khoá lưu token đăng nhập; dịch vụ nền đọc cùng khoá này.
+const kRiderTokenKey = 'sqt-rider-token';
+
+/// Vị trí gần nhất lấy từ GPS của máy (dịch vụ nền tự gửi vị trí lên máy chủ mỗi 15 giây).
 class RiderPosition {
   RiderPosition(this.lat, this.lng);
   double lat;
@@ -28,20 +30,11 @@ class _RiderHomeState extends State<RiderHome> with Polling {
   List<dynamic> _board = [];
   List<dynamic> _trips = [];
   Map<String, dynamic>? _trust;
-  Timer? _locationTimer;
 
   @override
   void initState() {
     super.initState();
     startPolling(_load);
-  }
-
-  @override
-  void dispose() {
-    _locationTimer?.cancel();
-    Browser.alarm(false);
-    Browser.keepScreenOn(false);
-    super.dispose();
   }
 
   /// Lấy GPS thật của máy; không được thì giữ vị trí trước đó.
@@ -69,31 +62,24 @@ class _RiderHomeState extends State<RiderHome> with Polling {
         _trips = results[2]['trips'] as List;
         _trust = results[3] as Map<String, dynamic>;
       });
-      Browser.alarm(_online && _offers.isNotEmpty);
     } on ApiException catch (e) {
       if (e.status == 403 && mounted) setState(() => _registered = false);
     }
   }
 
   Future<void> _setOnline(bool v) async {
-    if (v) {
-      Browser.unlockAudio();
-      await _refreshPosition(notify: true);
-    }
+    if (v) await _refreshPosition(notify: true);
     try {
       await widget.api.post('/v1/rider/status', {'online': v, ...pos.toJson()});
       setState(() => _online = v);
-      _locationTimer?.cancel();
-      // Gửi vị trí định kỳ khi trực tuyến (Phần 5.4); tắt hẳn khi ngoại tuyến.
-      if (v) {
-        _locationTimer = Timer.periodic(const Duration(seconds: 15), (_) async {
-          await _refreshPosition();
-          await widget.api.post('/v1/rider/location', pos.toJson()).catchError((_) => null);
-        });
-      }
-      // Bản web chỉ gửi được vị trí khi app đang mở: giữ màn hình sáng khi trực tuyến.
-      await Browser.keepScreenOn(v);
-      if (!v) Browser.alarm(false);
+      // Trực tuyến: dịch vụ nền kêu chuông khi có lời mời và gửi vị trí (Phần 5.4); ngoại tuyến thì tắt hẳn.
+      try {
+        if (v) {
+          await PartnerDevice.instance.startWatching(mode: WatchMode.rider, tokenKey: kRiderTokenKey);
+        } else {
+          await PartnerDevice.instance.stopWatching();
+        }
+      } catch (_) {}
     } on ApiException catch (e) {
       if (mounted) showError(context, e);
     }
@@ -126,12 +112,18 @@ class _RiderHomeState extends State<RiderHome> with Polling {
           ]),
         ),
         body: Column(children: [
-          PushBanner(api: widget.api, app: 'RIDER'),
-          if (Browser.isWeb && _online)
-            const Material(
-              color: Color(0x22FFB020),
-              child: ListTile(dense: true, leading: Icon(Icons.info_outline), title: Text('Giữ app mở khi đang chạy chuyến để cập nhật vị trí cho khách')),
+          Material(
+            color: _online ? SqtColors.confirmed.withValues(alpha: 0.12) : SqtColors.waiting.withValues(alpha: 0.15),
+            child: ListTile(
+              dense: true,
+              leading: Icon(_online ? Icons.notifications_active : Icons.notifications_off),
+              title: Text(_online ? 'Chuông lời mời đang bật — vẫn kêu khi khoá máy' : 'Bật trực tuyến để nhận chuyến'),
+              trailing: TextButton(
+                onPressed: () => PartnerDevice.instance.openDeviceCheck(context, needsBackgroundLocation: true),
+                child: const Text('Kiểm tra máy'),
+              ),
             ),
+          ),
           Expanded(child: TabBarView(children: [
           _list(_offers, 'Chưa có lời mời. Bật trực tuyến để nhận chuyến.', (o) => _OfferCard(offer: o, onAccept: () => _act(() => widget.api.post('/v1/rider/offers/${o['id']}/accept'), 'Đã nhận chuyến'), onDecline: () => _act(() => widget.api.post('/v1/rider/offers/${o['id']}/decline'), 'Đã bỏ qua'))),
           _list(_board, 'Chưa có chuyến hẹn quanh bạn', (t) => _BoardCard(trip: t, onClaim: () => _act(() => widget.api.post('/v1/rider/scheduled-trips/${t['orderId']}/claim'), 'Đã giữ chuyến'))),
@@ -227,8 +219,13 @@ class TripCard extends StatelessWidget {
             actions: [TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Quay lại')), FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('📷 Chụp ảnh xác nhận'))],
           ),
         );
-        // TODO(camera): chụp ảnh thật và tải lên kho ảnh; tạm dùng đường dẫn giữ chỗ.
-        if (ok == true && context.mounted) await _call(context, path, {...body, 'photoUrl': 'pending-upload://$_id'}, done);
+        if (ok != true || !context.mounted) return;
+        try {
+          final url = await PartnerDevice.instance.takePhoto(api);
+          if (url != null && context.mounted) await _call(context, path, {...body, 'photoUrl': url}, done);
+        } on ApiException catch (e) {
+          if (context.mounted) showError(context, e);
+        }
         return;
       }
       showError(context, e);

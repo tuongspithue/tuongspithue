@@ -29,7 +29,10 @@ services:
       VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY}
       VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY}
       VAPID_SUBJECT: ${VAPID_SUBJECT}
-      CORS_ORIGINS: https://${DOMAIN_APP},https://${DOMAIN_STORE},https://${DOMAIN_RIDER},https://${DOMAIN_ADMIN}
+      CORS_ORIGINS: https://${DOMAIN_APP},https://${DOMAIN_ADMIN}
+      PUBLIC_API_URL: https://${DOMAIN_API}
+      UPLOAD_DIR: /data/uploads
+    volumes: [uploads:/data/uploads]
 
   admin:
     build:
@@ -50,13 +53,12 @@ services:
     environment:
       ACME_EMAIL: ${ACME_EMAIL}
       DOMAIN_APP: ${DOMAIN_APP}
-      DOMAIN_STORE: ${DOMAIN_STORE}
-      DOMAIN_RIDER: ${DOMAIN_RIDER}
       DOMAIN_ADMIN: ${DOMAIN_ADMIN}
       DOMAIN_API: ${DOMAIN_API}
     volumes: [caddy_data:/data, caddy_config:/config]
 
 volumes:
   pgdata:
+  uploads:
   caddy_data:
   caddy_config:

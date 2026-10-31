@@ -10,6 +10,8 @@ dependencies:
     sdk: flutter
   sqt_core:
     path: ../../packages/sqt_core
+  sqt_partner:
+    path: ../../packages/sqt_partner
   http: ^1.2.0
 dev_dependencies:
   flutter_test:

@@ -101,6 +101,7 @@ class _OrderScreenState extends State<OrderScreen> with Polling {
         onRefresh: _load,
         child: ListView(padding: const EdgeInsets.all(16), children: [
           PushBanner(api: widget.api, app: 'CUSTOMER'),
+          const InstallTip(),
           Align(alignment: Alignment.centerLeft, child: StateChip(state)),
           if (schedule != null) Text('🟣 Hẹn lấy hàng lúc ${hhmm(schedule['pickupAt'] as String?)}', style: const TextStyle(color: SqtColors.scheduled)),
           if (state == 'HEN_CHO_KHACH_DUYET_GIO') ...[

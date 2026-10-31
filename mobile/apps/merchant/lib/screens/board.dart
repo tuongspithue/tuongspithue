@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:sqt_core/sqt_core.dart';
+import 'package:sqt_partner/sqt_partner.dart';
 
 import 'menu_import.dart';
 
-const _newStates = {'CHO_QUAN_XAC_NHAN', 'HEN_CHO_QUAN_NHAN'};
+/// Khoá lưu token đăng nhập; dịch vụ nền đọc cùng khoá này.
+const kMerchantTokenKey = 'sqt-merchant-token';
+
+const _newStates = kMerchantPendingStates;
 const _doneStates = {'HOAN_THANH', 'DA_HUY', 'HOAN_TRA_QUAN', 'GIAO_THAT_BAI'};
 
 /// Bảng đơn của quán: Mới → Đang làm → Đơn hẹn → Xong (Phần 2.2.3, 9.5 "Chế độ Đơn giản").
@@ -19,13 +23,13 @@ class BoardScreen extends StatefulWidget {
 class _BoardScreenState extends State<BoardScreen> with Polling {
   List<Map<String, dynamic>> _orders = [];
   late bool _open = widget.store['isOpen'] as bool;
-  bool _bell = false;
   int get _storeId => widget.store['id'] as int;
 
   @override
   void initState() {
     super.initState();
     startPolling(_load);
+    _syncWatcher();
   }
 
   Future<void> _load() async {
@@ -33,34 +37,29 @@ class _BoardScreenState extends State<BoardScreen> with Polling {
       final res = await widget.api.get('/v1/merchant/stores/$_storeId/orders');
       if (!mounted) return;
       setState(() => _orders = (res['orders'] as List).cast<Map<String, dynamic>>());
-      // Chuông kêu liên tục khi còn đơn mới chưa nhận (chỉ khi trang đang mở — giới hạn của bản web).
-      Browser.alarm(_bell && _orders.any((o) => _newStates.contains(o['state'])));
     } on ApiException catch (e) {
       if (mounted) showError(context, e);
     }
   }
 
-  /// Bật chuông và giữ màn hình sáng — phải do người dùng bấm (chính sách trình duyệt).
-  Future<void> _toggleBell() async {
-    final on = !_bell;
-    if (on) Browser.unlockAudio();
-    await Browser.keepScreenOn(on);
-    setState(() => _bell = on);
-    if (!on) Browser.alarm(false);
-    _load();
-  }
-
-  @override
-  void dispose() {
-    Browser.alarm(false);
-    Browser.keepScreenOn(false);
-    super.dispose();
+  /// Quán mở cửa thì bật dịch vụ nền: chuông kêu khi có đơn kể cả khi khoá máy (Phần 2.2.3).
+  Future<void> _syncWatcher() async {
+    try {
+      if (_open) {
+        await PartnerDevice.instance.startWatching(mode: WatchMode.merchant, tokenKey: kMerchantTokenKey, storeId: _storeId);
+      } else {
+        await PartnerDevice.instance.stopWatching();
+      }
+    } catch (_) {
+      // Máy không hỗ trợ chạy nền: vẫn dùng được khi mở app.
+    }
   }
 
   Future<void> _toggleOpen(bool v) async {
     try {
       final res = await widget.api.patch('/v1/merchant/stores/$_storeId', {'isOpen': v});
       setState(() => _open = res['isOpen'] as bool);
+      await _syncWatcher();
     } on ApiException catch (e) {
       if (mounted) showError(context, e);
     }
@@ -96,17 +95,18 @@ class _BoardScreenState extends State<BoardScreen> with Polling {
           ]),
         ),
         body: Column(children: [
-          PushBanner(api: widget.api, app: 'MERCHANT'),
-          if (Browser.isWeb)
-            Material(
-              color: _bell ? SqtColors.confirmed.withValues(alpha: 0.12) : SqtColors.waiting.withValues(alpha: 0.15),
-              child: ListTile(
-                leading: Icon(_bell ? Icons.notifications_active : Icons.notifications_off),
-                title: Text(_bell ? 'Chuông đang bật · màn hình luôn sáng' : 'Bật chuông báo đơn mới'),
-                subtitle: const Text('Giữ trang này mở ở quầy để nghe chuông'),
-                trailing: Switch(key: const Key('bell'), value: _bell, onChanged: (_) => _toggleBell()),
+          Material(
+            color: _open ? SqtColors.confirmed.withValues(alpha: 0.12) : SqtColors.waiting.withValues(alpha: 0.15),
+            child: ListTile(
+              dense: true,
+              leading: Icon(_open ? Icons.notifications_active : Icons.notifications_off),
+              title: Text(_open ? 'Chuông đơn mới đang bật — vẫn kêu khi khoá máy' : 'Quán đang đóng — không nhận đơn mới'),
+              trailing: TextButton(
+                onPressed: () => PartnerDevice.instance.openDeviceCheck(context, needsBackgroundLocation: false),
+                child: const Text('Kiểm tra máy'),
               ),
             ),
+          ),
           Expanded(child: TabBarView(children: [
           for (final list in [fresh, working, scheduled, done])
             RefreshIndicator(

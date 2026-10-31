@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Giữ tiếng chuông khi build release: chỉ được gọi tên từ Dart nên trình rút gọn tài nguyên không thấy. -->
+<resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@raw/ring" />

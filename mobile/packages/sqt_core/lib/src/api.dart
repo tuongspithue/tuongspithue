@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Địa chỉ API, đặt khi build: `--dart-define=API_URL=https://api.example.vn`.
@@ -92,6 +93,26 @@ class ApiClient {
   Future<dynamic> get(String path, [Map<String, String>? query]) => _send('GET', path, query: query);
   Future<dynamic> post(String path, [Object? body, Map<String, String>? headers]) => _send('POST', path, body: body, headers: headers);
   Future<dynamic> patch(String path, Object body) => _send('PATCH', path, body: body);
+
+  /// Tải tệp (multipart) — dùng cho ảnh bằng chứng giao hàng.
+  Future<dynamic> upload(String path, List<int> bytes, {required String filename, required String contentType}) async {
+    final req = http.MultipartRequest('POST', Uri.parse('$baseUrl$path'));
+    if (_token != null) req.headers['Authorization'] = 'Bearer $_token';
+    final parts = contentType.split('/');
+    req.files.add(http.MultipartFile.fromBytes('file', bytes, filename: filename, contentType: MediaType(parts[0], parts[1])));
+    late http.Response res;
+    try {
+      res = await http.Response.fromStream(await _http.send(req).timeout(const Duration(seconds: 60)));
+    } catch (_) {
+      throw ApiException(0, 'NETWORK', 'Không tải được ảnh, vui lòng kiểm tra mạng');
+    }
+    final data = res.body.isEmpty ? null : jsonDecode(utf8.decode(res.bodyBytes));
+    if (res.statusCode >= 400) {
+      final err = data is Map ? data['error'] as Map? : null;
+      throw ApiException(res.statusCode, err?['code'] as String? ?? 'ERROR', err?['message'] as String? ?? 'Có lỗi xảy ra');
+    }
+    return data;
+  }
 
   Future<dynamic> _send(String method, String path, {Object? body, Map<String, String>? query, Map<String, String>? headers}) async {
     final uri = Uri.parse('$baseUrl$path').replace(queryParameters: query);

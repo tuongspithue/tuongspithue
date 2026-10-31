@@ -1,7 +1,9 @@
 import 'reflect-metadata';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
+import { uploadDir } from './uploads/uploads';
 
 export function configureApp(app: INestApplication) {
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
@@ -13,7 +15,9 @@ export function configureApp(app: INestApplication) {
 }
 
 async function bootstrap() {
-  const app = configureApp(await NestFactory.create(AppModule));
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  configureApp(app);
+  app.useStaticAssets(uploadDir(), { prefix: '/uploads/', maxAge: '30d', index: false });
   await app.listen(Number(process.env.PORT ?? 3000));
 }
 

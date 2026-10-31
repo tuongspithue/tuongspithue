@@ -21,18 +21,18 @@
 | 2 | **Bốn chế độ giao linh hoạt** | Quán tự chọn: *Hệ thống giao*, *Quán tự giao*, *Lai* (quán giao trong bán kính X km, xa hơn chuyển cho shipper hệ thống), hoặc *Tự giao có dự phòng hệ thống*. |
 | 3 | **Siêu gần — siêu nhanh** | Ưu tiên quán ≤ 3 km, hiển thị *thời gian đến tay* thực tế (chuẩn bị + di chuyển) chứ không chỉ khoảng cách. |
 | 4 | **Không chỉ đồ ăn** | Nhu yếu phẩm: nước bình, gas, đá, thuốc không kê đơn, tã sữa, văn phòng phẩm, hoa, sửa chữa nhỏ… |
-| 5 | **Thân thiện với quán nhỏ** | Quán vỉa hè, tạp hoá chỉ cần 1 smartphone. Nhập menu nhanh bằng cách dán/gõ danh sách món (AI chuẩn hoá) hoặc đọc bằng giọng nói, nhận đơn bằng cuộc gọi tự động. |
+| 5 | **Thân thiện với quán nhỏ** | Quán vỉa hè, tạp hoá chỉ cần 1 smartphone. Nhập menu nhanh bằng cách dán/gõ danh sách món (AI chuẩn hoá) hoặc đọc bằng giọng nói; app kêu chuông lớn khi có đơn, quán chưa nhận thì điều phối viên gọi nhắc. |
 | 6 | **Minh bạch** | Phí ship, phí dịch vụ, chiết khấu quán, thu nhập shipper đều hiển thị rõ ràng cho từng bên. |
 
 ## 1.3. Các bên tham gia (Actors)
 
 | Vai trò | Ứng dụng | Mô tả |
 |---------|----------|-------|
-| **Người mua (Khách)** | App *Ship Quanh Tôi* (iOS/Android); bản 1.0 thêm **Zalo Mini App** và **Web đặt nhanh** (mở link/QR là đặt, không cần cài app) | Tìm quán, đặt món, thanh toán, theo dõi, đánh giá. |
-| **Chủ quán (Merchant Owner)** | App *SQT Đối Tác* + Web quản trị quán | Quản lý menu, giờ mở cửa, đơn hàng, nhân viên, doanh thu, khuyến mãi. |
+| **Người mua (Khách)** | **Web app *Ship Quanh Tôi*** — mở link/QR là đặt, **không cần cài app** (khách không thích cài rườm rà); bản 1.0 cân nhắc thêm **Zalo Mini App** | Tìm quán, đặt món, thanh toán, theo dõi, đánh giá. |
+| **Chủ quán (Merchant Owner)** | **App cài đặt *SQT Đối Tác*** (Android trước, iOS sau) — chuông kêu kể cả khi khoá máy để nhận đơn kịp thời | Quản lý menu, giờ mở cửa, đơn hàng, nhân viên, doanh thu, khuyến mãi. |
 | **Nhân viên quán (Merchant Staff)** | App *SQT Đối Tác* (quyền giới hạn) | Nhận/xác nhận đơn, chuẩn bị món, bàn giao. |
 | **Shipper của quán (Store Rider)** | App *SQT Tài Xế* (chế độ "Shipper của quán") | Người do quán đăng ký, chỉ nhận đơn của quán đó. |
-| **Shipper hệ thống (Platform Rider)** | App *SQT Tài Xế* | Đối tác tự do đã xác minh, nhận chuyến từ nhiều quán. |
+| **Shipper hệ thống (Platform Rider)** | **App cài đặt *SQT Tài Xế*** (Android trước) — chuông lời mời và gửi vị trí khi chạy nền | Đối tác tự do đã xác minh, nhận chuyến từ nhiều quán. |
 | **Điều phối viên (Dispatcher/Ops)** | Admin Console | Theo dõi bản đồ thời gian thực, can thiệp đơn bị kẹt, gán tay. |
 | **CSKH (Support)** | Admin Console + tổng đài | Xử lý khiếu nại, hoàn tiền, tranh chấp. |
 | **Quản trị (Admin)** | Admin Console | Duyệt đối tác, cấu hình phí, khu vực, chính sách, báo cáo. |
