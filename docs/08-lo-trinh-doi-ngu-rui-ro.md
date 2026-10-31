@@ -12,7 +12,9 @@
 - Ký hợp đồng cổng thanh toán, SMS/ZNS, eKYC, tổng đài IVR, bản đồ.
 
 ### Giai đoạn 1 — MVP (Tháng 2–4) · *"Chạy được, có người thật xác nhận"*
-- App khách: Quanh tôi (danh sách + bản đồ), tìm kiếm cơ bản, trang quán, giỏ hàng, COD + 1 ví điện tử + VietQR, theo dõi đơn realtime, đánh giá, báo sự cố.
+- App khách: Quanh tôi (danh sách + bản đồ), tìm kiếm cơ bản, trang quán, giỏ hàng, COD + 1 ví điện tử + VietQR, **đặt hẹn giờ lấy/giao**, theo dõi đơn realtime với hiệu ứng sinh động cốt lõi, đánh giá, báo sự cố.
+- Đơn hẹn giờ: tab Đơn hẹn cho quán, Chợ chuyến hẹn cho shipper, xác nhận lại trước giờ.
+- Điểm uy tín phiên bản 1 (hoàn thành, đúng giờ, sao Bayes, xác nhận) + cấp độ hiển thị trên thẻ quán/shipper.
 - App quán: đăng ký + duyệt, menu, **nhận/từ chối đơn (chuông lớn + IVR dự phòng)**, chuẩn bị xong, mở/đóng, chế độ giao Hệ thống / Tự giao, mời shipper của quán, doanh thu cơ bản.
 - App shipper: đăng ký + eKYC, online/offline, **nhận chuyến**, quy trình 4 bước có geofence, ảnh giao hàng, thu nhập, COD.
 - Web Ops/Admin: duyệt hồ sơ, bản đồ trực tiếp, hàng đợi đơn có vấn đề, gán tay, hoàn tiền, cấu hình phí & SLA.
@@ -22,6 +24,8 @@
 ### Giai đoạn 2 — Phiên bản 1.0 (Tháng 5–7) · *"Mượt và đáng tin"*
 - Thêm ví/thẻ, hẹn giờ, tự đến lấy, đơn nhóm, tip, PIN nhận hàng.
 - Khuyến mãi (quán & nền tảng), quảng cáo lên top, huy hiệu, điểm tin cậy.
+- Yêu cầu mở (gửi nhiều quán, nhận báo giá), Bảng Vàng khu vực, khiếu nại điểm uy tín.
+- AI: OCR menu, mô tả món, gợi ý món thay thế/kèm, tóm tắt đánh giá, bot CSKH, ETA học máy, cảnh báo đơn nguy cơ.
 - OCR menu, máy in nhiệt, nhân viên & phân quyền, đa chi nhánh.
 - Ghép đơn cho shipper, chế độ "Về nhà", thưởng mốc, bảo hiểm.
 - OpenSearch cho tìm kiếm, cao điểm theo H3, chế độ mưa bão.

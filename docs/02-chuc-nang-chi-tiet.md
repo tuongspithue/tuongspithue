@@ -45,7 +45,7 @@ Ký hiệu mức ưu tiên: **[P0]** bắt buộc cho MVP · **[P1]** bản 1.0 
 - [P0] Hiển thị **minh bạch**: Tạm tính · Phí ship · Phí dịch vụ · Phụ phí (hàng nặng, đêm khuya, mưa) · Giảm giá · **Tổng**.
 - [P0] Chọn hình thức giao:
   - **Giao ngay** (mặc định)
-  - [P1] **Hẹn giờ** (trong 7 ngày)
+  - [P0] **Hẹn giờ lấy/giao** (sau 1–3 giờ hoặc chọn giờ, trong 7 ngày) — đơn hiện trực tiếp cho quán & shipper để họ chọn nhận; đơn ngay chờ lâu có thể chuyển sang hẹn giờ bằng 1 chạm → xem [Phần 10](10-don-hen-gio.md)
   - [P1] **Tự đến lấy** (miễn ship, quán chuẩn bị sẵn)
 - [P0] Địa chỉ giao + **ghi chú cho shipper** (VD: "Hẻm 45, cổng xanh, gọi trước 5 phút") + ảnh chỉ đường tuỳ chọn.
 - [P0] Thanh toán: **Tiền mặt (COD)**, **Ví điện tử** (MoMo, ZaloPay, VNPay), **QR chuyển khoản (VietQR)**, [P1] thẻ ATM/Visa.
@@ -121,6 +121,7 @@ Thanh tiến trình rõ ràng, mỗi bước có **tên người xác nhận + g
 - [P0] **Chế độ tự nhận** (auto-accept) chỉ dành cho quán đạt điều kiện (tỷ lệ hoàn thành ≥ 98%, ≥ 200 đơn) — vẫn được tính là quán xác nhận vì quán đã **chủ động cam kết** bật chế độ này, và vẫn có chuông báo để nhân viên biết. *(Cấu hình được tắt toàn hệ thống nếu muốn tuân thủ tuyệt đối "xác nhận thủ công".)*
 - [P0] **Dự phòng khi quán không phản hồi**: sau 90 giây chưa xử lý → **cuộc gọi tự động IVR** tới SĐT quán ("Bấm 1 nhận, 2 từ chối"); sau 3 phút → huỷ, báo khách & gợi ý quán tương tự.
 - [P1] In phiếu bếp qua **máy in nhiệt Bluetooth/LAN** tự động khi nhận đơn.
+- [P0] Tab **"Đơn hẹn 🟣"**: xem đơn hẹn giờ & yêu cầu mở trong khu vực theo thời gian thực, chọn Nhận / Đề xuất giờ khác / Từ chối, lịch năng lực theo khung 15 phút, xác nhận lại trước giờ → [Phần 10](10-don-hen-gio.md).
 - [P0] Bấm **"Đã chuẩn bị xong"** → báo shipper & khách.
 - [P0] **Bàn giao**: shipper quét **mã QR trên phiếu/app quán** hoặc nhập mã đơn 4 số → xác nhận đúng đơn, tránh nhầm lẫn.
 
@@ -179,6 +180,8 @@ Thanh tiến trình rõ ràng, mỗi bước có **tên người xác nhận + g
 - [P0] **Nhận chuyến** / **Bỏ qua** (bỏ qua không bị phạt nhưng ảnh hưởng nhẹ tới ưu tiên nếu bỏ quá nhiều).
 - [P1] Ghép đơn: nhận thêm 1 đơn cùng quán/cùng hướng (tối đa 2–3 đơn), hệ thống tính lại lộ trình.
 - [P0] Huỷ sau khi nhận: phải nêu lý do; huỷ nhiều → giảm điểm tin cậy.
+
+- [P0] Tab **"Chuyến hẹn 🟣"** (chợ chuyến hẹn giờ realtime): xem các chuyến hẹn quán đã nhận, **Giữ chuyến**, xác nhận "Tôi sẵn sàng" trước giờ; shipper uy tín cao thấy sớm hơn → [Phần 10](10-don-hen-gio.md), [Phần 11](11-diem-uy-tin-khu-vuc.md).
 
 ### 2.3.4. Thực hiện chuyến
 - [P0] Dẫn đường (mở Google Maps / bản đồ tích hợp).

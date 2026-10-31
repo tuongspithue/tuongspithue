@@ -22,7 +22,11 @@
 - **App quán (≈ 20 màn):** Đăng ký 8 bước, Bảng đơn (Mới / Đang làm / Chờ shipper / Đang giao / Xong), Chi tiết đơn, Popup đơn mới toàn màn hình, Menu, Sửa món, OCR menu, Cài đặt cửa hàng, Shipper của quán, Doanh thu, Khuyến mãi, Nhân viên, Đánh giá.
 - **App shipper (≈ 18 màn):** Đăng ký & eKYC, Khoá học, Trang chủ bản đồ nhiệt, Popup mời chuyến, Dẫn đường, Checklist lấy hàng, Xác nhận giao, Thu nhập, Ví & COD, Lịch sử, Thưởng, SOS, Hỗ trợ.
 
+> Chi tiết giao diện sinh động xem [Phần 9](09-giao-dien-truc-quan-sinh-dong.md).
+
 ## 7.2. Hệ thống uy tín (Trust & Safety)
+
+> Công thức đầy đủ, cấp độ, Bảng Vàng khu vực xem [Phần 11](11-diem-uy-tin-khu-vuc.md).
 
 ### Điểm tin cậy
 | Đối tượng | Thành phần điểm |
@@ -89,7 +93,7 @@
 11. **🤝 "Quán tự giao — Phí thân thiện"**
     Quán tự giao trả chiết khấu thấp hơn, được gắn nhãn *"Quán tự giao – ship gần rẻ"*, giúp quán giữ quan hệ trực tiếp với khách quen.
 
-12. **🤖 Trợ lý AI cho quán**
+12. **🤖 Trợ lý AI cho quán** *(chi tiết toàn bộ ứng dụng AI: [Phần 12](12-tich-hop-ai.md))*
     Tạo menu từ ảnh, viết mô tả món hấp dẫn, gợi ý giá & combo theo dữ liệu khu vực, cảnh báo "Hôm nay mưa — nên chuẩn bị thêm món nóng", tóm tắt đánh giá khách tuần qua.
 
 13. **🎁 "Treo món" — Lan toả yêu thương**

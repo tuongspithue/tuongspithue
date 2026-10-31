@@ -85,6 +85,8 @@ stateDiagram-v2
 
 ---
 
+> **Đơn hẹn giờ** có máy trạng thái riêng trước giờ hẹn (quán nhận → đăng lên chợ chuyến hẹn → shipper giữ chuyến → xác nhận lại T−30/T−20), sau đó nhập vào luồng chuẩn tại `SHIPPER_DA_NHAN`. Xem [Phần 10](10-don-hen-gio.md).
+
 ## 3.3. Cổng A — Quán xác nhận: SLA & dự phòng
 
 | Thời điểm (từ lúc đơn tới quán) | Hành động hệ thống |
@@ -93,6 +95,7 @@ stateDiagram-v2
 | 45s | Nhắc lại chuông, gửi SMS/Zalo ZNS cho chủ quán |
 | 90s | **Gọi IVR tự động**: "Quán có đơn mới 2 món, 85.000đ. Bấm 1 để nhận, bấm 2 để từ chối." → bấm 1 → hỏi thời gian chuẩn bị (bấm 1: 10 phút, 2: 20 phút, 3: 30 phút) |
 | 150s | Đơn vào hàng đợi Ops (nếu khu vực có Ops trực) — Ops gọi trực tiếp quán |
+| 120s | Hiện gợi ý cho khách: **"Chuyển sang hẹn giờ"** (giữ nguyên giỏ) hoặc chọn quán tương tự |
 | 180s | Huỷ tự động, **hoàn tiền 100%**, khách nhận voucher xin lỗi + gợi ý 3 quán tương tự có món tương tự |
 
 - Quán bị **lỡ đơn** nhiều: lần 1 nhắc nhở; ≥ 3 lần/ngày → **tự động chuyển "Tạm nghỉ"** 30 phút và báo chủ quán (tránh khách tiếp tục đặt vào quán không người trực).
