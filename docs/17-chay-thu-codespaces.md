@@ -29,7 +29,7 @@ Lần đầu mất ~5 phút (build Admin Console và web app). Xong sẽ in ra:
   Admin Console : https://<tên-codespace>-3001.app.github.dev
   API           : https://<tên-codespace>-3000.app.github.dev
 ```
-và **mã kích hoạt** cho Admin, 3 quán, 2 shipper mẫu (lưu trong `.devcontainer/local/codes.txt`).
+và **mã kích hoạt** cho Admin, 50 quán mẫu (10 quán mỗi ngành) và 5 shipper mẫu (lưu trong `.devcontainer/local/codes.txt`).
 
 **Bắt buộc:** 3 cổng phải ở chế độ **Public** thì điện thoại mới vào được. Script tự đặt; nếu báo chưa đặt được: mở tab **PORTS** → chuột phải từng cổng 3000, 3001, 8080 → **Port Visibility → Public**.
 

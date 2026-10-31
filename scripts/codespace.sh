@@ -44,8 +44,8 @@ if [ ! -f "$ENV_FILE" ]; then
 # Sửa ADMIN_PHONES thành số của bạn, SEED_LAT/SEED_LNG thành toạ độ nơi bạn đứng thử (lấy trên Google Maps),
 # rồi chạy lại: bash scripts/codespace.sh seed
 ADMIN_PHONES=0900000001
-SEED_LAT=10.7769
-SEED_LNG=106.7009
+SEED_LAT=17.539719890428422
+SEED_LNG=106.57436128536212
 JWT_SECRET=$(secret)
 AI_KEY_ENCRYPTION_KEY=$(secret)
 VAPID_PUBLIC_KEY=${VAPID% *}

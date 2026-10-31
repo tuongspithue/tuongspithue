@@ -50,8 +50,8 @@ Không có SMS/OTP (xem Phần 13.9). Lệnh tạo dữ liệu mẫu in ra **mã
 | Vai trò | Số điện thoại | Đăng nhập bằng |
 |---|---|---|
 | Admin | Các số trong `ADMIN_PHONES` | Số + mã kích hoạt (Admin Console) |
-| Quán | `0911000001` (Phở Cô Lan), `0911000002` (Trà Sữa Mây), `0911000003` (Tạp Hoá Cô Ba) | Số + mã kích hoạt (app quán) |
-| Shipper | `0933000001`, `0933000002` | Số + mã kích hoạt (app shipper) |
+| Quán | 50 quán, 10 quán mỗi ngành: Đồ ăn `0915000001`–`0915000010`, Đồ uống `0916…`, Tạp hoá `0917…`, Nước & đá `0918…`, Mẹ & bé `0919…` (tên quán in kèm mã) | Số + mã kích hoạt (app quán) |
+| Shipper | `0933000001` – `0933000005` | Số + mã kích hoạt (app shipper) |
 | Khách | Số bất kỳ | Tên + số, không cần mã |
 
 Cấp mã riêng cho Admin (khi chưa vào được Admin Console):
