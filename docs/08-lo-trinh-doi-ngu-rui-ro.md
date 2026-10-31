@@ -17,7 +17,7 @@
 - Điểm uy tín phiên bản 1 (hoàn thành, đúng giờ, sao Bayes, xác nhận) + cấp độ hiển thị trên thẻ quán/shipper.
 - App quán: đăng ký + duyệt, menu, **nhận/từ chối đơn (chuông lớn + IVR dự phòng)**, chuẩn bị xong, mở/đóng, chế độ giao Hệ thống / Tự giao, mời shipper của quán, doanh thu cơ bản.
 - App shipper: đăng ký + eKYC, online/offline, **nhận chuyến**, quy trình 4 bước có geofence, ảnh giao hàng, thu nhập, COD.
-- Web Ops/Admin: duyệt hồ sơ, bản đồ trực tiếp, hàng đợi đơn có vấn đề, gán tay, hoàn tiền, cấu hình phí & SLA.
+- Admin Console (Phần 14, mức MVP): dashboard tổng quan, bản đồ trực tiếp, hàng đợi đơn có vấn đề, hồ sơ 360°, duyệt hồ sơ, gán tay, hoàn tiền, **trung tâm cấu hình phân tầng** có phiên bản & hoàn tác, feature flags, xác thực 2 lớp.
 - Backend: modular monolith (NestJS), PostgreSQL+PostGIS, Redis + BullMQ, WebSocket, outbox, ledger, chế độ vận hành suy giảm.
 - **AI Gateway + tài khoản Groq** dựng sẵn để thử nghiệm nội bộ (chưa phát hành tính năng AI cho người dùng).
 - **Mục tiêu ra mắt thí điểm:** 150 quán, 80 shipper, 300 đơn/ngày sau 4 tuần.

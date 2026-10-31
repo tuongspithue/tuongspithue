@@ -56,6 +56,7 @@ flowchart LR
       NTF[Notification<br/>Push/SMS/ZNS/IVR]
       RVW[Review & Trust]
       SUP[Support/Ticket]
+      CFG[Config & Rule Engine]
     end
 
     GW --> ID & CAT & DISC & ORD & PAY & PRM & RVW & SUP

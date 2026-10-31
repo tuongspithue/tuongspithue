@@ -207,6 +207,8 @@ Thanh tiến trình rõ ràng, mỗi bước có **tên người xác nhận + g
 
 ---
 
+> **Lưu ý:** Mục 2.4 và 2.5 được hợp nhất và mở rộng thành **Admin Console** ở [Phần 14](14-trang-quan-tri-admin.md), gồm dashboard tuỳ biến, trung tâm cấu hình phân tầng, Rule Builder, báo cáo tự phục vụ và phân quyền linh hoạt. Hai mục dưới đây là danh sách chức năng tối thiểu.
+
 ## 2.4. Web Vận hành (Ops / Điều phối / CSKH)
 
 - [P0] **Bản đồ trực tiếp** toàn thành phố: đơn theo màu trạng thái, shipper online, quán đang mở.
