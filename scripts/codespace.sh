@@ -16,7 +16,7 @@ mkdir -p "$STATE/logs" "$STATE/uploads"
 export PATH="$HOME/flutter/bin:$PATH"
 
 # Bước cài đặt khi tạo Codespace chưa xong hoặc bị lỗi: tự cài lại trước khi chạy.
-if [ ! -d node_modules ] || ! command -v pnpm >/dev/null 2>&1 || ! command -v flutter >/dev/null 2>&1; then
+if [ "${1:-start}" != stop ] && [ "${1:-start}" != logs ] && { [ ! -d node_modules ] || ! command -v pnpm >/dev/null 2>&1 || ! command -v flutter >/dev/null 2>&1; }; then
   echo "==> Chưa cài đủ công cụ — đang cài (một lần, ~10 phút)"
   bash .devcontainer/setup.sh
   export PATH="$HOME/flutter/bin:$PATH"
