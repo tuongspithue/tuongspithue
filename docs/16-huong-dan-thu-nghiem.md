@@ -60,6 +60,8 @@ docker compose -f infra/docker-compose.prod.yml --env-file infra/.env.prod exec 
 ```
 Đối tác mới: đăng ký trong app → Admin gọi xác minh → **Duyệt** → bấm **Gửi SMS / Mở Zalo** để gửi mã.
 
+**Admin/Ops:** lần đầu đăng nhập Admin Console bằng mã kích hoạt, sau đó đặt mật khẩu ở mục **Tài khoản của tôi** để những lần sau đăng nhập bằng SĐT + mật khẩu. Quên mật khẩu thì lấy mã kích hoạt mới và đặt lại.
+
 ## 16.5. Lần đầu sử dụng
 
 **Khách (web app):** mở `https://app.<tên miền>` bằng Chrome/Safari → chọn món, khi đặt nhập **tên + số điện thoại** (không cần mã) → cho phép **vị trí** để thấy quán quanh mình. Khi theo dõi đơn có thể bấm **Bật thông báo** (không bắt buộc). Gợi ý "Thêm vào màn hình chính" chỉ là tuỳ chọn.

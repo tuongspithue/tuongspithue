@@ -19,6 +19,8 @@ export interface AuthUser {
   roles: Array<{ role: Role; scopeId: number }>;
   /** Mã máy của phiên khách (đăng nhập không xác minh). Không có = phiên đối tác do Admin kích hoạt. */
   device?: string;
+  /** Phiên đối tác được mở bằng gì: mã kích hoạt hay mật khẩu (đổi mật khẩu khi đăng nhập bằng mật khẩu phải nhập mật khẩu cũ). */
+  via?: 'code' | 'password';
 }
 
 /** Thao tác đối tác (mở quán, đăng ký shipper) cần phiên do Admin kích hoạt, không dùng phiên khách. */
@@ -74,7 +76,7 @@ export class AuthGuard implements CanActivate {
     const req = ctx.switchToHttp().getRequest();
     const header: string | undefined = req.headers.authorization;
     if (!header?.startsWith('Bearer ')) throw new UnauthorizedException('Cần đăng nhập');
-    let payload: { sub: string; k?: 'C' | 'P'; d?: string; v?: number };
+    let payload: { sub: string; k?: 'C' | 'P'; d?: string; v?: number; m?: 'code' | 'password' };
     try {
       payload = await this.jwt.verifyAsync(header.slice(7));
     } catch {
@@ -92,7 +94,7 @@ export class AuthGuard implements CanActivate {
         'SELECT role, scope_id FROM user_roles WHERE user_id = $1',
         [userId],
       );
-      authUser = { id: userId, roles: rows.map((r) => ({ role: r.role, scopeId: Number(r.scope_id) })) };
+      authUser = { id: userId, roles: rows.map((r) => ({ role: r.role, scopeId: Number(r.scope_id) })), via: payload.m ?? 'code' };
     } else {
       throw new UnauthorizedException('Phiên đăng nhập đã bị thu hồi, vui lòng đăng nhập lại');
     }

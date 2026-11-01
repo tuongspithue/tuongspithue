@@ -114,3 +114,57 @@ describe('quán & shipper: Admin xác minh rồi gửi mã kích hoạt', () => 
     await t.http().post(`/v1/admin/users/${old.userId}/activation-code`).set(auth(fresh)).send({}).expect(403);
   });
 });
+
+describe('mật khẩu Admin/Ops', () => {
+  it('lần đầu dùng mã kích hoạt, đặt mật khẩu, từ đó đăng nhập bằng mật khẩu; đổi mật khẩu thì đăng xuất máy khác', async () => {
+    const first = await t.login('0900000099');
+    const opsId = first.userId;
+    await t.pool.query(`INSERT INTO user_roles (user_id, role) VALUES ($1, 'OPS')`, [opsId]);
+
+    expect((await t.http().get('/v1/auth/me').set(auth(first.token)).expect(200)).body).toMatchObject({ phone: '0900000099', hasPassword: false, via: 'code' });
+    expect((await t.http().post('/v1/auth/password-login').send({ phone: '0900000099', password: 'matkhau123' }).expect(401)).body.error.code).toBe('PASSWORD_NOT_SET');
+
+    await t.http().post('/v1/auth/password').set(auth(first.token)).send({ newPassword: '12345678' }).expect(400);
+    await t.http().post('/v1/auth/password').set(auth(first.token)).send({ newPassword: 'ngan' }).expect(400);
+    const set = (await t.http().post('/v1/auth/password').set(auth(first.token)).send({ newPassword: 'ShipQuanhToi2026' }).expect(200)).body;
+    // Máy cũ bị đăng xuất, máy vừa đặt mật khẩu nhận phiên mới.
+    await t.http().get('/v1/admin/dashboard').set(auth(first.token)).expect(401);
+    await t.http().get('/v1/admin/dashboard').set(auth(set.accessToken)).expect(200);
+
+    const login = (await t.http().post('/v1/auth/password-login').send({ phone: '0900000099', password: 'ShipQuanhToi2026' }).expect(200)).body;
+    expect((await t.http().get('/v1/auth/me').set(auth(login.accessToken)).expect(200)).body).toMatchObject({ hasPassword: true, via: 'password', roles: expect.arrayContaining(['OPS']) });
+    const { rows } = await t.pool.query('SELECT password_hash FROM users WHERE id = $1', [opsId]);
+    expect(rows[0].password_hash).toMatch(/^scrypt\$/);
+    expect(rows[0].password_hash).not.toContain('ShipQuanhToi2026');
+
+    // Đang đăng nhập bằng mật khẩu thì đổi phải đúng mật khẩu cũ.
+    await t.http().post('/v1/auth/password').set(auth(login.accessToken)).send({ newPassword: 'MatKhauMoi2026' }).expect(401);
+    const changed = (await t.http().post('/v1/auth/password').set(auth(login.accessToken)).send({ currentPassword: 'ShipQuanhToi2026', newPassword: 'MatKhauMoi2026' }).expect(200)).body;
+    await t.http().get('/v1/auth/me').set(auth(login.accessToken)).expect(401);
+    await t.http().get('/v1/auth/me').set(auth(changed.accessToken)).expect(200);
+
+    // Quên mật khẩu: đăng nhập bằng mã kích hoạt rồi đặt lại, không cần mật khẩu cũ.
+    const viaCode = await t.login('0900000099');
+    await t.http().post('/v1/auth/password').set(auth(viaCode.token)).send({ newPassword: 'DatLai2026xx' }).expect(200);
+    await t.http().post('/v1/auth/password-login').send({ phone: '0900000099', password: 'DatLai2026xx' }).expect(200);
+  });
+
+  it('sai 5 lần thì khoá 15 phút; số không phải Admin/Ops không đăng nhập bằng mật khẩu được', async () => {
+    const admin2 = await t.login('0900000098');
+    await t.pool.query(`INSERT INTO user_roles (user_id, role) VALUES ($1, 'ADMIN')`, [admin2.userId]);
+    const set = (await t.http().post('/v1/auth/password').set(auth(admin2.token)).send({ newPassword: 'DungMatKhau1' }).expect(200)).body;
+    void set;
+    for (let i = 0; i < 5; i++) {
+      expect((await t.http().post('/v1/auth/password-login').send({ phone: '0900000098', password: 'sai-mat-khau' }).expect(401)).body.error.code).toBe('PASSWORD_WRONG');
+    }
+    expect((await t.http().post('/v1/auth/password-login').send({ phone: '0900000098', password: 'DungMatKhau1' }).expect(429)).body.error.code).toBe('PASSWORD_LOCKED');
+    await t.pool.query('UPDATE users SET password_locked_until = now() - interval \'1 second\' WHERE id = $1', [admin2.userId]);
+    await t.http().post('/v1/auth/password-login').send({ phone: '0900000098', password: 'DungMatKhau1' }).expect(200);
+
+    // Quán (không phải Admin/Ops) và số chưa có: cùng một thông báo, không lộ thông tin.
+    expect((await t.http().post('/v1/auth/password-login').send({ phone: '0911111111', password: 'bat-ky-123' }).expect(401)).body.error.code).toBe('PASSWORD_WRONG');
+    expect((await t.http().post('/v1/auth/password-login').send({ phone: '0999999999', password: 'bat-ky-123' }).expect(401)).body.error.code).toBe('PASSWORD_WRONG');
+    await t.http().post('/v1/auth/password').set(auth(merchant)).send({ newPassword: 'QuanDatMatKhau1' }).expect(403);
+  });
+});
+

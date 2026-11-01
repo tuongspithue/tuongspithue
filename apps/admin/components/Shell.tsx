@@ -91,8 +91,13 @@ export function Shell({ children }: { children: ReactNode }) {
           </div>
         ))}
         <div className="spacer" />
+        <Link href="/account" className={isActive('/account') ? 'active' : ''}>
+          <span className="ico">👤</span>
+          Tài khoản của tôi
+        </Link>
         <button
           className="logout"
+          style={{ marginTop: 6 }}
           onClick={() => {
             setToken(null);
             router.replace('/login');

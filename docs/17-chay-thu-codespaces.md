@@ -47,7 +47,7 @@ Rồi chạy `bash scripts/codespace.sh seed` để tạo quán/shipper mẫu qu
 
 | Ai | Làm gì |
 |---|---|
-| Admin | Mở địa chỉ **Admin Console** trên máy tính → nhập số + mã kích hoạt |
+| Admin | Mở địa chỉ **Admin Console** trên máy tính → tab **Mã kích hoạt** → nhập số + mã. Lần đầu sẽ được mời **đặt mật khẩu**; từ đó đăng nhập bằng tab **Mật khẩu**, không cần xin mã nữa |
 | Khách | Mở địa chỉ **Web app khách** trên điện thoại → chọn quán, đặt hàng, nhập tên + số |
 | Quán, shipper | Cài APK (17.6) → đăng nhập bằng số mẫu + mã trong `codes.txt` |
 

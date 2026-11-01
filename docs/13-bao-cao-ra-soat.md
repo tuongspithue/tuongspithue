@@ -162,6 +162,7 @@ Lần rà soát này đọc lại toàn bộ 15 phần theo bốn góc: **logic 
 | 31/10/2026 | **Đăng nhập không dùng SMS/Zalo**: khách chỉ nhập tên + SĐT, quán/shipper gọi xác minh khi nhận đơn (phiên khách gắn với máy, chỉ có quyền khách); quán/shipper/Ops đăng ký trong app, **Admin gọi xác minh rồi cấp mã kích hoạt 8 số** gửi bằng Zalo/SMS từ máy Admin. Bỏ hẳn OTP và chế độ hiện mã trên màn hình | 2, 5, 6, 13.9, 16 |
 | 31/10/2026 | **Admin Console mở rộng & làm lại giao diện**: quản lý **quán** (tìm, lọc ngành/trạng thái, hồ sơ 360°: menu bật/tắt món, đơn gần đây, uy tín, nhân sự, sửa thông tin, mở/đóng cửa hộ, tạm khoá, cấp mã đăng nhập), **shipper** (trực tuyến/đang chạy chuyến, tiền thu hộ & hạn mức, tỉ lệ nhận lời mời, vị trí, tạm khoá), **khách hàng** (khách mới, thân thiết, hay huỷ/bùng; khoá tài khoản), **bản đồ trực tiếp** (OpenStreetMap miễn phí), biểu đồ đơn theo giờ, quán nhiều đơn nhất. Mọi thao tác bắt buộc ghi lý do và vào nhật ký | 14, 15 |
 | 01/11/2026 | **Nâng cấp giao diện web app khách**: đầu trang màu cam có lời chào theo giờ, địa chỉ giao, ô tìm quán; ô ngành hàng có biểu tượng; thẻ quán có ảnh theo ngành, uy tín, **thời gian đến tay ước tính** và khoảng cách; sắp xếp gần nhất/nhanh nhất/uy tín; trang quán có ảnh bìa, menu theo nhóm, số món đã chọn; giỏ hàng chia khối, nút đặt luôn hiện; theo dõi đơn có thẻ trạng thái lớn và **thanh tiến trình 5 bước**; màn đăng nhập có nút quay lại. **Bản đồ Admin**: nền CARTO rõ hơn (tự quay về OSM nếu lỗi), ghim có biểu tượng theo ngành/shipper/điểm giao, shipper đang chạy nhấp nháy, nút "Xem toàn bộ", sửa mảng xám khi đổi kích thước | 9, 14 |
+| 01/11/2026 | **Mật khẩu đăng nhập cho Admin/Ops**: lần đầu dùng mã kích hoạt, sau đó đặt mật khẩu và đăng nhập bằng SĐT + mật khẩu; khoá 15 phút khi sai 5 lần; quên mật khẩu thì dùng mã kích hoạt để đặt lại | 13.9, 16, 17 |
 
 ## 13.9. Đăng nhập không dùng SMS/Zalo (chốt 31/10/2026)
 
@@ -186,6 +187,7 @@ Không tích hợp dịch vụ gửi tin trả phí. Thay bằng **người th�
 4. Đối tác nhập số + mã → đăng nhập, giữ phiên 180 ngày trên máy đó.
 5. **Đổi/mất điện thoại:** Admin vào *Cấp lại mã kích hoạt*, nhập số; chọn *Đăng xuất các máy cũ* nếu mất máy.
 6. **Admin đầu tiên** (chưa có ai cấp mã): chạy trên máy chủ `node dist/src/database/activation-code.js <số điện thoại>` — số đó phải có trong `ADMIN_PHONES`.
+7. **Mật khẩu cho Admin/Ops:** đăng nhập lần đầu bằng mã kích hoạt rồi đặt mật khẩu ở mục **Tài khoản của tôi**; từ đó đăng nhập Admin Console bằng SĐT + mật khẩu trên máy nào cũng được (phiên 30 ngày). Mật khẩu băm một chiều (scrypt), tối thiểu 8 ký tự, không toàn chữ số; sai 5 lần khoá 15 phút; đổi mật khẩu thì đăng xuất mọi máy khác; đang đăng nhập bằng mật khẩu muốn đổi phải nhập mật khẩu cũ. **Quên mật khẩu:** đăng nhập bằng mã kích hoạt rồi đặt lại. Quán/shipper không dùng mật khẩu.
 
 ### Hạn chế đã biết
 - Khách đổi máy thì không thấy lại đơn cũ đặt ở máy trước (đơn vẫn chạy bình thường, quán/shipper vẫn gọi được).

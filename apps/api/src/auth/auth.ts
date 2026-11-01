@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, Inject, Injectable, Module, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Inject, Injectable, Module, Post } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Type } from 'class-transformer';
 import { IsDefined, IsIn, IsOptional, IsString, Length, Matches, ValidateIf, ValidateNested } from 'class-validator';
@@ -7,10 +7,11 @@ import { PoolClient } from 'pg';
 import { Queryable } from '../database/database';
 import { APP_CONFIG, AppConfig } from '../config';
 import { BusinessError } from '../common/errors';
-import { Public } from '../common/auth';
+import { AuthUser, CurrentUser, Public, Roles } from '../common/auth';
 import { DATABASE, Database } from '../database/database';
 import { CreateStoreDto, StoresModule, StoresService } from '../stores/stores';
 import { activationHash, createActivationCode } from './activation';
+import { hashPassword, verifyPassword } from './password';
 
 const PHONE = /^0\d{9}$/;
 const PHONE_MESSAGE = 'Số điện thoại không hợp lệ (VD 0901234567)';
@@ -19,9 +20,14 @@ const CUSTOMER_TOKEN_SECONDS = 180 * DAY;
 const PARTNER_TOKEN_SECONDS = 180 * DAY;
 const CODE_MAX_ATTEMPTS = 5;
 const PARTNER_ROLES = ['MERCHANT_OWNER', 'MERCHANT_STAFF', 'RIDER', 'OPS', 'ADMIN'];
+const STAFF_ROLES = ['ADMIN', 'OPS'];
+// Phiên đăng nhập bằng mật khẩu ngắn hơn phiên mã kích hoạt: máy tính văn phòng hay dùng chung.
+const PASSWORD_TOKEN_SECONDS = 30 * DAY;
+const PASSWORD_MAX_FAILS = 5;
+const PASSWORD_LOCK_MINUTES = 15;
 
 /** Nội dung token: `k` = C (khách, kèm mã máy `d`) hoặc P (đối tác, kèm phiên bản phiên `v`). */
-export type TokenPayload = { sub: string; k: 'C'; d: string } | { sub: string; k: 'P'; v: number };
+export type TokenPayload = { sub: string; k: 'C'; d: string } | { sub: string; k: 'P'; v: number; m?: 'code' | 'password' };
 
 class CustomerSignInDto {
   @Matches(PHONE, { message: PHONE_MESSAGE }) phone!: string;
@@ -31,6 +37,19 @@ class CustomerSignInDto {
 class ActivateDto {
   @Matches(PHONE, { message: PHONE_MESSAGE }) phone!: string;
   @Matches(/^\d{8}$/, { message: 'Mã kích hoạt gồm 8 chữ số' }) code!: string;
+}
+
+class PasswordLoginDto {
+  @Matches(PHONE, { message: PHONE_MESSAGE }) phone!: string;
+  @IsString() @Length(1, 200) password!: string;
+}
+
+class SetPasswordDto {
+  @IsOptional() @IsString() @Length(1, 200) currentPassword?: string;
+  @IsString()
+  @Length(8, 200, { message: 'Mật khẩu cần ít nhất 8 ký tự' })
+  @Matches(/^(?!\d+$)/, { message: 'Mật khẩu không được chỉ toàn chữ số' })
+  newPassword!: string;
 }
 
 class ApplyDto {
@@ -120,12 +139,79 @@ export class AuthService {
       if (this.config.adminPhones.includes(phone)) {
         await client.query(`INSERT INTO user_roles (user_id, role) VALUES ($1, 'ADMIN'), ($1, 'OPS') ON CONFLICT DO NOTHING`, [userId]);
       }
-      const payload: TokenPayload = { sub: String(userId), k: 'P', v: row.session_version };
+      const payload: TokenPayload = { sub: String(userId), k: 'P', v: row.session_version, m: 'code' };
       const accessToken = await this.jwt.signAsync(payload, { expiresIn: PARTNER_TOKEN_SECONDS });
       return { accessToken, userId };
     });
     if (!result) throw new BusinessError('CODE_WRONG', 'Mã kích hoạt không đúng', 401);
     return result;
+  }
+
+  /**
+   * Admin/Ops đăng nhập Admin Console bằng SĐT + mật khẩu tự đặt (Phần 13.9).
+   * Sai 5 lần thì khoá 15 phút; lần đếm sai được lưu ngoài giao dịch để không bị huỷ theo lỗi.
+   */
+  async passwordLogin(phone: string, password: string) {
+    const u = await this.db.one<{ id: string; password_hash: string | null; password_failed: number; password_locked_until: Date | null; session_version: number; status: string; staff: boolean }>(
+      `SELECT u.id, u.password_hash, u.password_failed, u.password_locked_until, u.session_version, u.status,
+              EXISTS (SELECT 1 FROM user_roles r WHERE r.user_id = u.id AND r.role = ANY($2)) AS staff
+       FROM users u WHERE u.phone = $1`,
+      [phone, STAFF_ROLES],
+    );
+    const wrong = new BusinessError('PASSWORD_WRONG', 'Số điện thoại hoặc mật khẩu không đúng', 401);
+    if (!u || !u.staff || !u.password_hash) {
+      // Không tiết lộ số này có tài khoản hay chưa đặt mật khẩu.
+      throw u?.staff && !u.password_hash
+        ? new BusinessError('PASSWORD_NOT_SET', 'Tài khoản chưa đặt mật khẩu. Đăng nhập bằng mã kích hoạt rồi đặt mật khẩu trong mục "Tài khoản"', 401)
+        : wrong;
+    }
+    if (u.status !== 'ACTIVE') throw new BusinessError('ACCOUNT_LOCKED', 'Tài khoản đã bị khoá', 403);
+    if (u.password_locked_until && u.password_locked_until.getTime() > Date.now()) {
+      const min = Math.ceil((u.password_locked_until.getTime() - Date.now()) / 60_000);
+      throw new BusinessError('PASSWORD_LOCKED', `Nhập sai quá nhiều lần. Thử lại sau ${min} phút hoặc đăng nhập bằng mã kích hoạt`, 429);
+    }
+    if (!(await verifyPassword(password, u.password_hash))) {
+      await this.db.query(
+        `UPDATE users SET password_failed = password_failed + 1,
+           password_locked_until = CASE WHEN password_failed + 1 >= $2 THEN now() + make_interval(mins => $3) ELSE password_locked_until END
+         WHERE id = $1`,
+        [u.id, PASSWORD_MAX_FAILS, PASSWORD_LOCK_MINUTES],
+      );
+      throw wrong;
+    }
+    await this.db.query('UPDATE users SET password_failed = 0, password_locked_until = NULL WHERE id = $1', [u.id]);
+    const payload: TokenPayload = { sub: String(u.id), k: 'P', v: u.session_version, m: 'password' };
+    const accessToken = await this.jwt.signAsync(payload, { expiresIn: PASSWORD_TOKEN_SECONDS });
+    return { accessToken, userId: Number(u.id) };
+  }
+
+  /**
+   * Đặt/đổi mật khẩu. Đang đăng nhập bằng mật khẩu thì phải nhập mật khẩu cũ; đăng nhập bằng mã kích hoạt
+   * (VD quên mật khẩu) thì không cần. Đổi xong đăng xuất mọi máy khác, trả phiên mới cho máy này.
+   */
+  async setPassword(user: AuthUser, dto: SetPasswordDto) {
+    if (user.device || !user.roles.some((r) => STAFF_ROLES.includes(r.role))) {
+      throw new BusinessError('NOT_STAFF', 'Chỉ tài khoản Admin/Ops mới đặt mật khẩu', 403);
+    }
+    const u = await this.db.one<{ password_hash: string | null }>('SELECT password_hash FROM users WHERE id = $1', [user.id]);
+    if (u?.password_hash && user.via === 'password') {
+      if (!dto.currentPassword || !(await verifyPassword(dto.currentPassword, u.password_hash))) {
+        throw new BusinessError('PASSWORD_WRONG', 'Mật khẩu hiện tại không đúng', 401);
+      }
+    }
+    const hash = await hashPassword(dto.newPassword);
+    const { rows } = await this.db.query<{ session_version: number }>(
+      `UPDATE users SET password_hash = $2, password_failed = 0, password_locked_until = NULL, session_version = session_version + 1
+       WHERE id = $1 RETURNING session_version`,
+      [user.id, hash],
+    );
+    const payload: TokenPayload = { sub: String(user.id), k: 'P', v: rows[0].session_version, m: 'password' };
+    return { accessToken: await this.jwt.signAsync(payload, { expiresIn: PASSWORD_TOKEN_SECONDS }), message: 'Đã lưu mật khẩu. Các máy khác đã bị đăng xuất.' };
+  }
+
+  async me(user: AuthUser) {
+    const u = await this.db.one<{ phone: string; full_name: string | null; password_hash: string | null }>('SELECT phone, full_name, password_hash FROM users WHERE id = $1', [user.id]);
+    return { id: user.id, phone: u?.phone, name: u?.full_name ?? null, roles: user.roles.map((r) => r.role), hasPassword: !!u?.password_hash, via: user.via ?? null };
   }
 
   /**
@@ -167,6 +253,25 @@ export class AuthController {
   @HttpCode(200)
   activate(@Body() dto: ActivateDto) {
     return this.auth.activate(dto.phone, dto.code);
+  }
+
+  @Public()
+  @Post('password-login')
+  @HttpCode(200)
+  passwordLogin(@Body() dto: PasswordLoginDto) {
+    return this.auth.passwordLogin(dto.phone, dto.password);
+  }
+
+  @Post('password')
+  @Roles('ADMIN', 'OPS')
+  @HttpCode(200)
+  setPassword(@CurrentUser() user: AuthUser, @Body() dto: SetPasswordDto) {
+    return this.auth.setPassword(user, dto);
+  }
+
+  @Get('me')
+  me(@CurrentUser() user: AuthUser) {
+    return this.auth.me(user);
   }
 
   @Public()
