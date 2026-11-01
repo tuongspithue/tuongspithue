@@ -18,7 +18,11 @@ class UnsubscribeDto {
 /** Nội dung thông báo theo mẫu — tiếng Việt, ngắn gọn (Phần 3.7). */
 const TEMPLATES: Record<string, (p: any) => { title: string; body: string }> = {
   NEW_ORDER: () => ({ title: '🔔 Đơn mới!', body: 'Mở app để nhận đơn ngay' }),
-  NEW_ORDER_REMINDER: (p) => ({ title: '🔔 Đơn đang chờ bạn nhận', body: `Đơn ${p.code} sắp tự huỷ nếu không nhận` }),
+  NEW_ORDER_REMINDER: (p) => ({ title: '🔔 Đơn đang chờ bạn nhận', body: `Đơn ${p.code} đang chờ — bấm nhận để khách khỏi đợi` }),
+  NO_RIDER_YET: (p) => ({ title: 'Chưa có shipper nhận đơn', body: `Đơn ${p.code}: đang mời shipper thêm một lượt` }),
+  PROXY_STARTED: () => ({ title: '🛒 Quán chưa phản hồi', body: 'Đang tìm shipper tới quán mua giúp bạn' }),
+  NO_RIDER_RETRYING: () => ({ title: 'Chưa có shipper nhận', body: 'Đang gọi lại quán và mời shipper thêm một lượt' }),
+  ORDER_CANCELLED_NO_RIDER: () => ({ title: 'Rất tiếc, chưa giao được đơn', body: 'Không có shipper nhận đơn lúc này. Đơn đã huỷ và hoàn tiền' }),
   NEW_SCHEDULED_ORDER: () => ({ title: '🟣 Đơn hẹn mới', body: 'Có khách đặt hẹn giờ, mở app để nhận' }),
   START_PREP_NOW: () => ({ title: '🍳 Tới giờ làm đơn hẹn', body: 'Bắt đầu chuẩn bị để kịp giờ lấy hàng' }),
   RECONFIRM_SCHEDULED: () => ({ title: '🟣 Xác nhận lại đơn hẹn', body: 'Bấm "Vẫn làm" để khách yên tâm' }),

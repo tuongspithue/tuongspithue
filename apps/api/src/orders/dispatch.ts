@@ -6,6 +6,7 @@ import { BusinessError } from '../common/errors';
 import { ROOKIE_DEFAULT_SCORE } from '@sqt/domain';
 import { point } from '../common/geo';
 import { DATABASE, Database } from '../database/database';
+import { ConfigCenter } from '../config-center/config.service';
 import { JobsService } from './jobs';
 import { Actor, OrderLifecycle, OrderRow, SYSTEM_ACTOR } from './lifecycle';
 import { NotificationsService } from './notifications';
@@ -35,6 +36,7 @@ export class DispatchService implements OnModuleInit {
     private readonly lifecycle: OrderLifecycle,
     private readonly jobs: JobsService,
     private readonly notifications: NotificationsService,
+    private readonly configCenter: ConfigCenter,
   ) {}
 
   onModuleInit() {
@@ -42,11 +44,30 @@ export class DispatchService implements OnModuleInit {
       const order = await this.lifecycle.lock(client, Number(job.order_id));
       if (order.state !== OrderState.DANG_TIM_SHIPPER) return;
       await client.query(
-        `UPDATE dispatch_offers SET status = 'EXPIRED' WHERE order_id = $1 AND wave = $2 AND status = 'SENT'`,
-        [order.id, job.payload.wave],
+        `UPDATE dispatch_offers SET status = 'EXPIRED' WHERE order_id = $1 AND wave = $2 AND round = $3 AND status = 'SENT'`,
+        [order.id, job.payload.wave, order.dispatch_round],
       );
       await this.sendWave(client, order, job.payload.wave + 1, now);
     });
+
+    // Lượt mời thứ hai sau khi đã gọi lại quán (Phần 3.4).
+    this.jobs.register('DISPATCH_RETRY', async (job, client) => {
+      const order = await this.lifecycle.lock(client, Number(job.order_id));
+      if (order.state !== OrderState.DANG_TIM_SHIPPER || order.rider_id) return;
+      await this.sendWave(client, order, 1, job.run_at ? new Date(job.run_at) : new Date());
+    });
+  }
+
+  /** Có điều phối viên (Admin/Ops) đang mở Admin Console không. */
+  async opsOnDuty(q: { query: PoolClient['query'] } | Database, now: Date = new Date()): Promise<boolean> {
+    const minutes = this.configCenter.get<number>('ops.on_duty_minutes', {});
+    const { rows } = await (q as PoolClient).query<{ n: number }>(
+      `SELECT count(*)::int AS n FROM users u
+       WHERE u.console_seen_at > $1::timestamptz - make_interval(mins => $2)
+         AND EXISTS (SELECT 1 FROM user_roles r WHERE r.user_id = u.id AND r.role IN ('ADMIN', 'OPS'))`,
+      [now, minutes],
+    );
+    return rows[0].n > 0;
   }
 
   /** Quán vừa nhận đơn giao bởi shipper → bắt đầu tìm shipper. */
@@ -84,29 +105,60 @@ export class DispatchService implements OnModuleInit {
            AND ($9 = 0 OR r.advance_limit >= $9)
            AND ($4 = 0 OR ${RIDER_COD_ALLOWED})
            AND NOT EXISTS (SELECT 1 FROM orders o WHERE o.rider_id = r.user_id AND o.state = ANY($5))
-           AND NOT EXISTS (SELECT 1 FROM dispatch_offers d WHERE d.rider_id = r.user_id AND d.order_id = $6)
+           AND NOT EXISTS (SELECT 1 FROM dispatch_offers d WHERE d.rider_id = r.user_id AND d.order_id = $6 AND d.round = $10)
            AND NOT EXISTS (SELECT 1 FROM dispatch_offers d WHERE d.rider_id = r.user_id AND d.status = 'SENT' AND d.expires_at > $2)
          -- Khoảng cách điều chỉnh theo uy tín: điểm 100 như gần hơn 20%, điểm 0 như xa hơn 20% (Phần 3.4.1, w3).
          ORDER BY ST_Distance(r.location, s.location) * (1 - (LEAST(GREATEST(COALESCE(ts.score, $8), 0), 100) - 50) / 250)
          LIMIT $7`,
-        [order.id, now, cfg.radiusM, codNeeded, ACTIVE_RIDER_STATES, order.id, cfg.maxRiders, ROOKIE_DEFAULT_SCORE, order.fulfillment === 'PROXY' ? Number(order.subtotal) : 0],
+        [order.id, now, cfg.radiusM, codNeeded, ACTIVE_RIDER_STATES, order.id, cfg.maxRiders, ROOKIE_DEFAULT_SCORE, order.fulfillment === 'PROXY' ? Number(order.subtotal) : 0, order.dispatch_round ?? 1],
       );
       if (rows.length === 0) continue;
 
       const expiresAt = new Date(now.getTime() + cfg.offerSeconds * 1000);
       for (const r of rows) {
         await client.query(
-          `INSERT INTO dispatch_offers (order_id, rider_id, wave, distance_m, earning, expires_at) VALUES ($1, $2, $3, $4, $5, $6)`,
-          [order.id, r.user_id, w, Math.round(r.distance_m), this.riderEarning(order, cfg.bonus), expiresAt],
+          `INSERT INTO dispatch_offers (order_id, rider_id, wave, distance_m, earning, expires_at, round) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+          [order.id, r.user_id, w, Math.round(r.distance_m), this.riderEarning(order, cfg.bonus), expiresAt, order.dispatch_round ?? 1],
         );
         await this.notifications.enqueue(client, r.user_id, 'PUSH', 'RIDER_OFFER', { orderId: Number(order.id), wave: w });
       }
       await this.jobs.schedule(client, 'DISPATCH_WAVE_EXPIRE', order.id, expiresAt, { wave: w });
       return order;
     }
-    const stuck = await this.lifecycle.apply(client, order, OrderEvent.DISPATCH_EXHAUSTED, SYSTEM_ACTOR);
-    await this.notifications.enqueue(client, null, 'PUSH', 'OPS_STUCK_ORDER', { orderId: Number(order.id), reason: 'NO_RIDER' });
-    return stuck;
+    return this.noRider(client, order, now);
+  }
+
+  /**
+   * Hết vòng mời mà không shipper nào nhận (Phần 3.4):
+   *  1. Lượt đầu: gọi lại quán (quán chưa nhận thì nhắc nhận đơn) và hẹn mời shipper thêm một lượt.
+   *  2. Lượt hai vẫn không ai nhận: có điều phối viên đang trực thì chuyển họ xử lý; không có thì huỷ,
+   *     hoàn tiền và báo khách — không để khách chờ một "điều phối viên" không tồn tại.
+   */
+  private async noRider(client: PoolClient, order: OrderRow, now: Date): Promise<OrderRow> {
+    const info = { orderId: Number(order.id), code: order.code };
+    if ((order.dispatch_round ?? 1) < 2) {
+      await client.query('UPDATE orders SET dispatch_round = 2 WHERE id = $1', [order.id]);
+      if (order.store_id) {
+        // Quán chưa nhận (đơn mua hộ) thì nhắc nhận đơn; quán đã nhận thì báo đang tìm thêm shipper.
+        await this.notifications.toStore(client, order.store_id, 'PUSH', order.accepted_at ? 'NO_RIDER_YET' : 'NEW_ORDER_REMINDER', info);
+      }
+      if (await this.opsOnDuty(client, now)) await this.notifications.enqueue(client, null, 'PUSH', 'OPS_STUCK_ORDER', { ...info, reason: 'NO_RIDER_RETRY' });
+      await this.notifications.enqueue(client, order.customer_id, 'PUSH', 'NO_RIDER_RETRYING', info);
+      const delay = this.configCenter.get<number>('dispatch.retry_delay_seconds', {});
+      await this.jobs.schedule(client, 'DISPATCH_RETRY', order.id, new Date(now.getTime() + delay * 1000));
+      return { ...order, dispatch_round: 2 };
+    }
+    if (await this.opsOnDuty(client, now)) {
+      const stuck = await this.lifecycle.apply(client, order, OrderEvent.DISPATCH_EXHAUSTED, SYSTEM_ACTOR);
+      await this.notifications.enqueue(client, null, 'PUSH', 'OPS_STUCK_ORDER', { ...info, reason: 'NO_RIDER' });
+      return stuck;
+    }
+    const cancelled = await this.lifecycle.apply(client, order, OrderEvent.NO_RIDER_CANCEL, SYSTEM_ACTOR, {
+      set: { cancel_reason: 'NO_RIDER', cancelled_by_role: 'SYSTEM', refund_kind: 'FULL' },
+    });
+    await this.notifications.enqueue(client, order.customer_id, 'PUSH', 'ORDER_CANCELLED_NO_RIDER', info);
+    if (order.store_id) await this.notifications.toStore(client, order.store_id, 'PUSH', 'ORDER_CANCELLED_NO_RIDER', info);
+    return cancelled;
   }
 
   async offersFor(riderId: number) {

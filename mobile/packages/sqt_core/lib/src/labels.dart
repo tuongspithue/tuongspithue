@@ -7,7 +7,7 @@ const Map<String, String> kStateLabels = {
   'CHO_KHACH_DUYET_THAY_DOI': 'Chờ bạn duyệt thay đổi',
   'QUAN_DA_NHAN': 'Quán đã nhận',
   'DANG_TIM_SHIPPER': 'Đang tìm shipper',
-  'CAN_CAN_THIEP': 'Đang được hỗ trợ',
+  'CAN_CAN_THIEP': 'Cần xử lý',
   'SHIPPER_DA_NHAN': 'Shipper đã nhận',
   'SHIPPER_DEN_QUAN': 'Shipper tới quán',
   'DA_LAY_HANG': 'Đã lấy hàng',
@@ -50,6 +50,7 @@ const Map<String, String> kEventLabels = {
   'SLOT_START': 'Bắt đầu chuyến hẹn',
   // Shipper mua hộ (Phần 3.8)
   'SWITCH_TO_PROXY': 'Nhờ shipper tới quán mua giúp',
+  'NO_RIDER_CANCEL': 'Không có shipper nhận — huỷ, hoàn tiền',
   'PROXY_ORDERED': 'Shipper đã đặt món tại quán',
   'PROXY_STORE_UNAVAILABLE': 'Quán không bán được — đã huỷ',
 };

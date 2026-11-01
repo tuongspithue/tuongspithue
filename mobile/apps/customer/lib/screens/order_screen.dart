@@ -120,6 +120,9 @@ class _OrderScreenState extends State<OrderScreen> with Polling {
             proxyAllowed: o['proxyAllowed'] == true,
             orderedAtStore: o['acceptedChannel'] == 'RIDER_PROXY',
             since: DateTime.tryParse(o['stateSince'] as String? ?? ''),
+            dispatchRound: (o['dispatchRound'] as num?)?.toInt() ?? 1,
+            opsOnDuty: o['opsOnDuty'] == true,
+            cancelReason: o['cancelReason'] as String?,
           ),
           if (o['kind'] != 'PARCEL' && !['HOAN_THANH', 'DA_HUY'].contains(state)) _SendToStoreCard(order: o),
           const SizedBox(height: 12),
@@ -281,7 +284,7 @@ class _Line extends StatelessWidget {
 
 /// Thẻ trạng thái lớn: đang ở bước nào, ai đang lo đơn, việc tiếp theo (Phần 2.1.6, 9.4).
 class _StatusHero extends StatelessWidget {
-  const _StatusHero({required this.state, required this.selfPickup, this.parcel = false, this.schedule, this.proxy = false, this.proxyAllowed = false, this.orderedAtStore = false, this.since});
+  const _StatusHero({required this.state, required this.selfPickup, this.parcel = false, this.schedule, this.proxy = false, this.proxyAllowed = false, this.orderedAtStore = false, this.since, this.dispatchRound = 1, this.opsOnDuty = false, this.cancelReason});
   final String state;
   final bool selfPickup;
   final bool parcel;
@@ -290,13 +293,27 @@ class _StatusHero extends StatelessWidget {
   final bool orderedAtStore;
   final DateTime? since;
   final Map<String, dynamic>? schedule;
+  final int dispatchRound;
+  final bool opsOnDuty;
+  final String? cancelReason;
+
+  /// Nói thật với khách: chỉ nhắc "điều phối viên" khi có người đang trực (Phần 3.4).
+  (String, String)? get _special {
+    if (state == 'DANG_TIM_SHIPPER' && dispatchRound >= 2) return ('🔁', 'Chưa có shipper nhận — đang gọi lại quán và mời shipper thêm một lượt');
+    if (state == 'CAN_CAN_THIEP') {
+      return opsOnDuty ? ('🧑‍💼', 'Điều phối viên đang hỗ trợ đơn của bạn') : ('⚠️', 'Đơn đang gặp trục trặc — bạn có thể gọi quán hoặc shipper ở mục Liên hệ');
+    }
+    if (state == 'DA_HUY' && cancelReason == 'NO_RIDER') return ('😔', 'Rất tiếc, chưa có shipper nhận đơn lúc này. Đơn đã huỷ — nếu đã trả trước, bạn được hoàn tiền');
+    if (state == 'DA_HUY' && cancelReason == 'MERCHANT_TIMEOUT') return ('😔', 'Quán chưa phản hồi. Đơn đã huỷ — nếu đã trả trước, bạn được hoàn tiền');
+    return null;
+  }
 
   static const _messages = {
     'CHO_THANH_TOAN': ('💳', 'Đang chờ bạn thanh toán'),
-    'CHO_QUAN_XAC_NHAN': ('🏪', 'Quán đang xem đơn — thường dưới 3 phút'),
+    'CHO_QUAN_XAC_NHAN': ('🏪', 'Quán đang xem đơn — vui lòng chờ giây lát'),
     'QUAN_DA_NHAN': ('👨‍🍳', 'Quán đã nhận và đang chuẩn bị món'),
     'DANG_TIM_SHIPPER': ('🔎', 'Đang mời shipper gần quán nhận chuyến'),
-    'CAN_CAN_THIEP': ('🧑‍💼', 'Điều phối viên đang hỗ trợ đơn của bạn'),
+    'CAN_CAN_THIEP': ('⚠️', 'Đơn đang gặp trục trặc'),
     'SHIPPER_DA_NHAN': ('🛵', 'Shipper đã nhận chuyến, đang tới quán'),
     'SHIPPER_DEN_QUAN': ('🛵', 'Shipper đã tới quán, chờ lấy món'),
     'DA_LAY_HANG': ('📦', 'Shipper đã lấy hàng'),
@@ -344,7 +361,7 @@ class _StatusHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = stateColor(state);
-    final msg = (proxy ? _proxyMessage : null) ?? (parcel ? _parcelMessages[state] : null) ?? _messages[state] ?? (state.startsWith('HEN_') ? ('🟣', 'Đơn hẹn giờ — chúng tôi nhắc quán & shipper đúng giờ') : ('📦', ''));
+    final msg = _special ?? (proxy ? _proxyMessage : null) ?? (parcel ? _parcelMessages[state] : null) ?? _messages[state] ?? (state.startsWith('HEN_') ? ('🟣', 'Đơn hẹn giờ — chúng tôi nhắc quán & shipper đúng giờ') : ('📦', ''));
     final ended = state == 'DA_HUY' || state == 'GIAO_THAT_BAI';
     final labels = parcel
         ? ['Đặt', 'Shipper nhận', 'Lấy hàng', 'Đang giao', 'Đã giao']

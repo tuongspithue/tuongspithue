@@ -69,6 +69,7 @@ export const OrderEvent = {
   RIDER_ACCEPT: 'RIDER_ACCEPT',
   DISPATCH_EXHAUSTED: 'DISPATCH_EXHAUSTED',
   OPS_RETRY_DISPATCH: 'OPS_RETRY_DISPATCH',
+  NO_RIDER_CANCEL: 'NO_RIDER_CANCEL',
   RIDER_RELEASE: 'RIDER_RELEASE',
   RIDER_ARRIVED_STORE: 'RIDER_ARRIVED_STORE',
   RIDER_PICKED_UP: 'RIDER_PICKED_UP',
@@ -226,6 +227,9 @@ const RULES: TransitionRule[] = [
   { from: [S.DANG_TIM_SHIPPER], event: E.RIDER_ACCEPT, actors: [A.RIDER], to: S.SHIPPER_DA_NHAN },
   { from: [S.DANG_TIM_SHIPPER], event: E.DISPATCH_EXHAUSTED, actors: [A.SYSTEM], to: S.CAN_CAN_THIEP },
   { from: [S.CAN_CAN_THIEP], event: E.OPS_RETRY_DISPATCH, actors: [A.OPS], to: S.DANG_TIM_SHIPPER },
+  // Đã gọi lại quán và mời shipper thêm một lượt mà vẫn không ai nhận, không có điều phối viên trực:
+  // huỷ, hoàn tiền và báo khách thay vì để đơn treo (Phần 3.4). Đây là huỷ, không phải xác nhận.
+  { from: [S.DANG_TIM_SHIPPER], event: E.NO_RIDER_CANCEL, actors: [A.SYSTEM], to: S.DA_HUY },
   {
     from: [S.SHIPPER_DA_NHAN, S.SHIPPER_DEN_QUAN],
     event: E.RIDER_RELEASE,

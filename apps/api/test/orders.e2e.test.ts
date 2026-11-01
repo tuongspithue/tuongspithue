@@ -263,11 +263,11 @@ describe('luồng đầy đủ: đặt đơn → Cổng A → Cổng B → giao 
 });
 
 describe('Cổng A — hẹn giờ và dự phòng', () => {
-  it('quán im lặng: nhắc, nhờ Ops gọi quán (kèm SĐT & lời đọc có ghi chú), 180 giây thì chuyển shipper tới quán mua hộ — không huỷ', async () => {
+  it('quán im lặng: nhắc, nhờ Ops gọi quán (kèm SĐT & lời đọc có ghi chú), hết 90 giây (mặc định) thì chuyển shipper tới quán mua hộ — không huỷ', async () => {
     const order = await placeOrder({ items: [{ itemId: phoId, quantity: 1, noteTags: ['Không hành'], allergens: ['SEAFOOD'] }] });
     const placedAt = Date.now();
 
-    await t.jobs.runDue(new Date(placedAt + 100_000));
+    await t.jobs.runDue(new Date(placedAt + 50_000));
     let view = await t.http().get(`/v1/orders/${order.id}`).set(auth(customer)).expect(200);
     expect(view.body.state).toBe('CHO_QUAN_XAC_NHAN');
     const call = await t.pool.query(`SELECT payload FROM notifications WHERE template = 'OPS_CALL_STORE'`);
@@ -277,7 +277,7 @@ describe('Cổng A — hẹn giờ và dự phòng', () => {
     // Không còn kênh trả phí (SMS/ZNS/IVR).
     expect((await t.pool.query(`SELECT DISTINCT channel FROM notifications`)).rows).toEqual([{ channel: 'PUSH' }]);
 
-    await t.jobs.runDue(new Date(placedAt + 181_000));
+    await t.jobs.runDue(new Date(placedAt + 91_000));
     view = await t.http().get(`/v1/orders/${order.id}`).set(auth(customer)).expect(200);
     expect(view.body.state).not.toBe('DA_HUY');
     expect(view.body.fulfillment).toBe('PROXY');
@@ -290,7 +290,7 @@ describe('Cổng A — hẹn giờ và dự phòng', () => {
     expect(missed.rows[0].store_missed).toBe(true);
   });
 
-  it('quán im lặng với đơn tự đến lấy (shipper không mua hộ được) thì 180 giây vẫn huỷ và hoàn tiền', async () => {
+  it('quán im lặng với đơn tự đến lấy (shipper không mua hộ được) thì hết giờ chờ vẫn huỷ và hoàn tiền', async () => {
     const order = await placeOrder({ deliveryMode: 'SELF_PICKUP', dropoff: undefined });
     await t.jobs.runDue(new Date(Date.now() + 181_000));
     const view = await t.http().get(`/v1/orders/${order.id}`).set(auth(customer)).expect(200);
@@ -340,10 +340,38 @@ describe('Cổng B — điều phối', () => {
     ]);
   });
 
-  it('không có shipper nào: chuyển cần can thiệp và báo Ops', async () => {
+  it('không có shipper nào: gọi lại quán, mời thêm một lượt; vẫn không ai và không có điều phối viên trực thì huỷ, hoàn tiền, báo khách', async () => {
+    await t.pool.query('UPDATE users SET console_seen_at = NULL');
     const order = await placeOrder();
     const res = await t.http().post(`/v1/merchant/orders/${order.id}/accept`).set(auth(merchant)).send({ prepTimeMin: 10 }).expect(200);
-    expect(res.body.state).toBe('CAN_CAN_THIEP');
+    expect(res.body.state).toBe('DANG_TIM_SHIPPER');
+    let view = (await t.http().get(`/v1/orders/${order.id}`).set(auth(customer)).expect(200)).body;
+    expect(view.dispatchRound).toBe(2);
+    const sent = async () => (await t.pool.query(`SELECT template FROM notifications WHERE (payload->>'orderId')::int = $1 ORDER BY id`, [order.id])).rows.map((r) => r.template);
+    expect(await sent()).toEqual(expect.arrayContaining(['NO_RIDER_YET', 'NO_RIDER_RETRYING']));
+    // Không ai trực Admin Console thì không báo Ops.
+    expect(await sent()).not.toContain('OPS_STUCK_ORDER');
+
+    await t.jobs.runDue(new Date(Date.now() + 61_000));
+    view = (await t.http().get(`/v1/orders/${order.id}`).set(auth(customer)).expect(200)).body;
+    expect(view).toMatchObject({ state: 'DA_HUY', cancelReason: 'NO_RIDER', refund: 'FULL' });
+    expect(await sent()).toContain('ORDER_CANCELLED_NO_RIDER');
+  });
+
+  it('lượt mời thứ hai: shipper vừa bật máy được mời; có điều phối viên trực thì chuyển họ thay vì huỷ', async () => {
+    const order = await placeOrder();
+    await t.http().post(`/v1/merchant/orders/${order.id}/accept`).set(auth(merchant)).send({ prepTimeMin: 10 }).expect(200);
+    await t.http().get('/v1/admin/dashboard').set(auth(admin)).expect(200); // điều phối viên đang mở Console
+    await goOnline(riderA, offset(300));
+    await t.pool.query(`UPDATE riders SET location_at = now() + interval '1 minute'`);
+    await t.jobs.runDue(new Date(Date.now() + 61_000));
+    const offers = await t.pool.query('SELECT rider_id, round FROM dispatch_offers WHERE order_id = $1', [order.id]);
+    expect(offers.rows.map((r) => [Number(r.rider_id), r.round])).toEqual([[riderA.userId, 2]]);
+
+    await t.jobs.runDue(new Date(Date.now() + 200_000));
+    const view = (await t.http().get(`/v1/orders/${order.id}`).set(auth(customer)).expect(200)).body;
+    expect(view).toMatchObject({ state: 'CAN_CAN_THIEP', opsOnDuty: true });
+    await t.http().post('/v1/rider/status').set(auth(riderA.token)).send({ online: false }).expect(200);
   });
 
   it('shipper nhả chuyến: tìm người khác, không mời lại người vừa nhả', async () => {

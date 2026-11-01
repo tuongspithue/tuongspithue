@@ -47,7 +47,7 @@ export const CONFIG_DEFINITIONS: ConfigDefinition[] = [
   { key: 'feature.ai_assist', module: 'feature', description: 'Bật tính năng AI (cần cấu hình kết nối AI)', type: 'BOOL', default: true, scopes: ['GLOBAL'] },
   // ---- Phí ----
   // ---- Shipper mua hộ (Phần 3.8) ----
-  { key: 'proxy.hybrid_wait_seconds', module: 'proxy', description: 'Chế độ song song: số giây chờ quán nhận trước khi mời shipper tới mua hộ', type: 'INT', default: 60, min: 15, max: 600, scopes: ['GLOBAL', 'CATEGORY', 'STORE'] },
+  { key: 'proxy.hybrid_wait_seconds', module: 'proxy', description: 'Chế độ song song: số giây chờ quán nhận trước khi mời shipper tới mua hộ (nên nhỏ hơn thời gian chờ quán xác nhận)', type: 'INT', default: 60, min: 15, max: 600, scopes: ['GLOBAL', 'CATEGORY', 'STORE'] },
   { key: 'proxy.fallback_on_store_silent', module: 'proxy', description: 'Quán im lặng hết hạn Cổng A: chuyển đơn giao tận nơi sang shipper mua hộ thay vì huỷ (cả quán chế độ "Quán tự nhận")', type: 'BOOL', default: true, scopes: ['GLOBAL', 'CATEGORY', 'STORE'] },
   { key: 'proxy.new_customer_max_value', module: 'proxy', description: 'Khách mới (chưa có đơn thành công) chỉ được mua hộ với tiền món dưới mức này (đồng)', type: 'MONEY', default: 200_000, min: 0, max: 5_000_000, scopes: ['GLOBAL', 'CATEGORY', 'STORE'] },
   { key: 'proxy.price_tolerance_pct', module: 'proxy', description: 'Giá thật tại quán lệch quá % này so với app thì shipper phải gọi khách đồng ý', type: 'INT', default: 10, min: 0, max: 50, scopes: ['GLOBAL', 'CATEGORY', 'STORE'] },
@@ -57,11 +57,24 @@ export const CONFIG_DEFINITIONS: ConfigDefinition[] = [
   { key: 'fees.delivery_min', module: 'fees', description: 'Phí ship tối thiểu (đồng)', type: 'MONEY', default: 15_000, min: 0, max: 100_000, scopes: ['GLOBAL', 'CATEGORY', 'STORE'] },
   { key: 'fees.delivery_included_km', module: 'fees', description: 'Số km tính trong phí tối thiểu', type: 'INT', default: 2, min: 0, max: 10, scopes: ['GLOBAL', 'CATEGORY'] },
   { key: 'fees.delivery_per_km', module: 'fees', description: 'Phí mỗi km tiếp theo (đồng)', type: 'MONEY', default: 4_000, min: 0, max: 30_000, scopes: ['GLOBAL', 'CATEGORY', 'STORE'] },
+  // ---- Tìm shipper ----
+  { key: 'dispatch.retry_delay_seconds', module: 'dispatch', description: 'Không shipper nào nhận: chờ bao nhiêu giây rồi gọi lại quán và mời shipper thêm một lượt (không được nữa thì báo khách)', type: 'INT', default: 60, min: 15, max: 600, scopes: ['GLOBAL'] },
+  { key: 'ops.on_duty_minutes', module: 'dispatch', description: 'Điều phối viên được tính là đang trực nếu mở Admin Console trong số phút gần đây. Không ai trực thì hệ thống tự xử lý, không báo khách "điều phối viên đang hỗ trợ"', type: 'INT', default: 5, min: 1, max: 60, scopes: ['GLOBAL'] },
   // ---- SLA Cổng A ----
+  {
+    key: 'sla.gate_a.timeout_seconds',
+    module: 'sla',
+    description: 'Thời gian chờ quán xác nhận đơn (giây). Hết thời gian: đơn giao tận nơi chuyển shipper mua hộ, đơn khác huỷ & hoàn tiền. Các mốc nhắc/gọi quán tự chia theo tỷ lệ',
+    type: 'INT',
+    default: 90,
+    min: 30,
+    max: 600,
+    scopes: ['GLOBAL', 'CATEGORY'],
+  },
   {
     key: 'sla.gate_a.steps',
     module: 'sla',
-    description: 'Các mốc nhắc quán xác nhận đơn ngay (giây kể từ khi đơn tới quán)',
+    description: 'Nâng cao — tỷ lệ các mốc nhắc quán (giây theo thang mẫu; hệ thống co giãn để mốc AUTO_CANCEL trùng "thời gian chờ quán xác nhận")',
     type: 'JSON',
     default: DEFAULT_GATE_A_STEPS,
     scopes: ['GLOBAL', 'CATEGORY'],

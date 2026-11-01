@@ -94,6 +94,8 @@ stateDiagram-v2
 
 ## 3.3. Cổng A — Quán xác nhận: SLA & dự phòng
 
+Admin cài **một con số** cho cả hệ thống: *thời gian chờ quán xác nhận* (`sla.gate_a.timeout_seconds`, mặc định **90 giây**, có thể đặt riêng theo ngành). Các mốc nhắc/gọi quán tự chia theo tỷ lệ; bảng dưới là mốc ở mức 180 giây — với mặc định 90 giây thì 23s / 45s / 60s / 90s.
+
 | Thời điểm (từ lúc đơn tới quán) | Hành động hệ thống |
 |---|---|
 | 0s | Đẩy thông báo + chuông toàn màn hình trên **tất cả thiết bị** của quán (chủ + nhân viên có quyền nhận đơn) |
@@ -118,7 +120,10 @@ Tìm shipper theo **vòng mở rộng** (wave):
 | 2 | ≤ 2,5 km | 1 | 20 giây |
 | 3 | ≤ 3,5 km | 3 (ai nhận trước được) | 25 giây |
 | 4 | ≤ 5 km | 5 + **tăng thưởng +5.000đ** | 30 giây |
-| 5 | — | Đẩy vào hàng đợi Ops | Ops gán tay / gọi shipper |
+| 5 | — | **Lượt 2**: gọi lại quán (quán chưa nhận thì nhắc nhận đơn), báo khách "đang mời thêm một lượt", chờ `dispatch.retry_delay_seconds` (mặc định 60 giây) rồi mời lại vòng 1–4 — kể cả shipper đã được mời ở lượt 1 | |
+| 6 | — | Vẫn không ai nhận: **có điều phối viên đang trực** → đẩy vào hàng đợi Ops (gán tay / gọi shipper). **Không ai trực** → huỷ (sự kiện `NO_RIDER_CANCEL`, hệ thống chỉ huỷ, không xác nhận thay), **hoàn tiền 100%**, báo khách và quán | |
+
+**Điều phối viên** là tài khoản vai trò Ops/Admin (người của nền tảng) mở Admin Console để xử lý đơn kẹt và gọi quán. Được tính là **đang trực** khi Console đang mở trong `ops.on_duty_minutes` phút gần đây (mặc định 5). Khách **chỉ thấy** "Điều phối viên đang hỗ trợ" khi thật sự có người trực; ngược lại app nói rõ đơn đang được thử lại hoặc đã huỷ.
 
 **Điểm phù hợp** của shipper (càng cao càng được mời trước):
 

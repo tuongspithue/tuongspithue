@@ -190,9 +190,13 @@ export class OrdersService implements OnModuleInit {
 
   private async scheduleGateA(client: PoolClient, order: OrderRow, from: Date) {
     const { rows } = await client.query<{ category: string }>('SELECT category FROM stores WHERE id = $1', [order.store_id]);
-    const steps = this.configCenter.get<SlaStep[]>('sla.gate_a.steps', { category: rows[0]?.category });
+    const scope = { category: rows[0]?.category };
+    const steps = this.configCenter.get<SlaStep[]>('sla.gate_a.steps', scope);
+    // Admin cài một con số "thời gian chờ quán xác nhận"; các mốc nhắc/gọi quán co giãn theo cùng tỷ lệ.
+    const timeout = this.configCenter.get<number>('sla.gate_a.timeout_seconds', scope);
+    const factor = timeout / Math.max(...steps.map((s) => s.afterSeconds));
     for (const step of steps) {
-      await this.jobs.schedule(client, 'GATE_A_STEP', order.id, new Date(from.getTime() + step.afterSeconds * 1000), {
+      await this.jobs.schedule(client, 'GATE_A_STEP', order.id, new Date(from.getTime() + Math.round(step.afterSeconds * factor) * 1000), {
         action: step.action,
       });
     }
@@ -605,6 +609,10 @@ export class OrdersService implements OnModuleInit {
       // Mua hộ (Phần 3.8): PROXY = shipper tới quán đặt & trả tiền hộ; acceptedChannel cho biết ai xác nhận Cổng A.
       fulfillment: o.fulfillment ?? 'STORE',
       proxyAllowed: !!o.proxy_allowed,
+      // 2 = đã gọi lại quán và đang mời shipper lượt thứ hai (Phần 3.4).
+      dispatchRound: Number(o.dispatch_round ?? 1),
+      // Chỉ nói "điều phối viên đang hỗ trợ" khi thật sự có người đang trực Admin Console.
+      opsOnDuty: o.state === OrderState.CAN_CAN_THIEP ? await this.dispatch.opsOnDuty(q as PoolClient) : false,
       acceptedChannel: o.accepted_channel,
       proxyPaidAmount: o.proxy_paid_amount == null ? null : Number(o.proxy_paid_amount),
       proxyReceiptUrl: o.proxy_receipt_url,
@@ -651,6 +659,7 @@ export class OrdersService implements OnModuleInit {
           }
         : null,
       refund: o.refund_kind,
+      cancelReason: o.state === OrderState.DA_HUY ? o.cancel_reason : null,
       // Mã PIN chỉ khách xem; shipper phải hỏi khách khi giao (Phần 2.1.6).
       ...(isCustomer ? { deliveryPin: o.delivery_pin } : {}),
       items: items.rows.map((i) => ({

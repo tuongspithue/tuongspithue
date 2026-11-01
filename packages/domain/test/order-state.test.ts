@@ -175,6 +175,14 @@ describe('chuyển không hợp lệ', () => {
   });
 });
 
+describe('không shipper nào nhận (Phần 3.4)', () => {
+  it('hệ thống chỉ được huỷ đơn đang tìm shipper — không bao giờ tự nhận thay shipper', () => {
+    expect(transition(S.DANG_TIM_SHIPPER, E.NO_RIDER_CANCEL, A.SYSTEM).to).toBe(S.DA_HUY);
+    expect(() => transition(S.SHIPPER_DA_NHAN, E.NO_RIDER_CANCEL, A.SYSTEM)).toThrow(TransitionError);
+    expect(() => transition(S.DANG_TIM_SHIPPER, E.RIDER_ACCEPT, A.SYSTEM)).toThrow(TransitionError);
+  });
+});
+
 describe('shipper mua hộ (Phần 3.8)', () => {
   it('chỉ hệ thống chuyển đơn đang chờ quán sang mời shipper mua hộ; không ai khác làm thay', () => {
     expect(transition(S.CHO_QUAN_XAC_NHAN, E.SWITCH_TO_PROXY, A.SYSTEM).to).toBe(S.DANG_TIM_SHIPPER);

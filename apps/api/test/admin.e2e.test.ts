@@ -104,13 +104,15 @@ describe('trung tâm cấu hình phân tầng (Phần 14.6)', () => {
     expect(badSteps.body.error.message).toMatch(/AUTO_CANCEL/);
   });
 
-  it('mốc Cổng A chỉnh được: quán im lặng 120 giây thì hết hạn (đơn giao tận nơi chuyển shipper mua hộ)', async () => {
+  it('thời gian chờ quán xác nhận Admin cài cho cả hệ thống; các mốc nhắc co giãn theo', async () => {
     await t
       .http()
       .put('/v1/admin/config/sla.gate_a.steps')
       .set(auth(admin))
-      .send({ scope: 'GLOBAL', value: [{ afterSeconds: 60, action: 'OPS_CALL' }, { afterSeconds: 120, action: 'AUTO_CANCEL' }], reason: 'Rút ngắn chờ ở khu thí điểm' })
+      .send({ scope: 'GLOBAL', value: [{ afterSeconds: 60, action: 'OPS_CALL' }, { afterSeconds: 120, action: 'AUTO_CANCEL' }], reason: 'Bỏ bớt mốc nhắc' })
       .expect(200);
+    await t.http().put('/v1/admin/config/sla.gate_a.timeout_seconds').set(auth(admin)).send({ scope: 'GLOBAL', value: 10, reason: 'Quá ngắn' }).expect(422);
+    await t.http().put('/v1/admin/config/sla.gate_a.timeout_seconds').set(auth(admin)).send({ scope: 'GLOBAL', value: 120, reason: 'Thí điểm chờ 2 phút' }).expect(200);
     const o = (await order().expect(201)).body;
     await t.jobs.runDue(new Date(Date.now() + 100_000));
     expect((await t.http().get(`/v1/orders/${o.id}`).set(auth(customer.token)).expect(200)).body.state).toBe('CHO_QUAN_XAC_NHAN');

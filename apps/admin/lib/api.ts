@@ -100,6 +100,7 @@ export const ALLERGEN_LABELS: Record<string, string> = {
 export const EVENT_LABELS: Record<string, string> = {
   ORDER_PLACED: 'Khách đặt đơn',
   SWITCH_TO_PROXY: 'Quán im lặng → nhờ shipper mua hộ',
+  NO_RIDER_CANCEL: 'Không shipper nhận sau 2 lượt → huỷ, hoàn tiền',
   PROXY_ORDERED: 'Shipper đặt món tại quán (xác nhận thay quán)',
   PROXY_STORE_UNAVAILABLE: 'Shipper báo quán không bán được',
   PAYMENT_SUCCEEDED: 'Đã thanh toán',

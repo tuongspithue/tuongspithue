@@ -56,8 +56,8 @@ describe('thông báo đẩy qua trình duyệt (miễn phí)', () => {
     const statuses = (await t.pool.query(`SELECT template, status FROM notifications ORDER BY id`)).rows;
     expect(statuses).toContainEqual({ template: 'NEW_ORDER', status: 'SENT' });
 
-    // 90 giây chưa nhận: việc gọi quán vào hộp "Việc cần làm" của Ops kèm SĐT và lời đọc đơn.
-    await t.jobs.runDue(new Date(Date.now() + 95_000));
+    // Quá nửa thời gian chờ (mặc định 45/90 giây) chưa nhận: việc gọi quán vào hộp "Việc cần làm" của Ops kèm SĐT và lời đọc đơn.
+    await t.jobs.runDue(new Date(Date.now() + 50_000));
     await push.flush();
     const inbox = await t.http().get('/v1/admin/ops-inbox').set(auth(admin)).expect(200);
     expect(inbox.body.items[0]).toMatchObject({ orderId: order.body.id, storePhone: '0911111111', reason: 'MERCHANT_SILENT' });

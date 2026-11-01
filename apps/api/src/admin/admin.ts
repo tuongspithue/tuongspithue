@@ -53,7 +53,9 @@ export class AdminController {
 
   /** Tổng quan "nhìn trong 5 giây" (Phần 14.2). */
   @Get('dashboard')
-  async dashboard() {
+  async dashboard(@CurrentUser() user: AuthUser) {
+    // Console hỏi số liệu định kỳ → ghi nhận điều phối viên đang trực (Phần 3.4: không trực thì hệ thống tự xử lý).
+    await this.db.query('UPDATE users SET console_seen_at = now() WHERE id = $1', [user.id]);
     const [byState, gateA, riders, problems, scheduled, today, outbox, hourly, pending, topStores] = await Promise.all([
       this.db.query(`SELECT state, count(*)::int AS n FROM orders o WHERE o.state IN ${ACTIVE_STATES} GROUP BY state`),
       this.db.query(
