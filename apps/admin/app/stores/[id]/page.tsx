@@ -40,7 +40,7 @@ export default function StoreDetailPage() {
   }, [id]);
   useEffect(load, [load]);
 
-  const markers = useMemo(() => (s ? [{ lat: s.lat, lng: s.lng, color: CATEGORY_LABELS[s.category]?.color ?? '#ff6b2c', size: 10, popup: s.name }] : []), [s]);
+  const markers = useMemo(() => (s ? [{ lat: s.lat, lng: s.lng, color: CATEGORY_LABELS[s.category]?.color ?? '#ff6b2c', icon: CATEGORY_LABELS[s.category]?.icon ?? '🏪', size: 36, popup: s.name }] : []), [s]);
 
   async function run(fn: () => Promise<unknown>, ok: string) {
     setMsg(null);

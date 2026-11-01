@@ -19,6 +19,7 @@ export default function MapPage() {
   const [error, setError] = useState<string | null>(null);
   const [layer, setLayer] = useState<Layer>('ALL');
   const [onlyOpen, setOnlyOpen] = useState(false);
+  const [fit, setFit] = useState(0);
 
   useEffect(() => {
     const load = () =>
@@ -44,6 +45,8 @@ export default function MapPage() {
           lat: s.lat,
           lng: s.lng,
           color: c?.color ?? '#888',
+          icon: c?.icon ?? '🏪',
+          size: 28,
           faded: !s.isOpen || s.status !== 'APPROVED',
           popup: `<strong>${esc(s.name)}</strong><br>${esc(c ? `${c.icon} ${c.label}` : s.category)} · ${s.status !== 'APPROVED' ? 'Tạm khoá/chờ duyệt' : s.isOpen ? 'Đang mở' : 'Đóng cửa'}<br><a href="/stores/${s.id}">Xem hồ sơ quán →</a>`,
         });
@@ -51,7 +54,7 @@ export default function MapPage() {
     }
     if (layer === 'ALL' || layer === 'ORDERS') {
       for (const o of d.orders) {
-        out.push({ lat: o.lat, lng: o.lng, color: '#cc2f35', size: 6, popup: `📍 Điểm giao <strong>${esc(o.code)}</strong><br>${esc(STATE_LABELS[o.state] ?? o.state)}<br><a href="/orders/${o.id}">Xem đơn →</a>` });
+        out.push({ lat: o.lat, lng: o.lng, color: '#cc2f35', icon: '📍', size: 24, popup: `📍 Điểm giao <strong>${esc(o.code)}</strong><br>${esc(STATE_LABELS[o.state] ?? o.state)}<br><a href="/orders/${o.id}">Xem đơn →</a>` });
       }
     }
     if (layer === 'ALL' || layer === 'RIDERS') {
@@ -60,8 +63,10 @@ export default function MapPage() {
           lat: r.lat,
           lng: r.lng,
           color: r.activeTrip ? '#1f6fd1' : '#12803a',
-          ring: true,
-          size: 9,
+          icon: '🛵',
+          size: 34,
+          top: true,
+          pulse: !!r.activeTrip,
           popup: `🛵 <strong>${esc(r.name ?? r.phone)}</strong><br>${r.activeTrip ? `Đang chạy ${esc(r.activeTrip)}` : 'Đang rảnh'} · vị trí ${esc(ago(r.locationAt))}<br><a href="/riders/${r.userId}">Xem hồ sơ →</a>`,
         });
       }
@@ -97,13 +102,17 @@ export default function MapPage() {
           Chỉ quán đang mở
         </label>
         <div className="legend" style={{ marginLeft: 'auto', flexWrap: 'wrap' }}>
-          {Object.values(CATEGORY_LABELS).map((c) => <span key={c.label}><i style={{ background: c.color }} />{c.label}</span>)}
-          <span><i style={{ background: '#12803a' }} />Shipper rảnh</span>
-          <span><i style={{ background: '#1f6fd1' }} />Shipper đang chạy</span>
-          <span><i style={{ background: '#cc2f35' }} />Điểm giao</span>
+          {Object.values(CATEGORY_LABELS).map((c) => <span key={c.label}>{c.icon} {c.label}</span>)}
+          <span>🛵 <b className="tone-ok">xanh lá</b> rảnh · <b style={{ color: 'var(--info)' }}>xanh dương</b> đang chạy</span>
+          <span>📍 Điểm giao</span>
         </div>
       </div>
-      <LeafletMap markers={markers} />
+      <div className="map-wrap">
+        <div className="map-tools">
+          <button className="btn secondary small" onClick={() => setFit((n) => n + 1)}>⤢ Xem toàn bộ</button>
+        </div>
+        <LeafletMap markers={markers} fitSignal={fit} />
+      </div>
     </>
   );
 }

@@ -18,8 +18,23 @@ ThemeData sqtTheme({required Brightness brightness, bool large = false}) {
     textTheme: large ? base.textTheme.apply(fontSizeFactor: 1.1) : base.textTheme,
     filledButtonTheme: FilledButtonThemeData(style: FilledButton.styleFrom(minimumSize: minButton, shape: const StadiumBorder())),
     outlinedButtonTheme: OutlinedButtonThemeData(style: OutlinedButton.styleFrom(minimumSize: minButton, shape: const StadiumBorder())),
-    cardTheme: const CardThemeData(margin: EdgeInsets.symmetric(vertical: 6), shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16)))),
-    inputDecorationTheme: const InputDecorationTheme(border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12)))),
+    // Nền xám nhạt, thẻ trắng viền mảnh: nhìn sạch, dễ phân khối thông tin (Phần 9.2).
+    scaffoldBackgroundColor: brightness == Brightness.light ? const Color(0xFFF5F6F8) : scheme.surface,
+    appBarTheme: AppBarTheme(
+      backgroundColor: brightness == Brightness.light ? const Color(0xFFF5F6F8) : scheme.surface,
+      surfaceTintColor: Colors.transparent,
+      scrolledUnderElevation: 0,
+      titleTextStyle: base.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800, color: scheme.onSurface),
+    ),
+    cardTheme: CardThemeData(
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      elevation: 0,
+      color: brightness == Brightness.light ? Colors.white : scheme.surfaceContainer,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(borderRadius: const BorderRadius.all(Radius.circular(20)), side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.6))),
+    ),
+    chipTheme: base.chipTheme.copyWith(shape: const StadiumBorder()),
+    inputDecorationTheme: const InputDecorationTheme(border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(14)))),
   );
 }
 

@@ -216,7 +216,7 @@ label { font-size: 13px; color: var(--muted); }
 .timeline li::before { content: ""; position: absolute; left: -6px; top: 13px; width: 10px; height: 10px; border-radius: 50%; background: var(--confirmed); }
 
 /* ---------- Bản đồ ---------- */
-.map { height: calc(100vh - 190px); min-height: 420px; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
+.map { height: calc(100vh - 330px); min-height: 420px; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
 .map.small { height: 260px; min-height: 0; }
 .leaflet-popup-content { font: 13px/1.45 "Be Vietnam Pro", system-ui, sans-serif; }
 
@@ -233,3 +233,17 @@ label { font-size: 13px; color: var(--muted); }
   .stat .value { font-size: 20px; }
   .page-head h1 { font-size: 20px; }
 }
+
+/* ---------- Ghim bản đồ ---------- */
+.sqt-marker { background: transparent; border: 0; }
+.sqt-marker .pin { display: grid; place-items: center; border-radius: 50%; background: #fff; border: 3px solid var(--c); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3); line-height: 1; transition: transform 0.15s; }
+.sqt-marker .pin:hover { transform: scale(1.18); }
+.sqt-marker .pin.pulse { animation: sqt-pulse 1.6s ease-out infinite; }
+.sqt-marker .dot { border-radius: 50%; background: var(--c); border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35); }
+@keyframes sqt-pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--c) 60%, transparent); } 70% { box-shadow: 0 0 0 12px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
+.leaflet-popup-content-wrapper { border-radius: 12px; }
+.leaflet-popup-content a { color: var(--primary); font-weight: 600; text-decoration: none; }
+.map-wrap { position: relative; }
+.map-wrap .map-tools { position: absolute; top: 10px; right: 10px; z-index: 500; display: flex; gap: 6px; }
+.map-wrap .map-tools .btn { box-shadow: var(--shadow); }
+.leaflet-container { background: #e9eef2; font: inherit; }

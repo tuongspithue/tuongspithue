@@ -64,8 +64,7 @@ class OrderItemsView extends StatelessWidget {
             padding: const EdgeInsets.all(10),
             margin: const EdgeInsets.only(bottom: 8),
             decoration: BoxDecoration(color: SqtColors.danger.withValues(alpha: 0.12), border: Border.all(color: SqtColors.danger), borderRadius: BorderRadius.circular(12)),
-            child: Text('⚠ Dị ứng: ${allergens.map((a) => kAllergenLabels[a] ?? a).join(', ')}',
-                style: const TextStyle(color: SqtColors.danger, fontWeight: FontWeight.bold)),
+            child: Text('⚠ Dị ứng: ${allergens.map((a) => kAllergenLabels[a] ?? a).join(', ')}', style: const TextStyle(color: SqtColors.danger, fontWeight: FontWeight.bold)),
           ),
         for (final i in items)
           Padding(
@@ -87,20 +86,40 @@ class OrderItemsView extends StatelessWidget {
 
 /// Khung chung cho các màn đăng nhập: tiêu đề, các ô nhập, lỗi, nút chính.
 class _SignInFrame extends StatelessWidget {
-  const _SignInFrame({required this.title, required this.children});
+  const _SignInFrame({required this.title, required this.children, this.emoji = '👋', this.subtitle});
   final String title;
+  final String emoji;
+  final String? subtitle;
   final List<Widget> children;
 
   @override
   Widget build(BuildContext context) => Scaffold(
+        // Có nút quay lại khi màn này được mở từ giỏ hàng.
+        appBar: Navigator.of(context).canPop() ? AppBar() : null,
         body: SafeArea(
           child: Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
+              constraints: const BoxConstraints(maxWidth: 440),
               child: ListView(
                 padding: const EdgeInsets.all(24),
                 shrinkWrap: true,
-                children: [Text(title, style: Theme.of(context).textTheme.headlineSmall), const SizedBox(height: 24), ...children],
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Container(
+                      width: 72,
+                      height: 72,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(color: SqtColors.primary.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(24)),
+                      child: Text(emoji, style: const TextStyle(fontSize: 36)),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(title, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
+                  if (subtitle != null) Padding(padding: const EdgeInsets.only(top: 6), child: Text(subtitle!, style: Theme.of(context).textTheme.bodyMedium)),
+                  const SizedBox(height: 24),
+                  ...children,
+                ],
               ),
             ),
           ),
@@ -146,13 +165,13 @@ class _CustomerSignInScreenState extends State<CustomerSignInScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => _SignInFrame(title: 'Thông tin người đặt', children: [
+  Widget build(BuildContext context) => _SignInFrame(title: 'Bạn tên gì nhỉ?', subtitle: 'Chỉ cần tên và số điện thoại — không cần mật khẩu hay mã xác minh.', children: [
         TextField(
           key: const Key('name'),
           controller: _name,
           textCapitalization: TextCapitalization.words,
           autofillHints: const [AutofillHints.name],
-          decoration: const InputDecoration(labelText: 'Tên của bạn', hintText: 'Chị Hoa'),
+          decoration: const InputDecoration(labelText: 'Tên của bạn', hintText: 'VD: Chị Hoa', prefixIcon: Icon(Icons.person_outline)),
         ),
         const SizedBox(height: 12),
         TextField(
@@ -160,7 +179,7 @@ class _CustomerSignInScreenState extends State<CustomerSignInScreen> {
           controller: _phone,
           keyboardType: TextInputType.phone,
           autofillHints: const [AutofillHints.telephoneNumber],
-          decoration: const InputDecoration(labelText: 'Số điện thoại', hintText: '0901234567'),
+          decoration: const InputDecoration(labelText: 'Số điện thoại', hintText: '0901234567', prefixIcon: Icon(Icons.phone_outlined)),
         ),
         const SizedBox(height: 8),
         const Text('📞 Quán hoặc shipper sẽ gọi số này để xác nhận đơn — hãy nhập đúng số bạn đang dùng.'),
@@ -210,7 +229,7 @@ class _PartnerSignInScreenState extends State<PartnerSignInScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => _SignInFrame(title: widget.title, children: [
+  Widget build(BuildContext context) => _SignInFrame(title: widget.title, emoji: '🔑', subtitle: 'Nhập số điện thoại và mã kích hoạt Admin đã gửi cho bạn.', children: [
         TextField(
           key: const Key('phone'),
           controller: _phone,

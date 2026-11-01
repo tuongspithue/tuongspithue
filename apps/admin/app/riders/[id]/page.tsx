@@ -33,7 +33,7 @@ export default function RiderDetailPage() {
     return () => clearInterval(t);
   }, [load]);
 
-  const markers = useMemo(() => (r?.lat != null ? [{ lat: r.lat, lng: r.lng, color: '#12803a', ring: true, size: 9, popup: r.name ?? r.phone }] : []), [r?.lat, r?.lng, r?.name, r?.phone]);
+  const markers = useMemo(() => (r?.lat != null ? [{ lat: r.lat, lng: r.lng, color: r.activeTrip ? '#1f6fd1' : '#12803a', icon: '🛵', size: 38, pulse: !!r.activeTrip, popup: r.name ?? r.phone }] : []), [r?.lat, r?.lng, r?.name, r?.phone, r?.activeTrip]);
 
   async function run(fn: () => Promise<unknown>, ok: string) {
     setMsg(null);
