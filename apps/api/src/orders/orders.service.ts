@@ -18,7 +18,7 @@ import { point } from '../common/geo';
 import { APP_CONFIG, AppConfig } from '../config';
 import { DATABASE, Database, Queryable } from '../database/database';
 import { DispatchService } from './dispatch';
-import { CreateOrderDto, MerchantAcceptDto } from './dto';
+import { CreateOrderDto, MerchantAcceptDto, QuoteOrderDto } from './dto';
 import { JobsService } from './jobs';
 import { Actor, OrderLifecycle, OrderRow, SYSTEM_ACTOR } from './lifecycle';
 import { NotificationsService } from './notifications';
@@ -172,18 +172,7 @@ export class OrdersService implements OnModuleInit {
       });
 
       const subtotal = computeSubtotal(lines.map((l) => ({ unitPrice: Number(l.menu.price), quantity: l.quantity })));
-      // Chưa tích hợp dịch vụ định tuyến: ước tính đường đi = đường chim bay × hệ số (Phần 5.11).
-      const routeKm = (straightM * this.config.business.routeFactor) / 1000;
-      const deliveryFee = isDelivery
-        ? computeDeliveryFee(routeKm, {
-            ...this.config.business.deliveryFee,
-            minimumFee: this.configCenter.get<number>('fees.delivery_min', scope),
-            includedKm: this.configCenter.get<number>('fees.delivery_included_km', scope),
-            perKmFee: this.configCenter.get<number>('fees.delivery_per_km', scope),
-          })
-        : 0;
-      const serviceFee = this.configCenter.get<number>('fees.service_fee', scope);
-      const total = subtotal + deliveryFee + serviceFee;
+      const { routeKm, deliveryFee, serviceFee, total } = this.fees(scope, isDelivery, straightM, subtotal);
       if (dto.paymentMethod === 'COD' && total > Number(mine['customer.cod.max_value'])) {
         throw new BusinessError('COD_LIMIT_EXCEEDED', 'Đơn vượt giá trị tối đa cho phép trả tiền mặt, vui lòng chọn thanh toán online');
       }
@@ -256,6 +245,59 @@ export class OrdersService implements OnModuleInit {
       }
       return this.view(client, Number(order.id), user);
     });
+  }
+
+  /** Phí ship theo quãng đường + phí dịch vụ — dùng chung cho đặt đơn và báo giá để hai con số luôn khớp. */
+  private fees(scope: { storeId: number; category: string }, isDelivery: boolean, straightM: number, subtotal: number) {
+    // Chưa tích hợp dịch vụ định tuyến: ước tính đường đi = đường chim bay × hệ số (Phần 5.11).
+    const routeKm = (straightM * this.config.business.routeFactor) / 1000;
+    const deliveryFee = isDelivery
+      ? computeDeliveryFee(routeKm, {
+          ...this.config.business.deliveryFee,
+          minimumFee: this.configCenter.get<number>('fees.delivery_min', scope),
+          includedKm: this.configCenter.get<number>('fees.delivery_included_km', scope),
+          perKmFee: this.configCenter.get<number>('fees.delivery_per_km', scope),
+        })
+      : 0;
+    const serviceFee = this.configCenter.get<number>('fees.service_fee', scope);
+    return { routeKm, deliveryFee, serviceFee, total: subtotal + deliveryFee + serviceFee };
+  }
+
+  /**
+   * Báo giá giỏ hàng trước khi đặt (Phần 2.1.5): khách thấy đủ tiền món, phí ship, phí dịch vụ, tổng cộng.
+   * Cùng công thức với lúc đặt đơn; không giữ chỗ, không cần đăng nhập.
+   */
+  async quote(dto: QuoteOrderDto) {
+    const { rows } = await this.db.query(
+      `SELECT *, ST_Distance(location, ${point(2, 3)}) AS distance_m FROM stores WHERE id = $1 AND status = 'APPROVED'`,
+      [dto.storeId, dto.dropoff?.lng ?? 0, dto.dropoff?.lat ?? 0],
+    );
+    const store = rows[0];
+    if (!store) throw new BusinessError('STORE_NOT_FOUND', 'Không tìm thấy quán', 404);
+    const isDelivery = dto.deliveryMode === 'PLATFORM';
+    if (isDelivery && !dto.dropoff) throw new BusinessError('DROPOFF_REQUIRED', 'Cần địa chỉ giao hàng');
+    const straightM = isDelivery ? Number(store.distance_m) : 0;
+    const outOfArea = isDelivery && straightM > store.delivery_radius_m;
+    const { rows: menu } = await this.db.query('SELECT id, price, name, is_available FROM menu_items WHERE store_id = $1 AND id = ANY($2)', [store.id, dto.items.map((i) => i.itemId)]);
+    const byId = new Map(menu.map((m) => [Number(m.id), m]));
+    const subtotal = computeSubtotal(
+      dto.items.map((i) => {
+        const m = byId.get(i.itemId);
+        if (!m) throw new BusinessError('ITEM_NOT_FOUND', `Món #${i.itemId} không thuộc quán này`, 404);
+        return { unitPrice: Number(m.price), quantity: i.quantity };
+      }),
+    );
+    const f = this.fees({ storeId: Number(store.id), category: store.category }, isDelivery, straightM, subtotal);
+    return {
+      subtotal,
+      deliveryFee: f.deliveryFee,
+      serviceFee: f.serviceFee,
+      total: f.total,
+      distanceM: Math.round(f.routeKm * 1000),
+      // Ngoài vùng giao thì báo trước để khách đổi địa chỉ hoặc chọn tự đến lấy.
+      outOfArea,
+      unavailable: menu.filter((m) => !m.is_available).map((m) => m.name),
+    };
   }
 
   /** Cổng thanh toán báo đã thu tiền (webhook đã xác thực chữ ký ở tầng trên). */

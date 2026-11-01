@@ -59,6 +59,27 @@ describe('khách: không cần xác minh, người nhận đơn gọi xác minh'
   });
 });
 
+describe('báo giá giỏ hàng', () => {
+  it('khách thấy đủ tiền món, phí ship, phí dịch vụ, tổng cộng trước khi đặt — khớp đúng với đơn đặt ra', async () => {
+    const body = { storeId, deliveryMode: 'PLATFORM', dropoff: { ...offset(800), address: '12 Pasteur' }, items: [{ itemId, quantity: 2 }] };
+    const q = (await t.http().post('/v1/orders/quote').send(body).expect(200)).body;
+    expect(q.subtotal).toBe(90_000);
+    expect(q.deliveryFee).toBeGreaterThan(0);
+    expect(q.total).toBe(q.subtotal + q.deliveryFee + q.serviceFee);
+    expect(q.outOfArea).toBe(false);
+
+    const c = await t.customerLogin('0922000077', 'Chị Mơ');
+    const placed = (await t.http().post('/v1/orders').set(auth(c.token)).set('Idempotency-Key', idemKey()).send({ ...body, paymentMethod: 'COD' }).expect(201)).body;
+    expect({ subtotal: placed.subtotal, deliveryFee: placed.deliveryFee, serviceFee: placed.serviceFee, total: placed.total }).toEqual({
+      subtotal: q.subtotal, deliveryFee: q.deliveryFee, serviceFee: q.serviceFee, total: q.total,
+    });
+
+    // Tự đến lấy: không có phí ship. Ngoài vùng giao: báo trước.
+    expect((await t.http().post('/v1/orders/quote').send({ ...body, deliveryMode: 'SELF_PICKUP', dropoff: undefined }).expect(200)).body.deliveryFee).toBe(0);
+    expect((await t.http().post('/v1/orders/quote').send({ ...body, dropoff: { ...offset(20_000), address: 'Xã bên cạnh' } }).expect(200)).body.outOfArea).toBe(true);
+  });
+});
+
 describe('quán & shipper: Admin xác minh rồi gửi mã kích hoạt', () => {
   it('shipper đăng ký trong app → Admin duyệt nhận mã → đăng nhập bằng mã một lần', async () => {
     const applied = await t.http().post('/v1/auth/partner-apply')

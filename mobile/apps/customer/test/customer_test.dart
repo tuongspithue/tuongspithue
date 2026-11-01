@@ -35,6 +35,8 @@ void main() {
           return json({'stores': [store]});
         case '/v1/stores/1':
           return json(store);
+        case '/v1/orders/quote':
+          return json({'subtotal': 110000, 'deliveryFee': 15000, 'serviceFee': 2000, 'total': 127000, 'distanceM': 1200, 'outOfArea': false, 'unavailable': []});
         case '/v1/orders':
           placed = jsonDecode(req.body) as Map<String, dynamic>;
           idemKey = req.headers['Idempotency-Key'];
@@ -75,6 +77,11 @@ void main() {
     await tester.tap(find.byKey(const Key('view-cart')));
     await tester.pumpAndSettle();
     expect(find.textContaining('Không hành · ⚠ Đậu phộng'), findsOneWidget);
+    // Giỏ hàng hiện đủ phí ship và tổng cộng trước khi đặt.
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pumpAndSettle();
+    expect(tester.widget<Text>(find.byKey(const Key('cart-total'))).data, '127.000đ');
+    expect(find.text('Phí ship (1,2 km)'), findsOneWidget);
     // Đợi thông báo "Đã thêm…" biến mất để không che nút.
     await tester.pump(const Duration(seconds: 5));
     await tester.pumpAndSettle();

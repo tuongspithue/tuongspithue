@@ -16,6 +16,7 @@ import {
   RiderRegisterDto,
   RiderStatusDto,
   StepDto,
+  QuoteOrderDto,
 } from './dto';
 import { OrdersService } from './orders.service';
 import { RiderService } from './rider.service';
@@ -46,6 +47,14 @@ export class CustomerOrdersController {
   @HttpCode(200)
   proposal(@CurrentUser() user: AuthUser, @Param('id', ParseIntPipe) id: number, @Body() dto: ProposalResponseDto) {
     return this.scheduled.respondToProposal(user, id, dto.accept, this.orders.afterAccepted);
+  }
+
+  /** Báo giá giỏ hàng trước khi đặt: tiền món, phí ship, phí dịch vụ, tổng cộng. */
+  @Public()
+  @Post('quote')
+  @HttpCode(200)
+  quote(@Body() dto: QuoteOrderDto) {
+    return this.orders.quote(dto);
   }
 
   /** Bắt buộc Idempotency-Key: mạng chập chờn bấm 2 lần không tạo 2 đơn (Phần 3.2). */

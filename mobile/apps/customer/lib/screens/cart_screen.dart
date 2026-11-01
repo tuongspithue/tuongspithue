@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:sqt_core/sqt_core.dart';
 
@@ -27,6 +29,42 @@ class _CartScreenState extends State<CartScreen> {
   bool _busy = false;
   // Một khoá cho mỗi lần mở giỏ: bấm "Đặt hàng" hai lần không tạo hai đơn.
   final String _idemKey = newIdempotencyKey();
+  Map<String, dynamic>? _quote;
+  Timer? _quoteTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.cart.addListener(_requote);
+    _requote();
+  }
+
+  @override
+  void dispose() {
+    widget.cart.removeListener(_requote);
+    _quoteTimer?.cancel();
+    super.dispose();
+  }
+
+  /// Báo giá đủ tiền món + phí ship + phí dịch vụ mỗi khi giỏ hoặc cách nhận hàng thay đổi (chờ 300 ms cho đỡ gọi dồn).
+  void _requote() {
+    _quoteTimer?.cancel();
+    _quoteTimer = Timer(const Duration(milliseconds: 300), () async {
+      final cart = widget.cart;
+      if (cart.lines.isEmpty || cart.storeId == null) return;
+      try {
+        final q = await widget.api.post('/v1/orders/quote', {
+          'storeId': cart.storeId,
+          'deliveryMode': _mode,
+          'items': cart.lines.map((l) => {'itemId': l.itemId, 'quantity': l.quantity}).toList(),
+          if (_mode == 'PLATFORM') 'dropoff': {'lat': widget.place.lat, 'lng': widget.place.lng, 'address': widget.place.address.length >= 5 ? widget.place.address : 'Vị trí đã chọn'},
+        });
+        if (mounted) setState(() => _quote = q as Map<String, dynamic>);
+      } on ApiException {
+        if (mounted) setState(() => _quote = null);
+      }
+    });
+  }
 
   Future<void> _loadSlots() async {
     final now = DateTime.now();
@@ -87,10 +125,34 @@ class _CartScreenState extends State<CartScreen> {
         ),
       );
 
+  /// Bảng tiền: tiền món, phí ship (theo quãng đường), phí dịch vụ, tổng cộng — khách thấy đủ trước khi đặt.
+  List<Widget> _summary(int subtotal) {
+    final q = _quote;
+    Widget line(String a, String b, {bool bold = false, Key? key}) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 1),
+          child: Row(children: [
+            Expanded(child: Text(a, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: bold ? FontWeight.w800 : null, fontSize: bold ? 16 : 13.5))),
+            Text(b, key: key, style: TextStyle(fontWeight: bold ? FontWeight.w800 : FontWeight.w600, fontSize: bold ? 18 : 13.5, color: bold ? SqtColors.primary : null)),
+          ]),
+        );
+    final km = q == null ? '' : ' (${((q['distanceM'] as num) / 1000).toStringAsFixed(1).replaceAll('.', ',')} km)';
+    return [
+      line('Tiền món', money(q?['subtotal'] as num? ?? subtotal)),
+      if (_mode == 'PLATFORM') line('Phí ship$km', q == null ? '…' : money(q['deliveryFee'] as num)),
+      line('Phí dịch vụ', q == null ? '…' : money(q['serviceFee'] as num)),
+      line('Tổng cộng', q == null ? '…' : money(q['total'] as num), bold: true, key: const Key('cart-total')),
+      if (q?['outOfArea'] == true)
+        const Padding(
+          padding: EdgeInsets.only(top: 4),
+          child: Text('⚠ Địa chỉ nằm ngoài vùng giao của quán — hãy đổi địa chỉ hoặc chọn "Tự đến lấy"', style: TextStyle(color: SqtColors.danger, fontSize: 12.5)),
+        ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final cart = widget.cart;
-    final canPlace = !_busy && cart.lines.isNotEmpty && !(_scheduled && _slot == null);
+    final canPlace = !_busy && cart.lines.isNotEmpty && !(_scheduled && _slot == null) && _quote?['outOfArea'] != true;
     return Scaffold(
       appBar: AppBar(title: Text('Giỏ hàng · ${cart.storeName ?? ''}')),
       bottomNavigationBar: ListenableBuilder(
@@ -98,12 +160,7 @@ class _CartScreenState extends State<CartScreen> {
         builder: (context, _) => SafeArea(
           minimum: const EdgeInsets.fromLTRB(16, 8, 16, 12),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Row(children: [
-              const Text('Tạm tính'),
-              const Spacer(),
-              Text(money(cart.subtotal), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
-            ]),
-            Align(alignment: Alignment.centerLeft, child: Text('Phí ship & phí dịch vụ hiện rõ ở đơn trước khi quán nhận', style: Theme.of(context).textTheme.bodySmall)),
+            ..._summary(cart.subtotal),
             const SizedBox(height: 8),
             SizedBox(
               width: double.infinity,
@@ -159,7 +216,10 @@ class _CartScreenState extends State<CartScreen> {
               child: SegmentedButton<String>(
                 segments: const [ButtonSegment(value: 'PLATFORM', label: Text('🛵 Giao tận nơi')), ButtonSegment(value: 'SELF_PICKUP', label: Text('🏃 Tự đến lấy'))],
                 selected: {_mode},
-                onSelectionChanged: (v) => setState(() => _mode = v.first),
+                onSelectionChanged: (v) {
+                  setState(() => _mode = v.first);
+                  _requote();
+                },
               ),
             ),
             if (_mode == 'PLATFORM') ...[

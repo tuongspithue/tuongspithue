@@ -60,6 +60,14 @@ export class CreateOrderDto {
   @IsOptional() @ValidateNested() @Type(() => ScheduleDto) schedule?: ScheduleDto;
 }
 
+/** Báo giá giỏ hàng: như đặt đơn nhưng chưa cần cách thanh toán. */
+export class QuoteOrderDto {
+  @IsInt() storeId!: number;
+  @IsIn(['PLATFORM', 'SELF_PICKUP']) deliveryMode!: 'PLATFORM' | 'SELF_PICKUP';
+  @IsArray() @ArrayMinSize(1) @ArrayMaxSize(30) @ValidateNested({ each: true }) @Type(() => OrderItemDto) items!: OrderItemDto[];
+  @IsOptional() @ValidateNested() @Type(() => DropoffDto) dropoff?: DropoffDto;
+}
+
 export class ProposeTimeDto {
   @IsISO8601() at!: string;
   @IsInt() @IsIn([5, 10, 15, 20, 30, 45, 60]) prepTimeMin!: number;
