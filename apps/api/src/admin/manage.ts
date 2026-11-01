@@ -21,12 +21,16 @@ class StoreUpdateDto {
   @IsOptional() @Length(5, 300) address?: string;
   @IsOptional() @IsInt() @Min(500) @Max(7000) deliveryRadiusM?: number;
   @IsOptional() @IsInt() @Min(1) @Max(120) prepTimeDefaultMin?: number;
+  /** APP: quán tự nhận · PROXY: shipper mua hộ · HYBRID: song song (Phần 3.8). */
+  @IsOptional() @IsIn(['APP', 'PROXY', 'HYBRID']) orderMode?: 'APP' | 'PROXY' | 'HYBRID';
   @Length(3, 300, { message: 'Cần ghi lý do (ít nhất 3 ký tự)' }) reason!: string;
 }
 
 class RiderUpdateDto {
   @IsOptional() @IsIn(['APPROVED', 'SUSPENDED']) status?: 'APPROVED' | 'SUSPENDED';
   @IsOptional() @IsInt() @Min(0) @Max(20_000_000) codLimit?: number;
+  /** Hạn mức ứng trước tiền món khi mua hộ. */
+  @IsOptional() @IsInt() @Min(0) @Max(20_000_000) advanceLimit?: number;
   @Length(3, 300, { message: 'Cần ghi lý do (ít nhất 3 ký tự)' }) reason!: string;
 }
 
@@ -53,7 +57,7 @@ export class AdminManageController {
   @Get('stores')
   async stores(@Query('q') q?: string, @Query('category') category?: string, @Query('status') status?: string, @Query('open') open?: string) {
     const { rows } = await this.db.query(
-      `SELECT s.id, s.name, s.category, s.status, s.is_open, s.address_text, s.phone, s.created_at,
+      `SELECT s.id, s.name, s.category, s.status, s.is_open, s.address_text, s.phone, s.created_at, s.order_mode,
               ST_Y(s.location::geometry) AS lat, ST_X(s.location::geometry) AS lng,
               u.phone AS owner_phone, u.full_name AS owner_name,
               t.tier, t.score, t.stars, t.review_count,
@@ -87,6 +91,7 @@ export class AdminManageController {
         category: r.category,
         status: r.status,
         isOpen: r.is_open,
+        orderMode: r.order_mode,
         address: r.address_text,
         phone: r.phone,
         lat: Number(r.lat),
@@ -160,6 +165,7 @@ export class AdminManageController {
       lat: Number(s.lat),
       lng: Number(s.lng),
       deliveryMode: s.delivery_mode,
+      orderMode: s.order_mode,
       deliveryRadiusM: s.delivery_radius_m,
       prepTimeDefaultMin: s.prep_time_default_min,
       createdAt: s.created_at,
@@ -184,16 +190,16 @@ export class AdminManageController {
   @HttpCode(200)
   async updateStore(@CurrentUser() admin: AuthUser, @Param('id', ParseIntPipe) id: number, @Body() dto: StoreUpdateDto) {
     return this.db.tx(async (client) => {
-      const before = (await client.query('SELECT name, phone, address_text, status, is_open, delivery_radius_m, prep_time_default_min FROM stores WHERE id = $1 FOR UPDATE', [id])).rows[0];
+      const before = (await client.query('SELECT name, phone, address_text, status, is_open, delivery_radius_m, prep_time_default_min, order_mode FROM stores WHERE id = $1 FOR UPDATE', [id])).rows[0];
       if (!before) throw new BusinessError('STORE_NOT_FOUND', 'Không tìm thấy quán', 404);
       const status = dto.status ?? before.status;
       // Quán bị tạm khoá thì đóng cửa luôn và không mở lại được cho tới khi Admin mở khoá.
       const isOpen = status === 'APPROVED' ? (dto.isOpen ?? before.is_open) : false;
       const { rows } = await client.query(
-        `UPDATE stores SET name = $2, phone = $3, address_text = $4, status = $5, is_open = $6, delivery_radius_m = $7, prep_time_default_min = $8
-         WHERE id = $1 RETURNING name, phone, address_text, status, is_open, delivery_radius_m, prep_time_default_min`,
+        `UPDATE stores SET name = $2, phone = $3, address_text = $4, status = $5, is_open = $6, delivery_radius_m = $7, prep_time_default_min = $8, order_mode = $9
+         WHERE id = $1 RETURNING name, phone, address_text, status, is_open, delivery_radius_m, prep_time_default_min, order_mode`,
         [id, dto.name ?? before.name, dto.phone ?? before.phone, dto.address ?? before.address_text, status, isOpen,
-          dto.deliveryRadiusM ?? before.delivery_radius_m, dto.prepTimeDefaultMin ?? before.prep_time_default_min],
+          dto.deliveryRadiusM ?? before.delivery_radius_m, dto.prepTimeDefaultMin ?? before.prep_time_default_min, dto.orderMode ?? before.order_mode],
       );
       await audit(client, admin.id, status !== before.status ? `STORE_${status}` : 'STORE_UPDATED', 'store', String(id), before, rows[0], dto.reason);
       return { id, ...rows[0] };
@@ -217,7 +223,7 @@ export class AdminManageController {
   @Get('riders')
   async riders(@Query('q') q?: string, @Query('status') status?: string, @Query('online') online?: string) {
     const { rows } = await this.db.query(
-      `SELECT r.user_id, r.vehicle_type, r.plate_number, r.status, r.is_online, r.location_at, r.cod_balance, r.cod_limit, r.rider_type,
+      `SELECT r.user_id, r.vehicle_type, r.plate_number, r.status, r.is_online, r.location_at, r.cod_balance, r.cod_limit, r.rider_type, r.advance_limit,
               ST_Y(r.location::geometry) AS lat, ST_X(r.location::geometry) AS lng,
               u.phone, u.full_name, u.status AS user_status, u.created_at,
               t.tier, t.score, t.stars, t.review_count,
@@ -257,6 +263,7 @@ export class AdminManageController {
         lng: num(r.lng),
         codBalance: Number(r.cod_balance),
         codLimit: Number(r.cod_limit),
+        advanceLimit: Number(r.advance_limit),
         tier: r.tier ?? 'ROOKIE',
         score: num(r.score),
         stars: num(r.stars),
@@ -307,16 +314,16 @@ export class AdminManageController {
   @HttpCode(200)
   async updateRider(@CurrentUser() admin: AuthUser, @Param('id', ParseIntPipe) id: number, @Body() dto: RiderUpdateDto) {
     return this.db.tx(async (client) => {
-      const before = (await client.query('SELECT status, cod_limit, is_online FROM riders WHERE user_id = $1 FOR UPDATE', [id])).rows[0];
+      const before = (await client.query('SELECT status, cod_limit, is_online, advance_limit FROM riders WHERE user_id = $1 FOR UPDATE', [id])).rows[0];
       if (!before) throw new BusinessError('RIDER_NOT_FOUND', 'Không tìm thấy shipper', 404);
       const status = dto.status ?? before.status;
       const { rows } = await client.query(
-        `UPDATE riders SET status = $2::varchar, cod_limit = $3, is_online = CASE WHEN $2::varchar = 'APPROVED' THEN is_online ELSE false END
-         WHERE user_id = $1 RETURNING status, cod_limit, is_online`,
-        [id, status, dto.codLimit ?? before.cod_limit],
+        `UPDATE riders SET status = $2::varchar, cod_limit = $3, advance_limit = $4, is_online = CASE WHEN $2::varchar = 'APPROVED' THEN is_online ELSE false END
+         WHERE user_id = $1 RETURNING status, cod_limit, is_online, advance_limit`,
+        [id, status, dto.codLimit ?? before.cod_limit, dto.advanceLimit ?? before.advance_limit],
       );
       await audit(client, admin.id, status !== before.status ? `RIDER_${status}` : 'RIDER_UPDATED', 'rider', String(id), before, rows[0], dto.reason);
-      return { userId: id, status: rows[0].status, codLimit: Number(rows[0].cod_limit), isOnline: rows[0].is_online };
+      return { userId: id, status: rows[0].status, codLimit: Number(rows[0].cod_limit), advanceLimit: Number(rows[0].advance_limit), isOnline: rows[0].is_online };
     });
   }
 

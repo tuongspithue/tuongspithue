@@ -33,6 +33,8 @@ describe('khách: không cần xác minh, người nhận đơn gọi xác minh'
     expect(seen.customerName).toBe('Chị Hoa');
     expect(seen.customerCompletedOrders).toBe(0);
     expect(seen.contacts.customer).toBe('0922000001');
+    expect(seen.buyer).toEqual({ name: 'Chị Hoa', phone: '0922000001' });
+    expect((await t.http().get(`/v1/orders/${placed.id}`).set(auth(c.token)).expect(200)).body.buyer).toEqual({ name: 'Chị Hoa', phone: '0922000001' });
   });
 
   it('máy khác nhập trùng số không xem, không huỷ được đơn của người kia', async () => {

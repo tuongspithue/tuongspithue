@@ -28,6 +28,9 @@ import { EntitlementService } from '../config-center/entitlements.service';
 import { SlaStep } from '@sqt/domain';
 
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+/** Đơn mua hộ chưa ai đặt món tại quán: quán vẫn nhận trên app được (chế độ song song). */
+const PROXY_PENDING = new Set<string>([OrderState.DANG_TIM_SHIPPER, OrderState.SHIPPER_DA_NHAN, OrderState.SHIPPER_DEN_QUAN, OrderState.CAN_CAN_THIEP]);
+
 export const newOrderCode = () =>
   'SQT-' + Array.from(randomBytes(6), (b) => CODE_ALPHABET[b % CODE_ALPHABET.length]).join('');
 
@@ -73,6 +76,14 @@ export class OrdersService implements OnModuleInit {
       }
     });
 
+    // Chế độ song song: hết thời gian chờ mà quán chưa nhận thì mời shipper mua hộ.
+    this.jobs.register('PROXY_SWITCH', async (job, client) => {
+      const order = await this.lifecycle.lock(client, Number(job.order_id));
+      if (order.state !== OrderState.CHO_QUAN_XAC_NHAN || !order.proxy_allowed) return;
+      // Tính mốc mời shipper từ giờ việc được hẹn chạy, không phải lúc máy chạy tới.
+      await this.switchToProxy(client, order, job.run_at ? new Date(job.run_at) : new Date());
+    });
+
     this.jobs.register('PAYMENT_EXPIRE', async (job, client) => {
       const order = await this.lifecycle.lock(client, Number(job.order_id));
       if (order.state !== OrderState.CHO_THANH_TOAN) return;
@@ -112,6 +123,54 @@ export class OrdersService implements OnModuleInit {
     const allergens = [...new Set(rows.flatMap((r) => r.allergens))];
     const warn = allergens.length ? ` Lưu ý dị ứng: ${allergens.join(', ')}.` : '';
     return `Quán có đơn mới ${order.code}, ${Number(order.total).toLocaleString('vi-VN')} đồng. ${parts.join('. ')}.${warn}`;
+  }
+
+  /**
+   * Đơn này có được chuyển sang "shipper mua hộ" không (Phần 3.8). Quán chế độ PROXY (không dùng app)
+   * thì bắt buộc mua hộ nên chặn ngay các trường hợp không làm được; HYBRID thì chỉ đánh dấu được/không.
+   */
+  private async proxyAllowed(
+    client: PoolClient,
+    user: AuthUser,
+    store: { order_mode?: string },
+    scope: { storeId: number; category: string },
+    o: { isDelivery: boolean; scheduled: boolean; subtotal: number },
+  ): Promise<boolean> {
+    const mode = store.order_mode ?? 'APP';
+    if (mode === 'APP') return false;
+    const { rows } = await client.query<{ n: number }>(`SELECT count(*)::int AS n FROM orders WHERE customer_id = $1 AND state = 'HOAN_THANH'`, [user.id]);
+    const maxNew = this.configCenter.get<number>('proxy.new_customer_max_value', scope);
+    const valueOk = rows[0].n > 0 || o.subtotal < maxNew;
+    if (mode === 'PROXY') {
+      if (!o.isDelivery) throw new BusinessError('PROXY_DELIVERY_ONLY', 'Quán này đặt qua shipper mua hộ nên chỉ giao tận nơi, chưa nhận tự đến lấy');
+      if (o.scheduled) throw new BusinessError('SCHEDULED_NOT_AVAILABLE', 'Quán này chưa nhận đơn hẹn giờ');
+      if (!valueOk) {
+        throw new BusinessError('PROXY_NEW_CUSTOMER_LIMIT', `Đơn đầu tiên ở quán mua hộ cần tiền món dưới ${maxNew.toLocaleString('vi-VN')}đ. Hoàn thành một đơn để mở giới hạn.`);
+      }
+    }
+    return o.isDelivery && !o.scheduled && valueOk;
+  }
+
+  /** Bắt đầu Cổng A theo chế độ của quán: tự nhận (APP), mua hộ ngay (PROXY), hay chờ quán N giây (HYBRID). */
+  private async startGateA(client: PoolClient, order: OrderRow, now: Date) {
+    const { rows } = await client.query<{ order_mode: string; category: string }>('SELECT order_mode, category FROM stores WHERE id = $1', [order.store_id]);
+    const mode = rows[0]?.order_mode ?? 'APP';
+    if (mode === 'PROXY' && order.proxy_allowed) {
+      await this.switchToProxy(client, order, now);
+      return;
+    }
+    await this.scheduleGateA(client, order, now);
+    if (mode === 'HYBRID' && order.proxy_allowed) {
+      const wait = this.configCenter.get<number>('proxy.hybrid_wait_seconds', { storeId: Number(order.store_id), category: rows[0].category });
+      await this.jobs.schedule(client, 'PROXY_SWITCH', order.id, new Date(now.getTime() + wait * 1000));
+    }
+  }
+
+  /** Quán không nhận (không dùng app / im lặng quá hạn): mời shipper tới quán mua hộ. Chưa phải xác nhận. */
+  private async switchToProxy(client: PoolClient, order: OrderRow, now: Date) {
+    const switched = await this.lifecycle.apply(client, order, OrderEvent.SWITCH_TO_PROXY, SYSTEM_ACTOR, { set: { fulfillment: 'PROXY' } });
+    await this.notifications.enqueue(client, order.customer_id, 'PUSH', 'PROXY_STARTED', { orderId: Number(order.id) });
+    return this.dispatch.sendWave(client, switched, 1, now);
   }
 
   private async scheduleGateA(client: PoolClient, order: OrderRow, from: Date) {
@@ -173,6 +232,7 @@ export class OrdersService implements OnModuleInit {
 
       const subtotal = computeSubtotal(lines.map((l) => ({ unitPrice: Number(l.menu.price), quantity: l.quantity })));
       const { routeKm, deliveryFee, serviceFee, total } = this.fees(scope, isDelivery, straightM, subtotal);
+      const proxyAllowed = await this.proxyAllowed(client, user, store, scope, { isDelivery, scheduled: !!dto.schedule, subtotal });
       if (dto.paymentMethod === 'COD' && total > Number(mine['customer.cod.max_value'])) {
         throw new BusinessError('COD_LIMIT_EXCEEDED', 'Đơn vượt giá trị tối đa cho phép trả tiền mặt, vui lòng chọn thanh toán online');
       }
@@ -191,9 +251,9 @@ export class OrdersService implements OnModuleInit {
         `INSERT INTO orders (code, customer_id, store_id, state, delivery_mode, dropoff_location, dropoff_address, dropoff_note,
            recipient_name, recipient_phone, order_note, distance_m, subtotal, delivery_fee, service_fee, total,
            payment_method, has_allergens, delivery_pin, is_scheduled, schedule_type, scheduled_for, scheduled_pickup_at, customer_device,
-           pickup_location, pickup_address)
+           pickup_location, pickup_address, proxy_allowed)
          VALUES ($1, $2, $3, $4, $5, ${point(6, 7)}, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25,
-           (SELECT location FROM stores WHERE id = $3), (SELECT address_text FROM stores WHERE id = $3))
+           (SELECT location FROM stores WHERE id = $3), (SELECT address_text FROM stores WHERE id = $3), $26)
          RETURNING *`,
         [
           newOrderCode(),
@@ -221,6 +281,7 @@ export class OrdersService implements OnModuleInit {
           plan?.scheduledFor ?? null,
           plan?.pickupAt ?? null,
           user.device ?? null,
+          proxyAllowed,
         ],
       );
       const order = rows[0];
@@ -237,7 +298,7 @@ export class OrdersService implements OnModuleInit {
         channel: 'APP',
       });
       if (state === OrderState.CHO_QUAN_XAC_NHAN) {
-        await this.scheduleGateA(client, order, now);
+        await this.startGateA(client, order, now);
       } else if (state === OrderState.HEN_CHO_QUAN_NHAN) {
         await this.scheduled.scheduleMerchantReply(client, order, now);
       } else {
@@ -305,7 +366,7 @@ export class OrdersService implements OnModuleInit {
     return this.db.tx(async (client) => {
       const order = await this.lifecycle.lock(client, orderId);
       const paid = await this.lifecycle.apply(client, order, OrderEvent.PAYMENT_SUCCEEDED, SYSTEM_ACTOR);
-      if (paid.state === OrderState.CHO_QUAN_XAC_NHAN) await this.scheduleGateA(client, paid, now);
+      if (paid.state === OrderState.CHO_QUAN_XAC_NHAN) await this.startGateA(client, paid, now);
       if (paid.state === OrderState.HEN_CHO_QUAN_NHAN) await this.scheduled.scheduleMerchantReply(client, paid, now);
       return { id: Number(paid.id), state: paid.state };
     });
@@ -350,6 +411,21 @@ export class OrdersService implements OnModuleInit {
       const order = await lock(client);
       const ack = order.has_allergens && dto.allergyAck === true;
       const now = new Date();
+      // Chế độ song song: shipper đang tới mua hộ nhưng quán bấm nhận trước khi shipper đặt món tại quán →
+      // quán làm món như đơn thường, shipper chỉ việc lấy. Đơn đã có shipper nên không đổi trạng thái.
+      if (order.fulfillment === 'PROXY' && !order.accepted_at && PROXY_PENDING.has(order.state)) {
+        if (order.has_allergens && !ack && !order.allergy_ack_at) throw new BusinessError('ALLERGY_ACK_REQUIRED', 'Đơn có ghi chú dị ứng — cần xác nhận đã đọc');
+        await client.query(
+          `UPDATE orders SET fulfillment = 'STORE', prep_time_min = $2, prep_state = 'PREPARING', accepted_by = $3, accepted_channel = $4, accepted_at = $5,
+             allergy_ack_by = CASE WHEN $6 THEN $3 ELSE allergy_ack_by END, allergy_ack_at = CASE WHEN $6 THEN $5 ELSE allergy_ack_at END, updated_at = now()
+           WHERE id = $1`,
+          [order.id, dto.prepTimeMin, actor.id, actor.channel, now, ack],
+        );
+        await this.lifecycle.recordEvent(client, order.id, order.state, order.state, 'MERCHANT_ACCEPT', actor, { prepTimeMin: dto.prepTimeMin, allergyAck: ack, lateWhileProxy: true });
+        if (order.rider_id) await this.notifications.enqueue(client, order.rider_id, 'PUSH', 'STORE_ACCEPTED_DURING_PROXY', { orderId: Number(order.id) });
+        await this.notifications.enqueue(client, order.customer_id, 'PUSH', 'MERCHANT_ACCEPTED', { orderId: Number(order.id) });
+        return { id: Number(order.id), state: order.state };
+      }
       const accepted = await this.lifecycle.apply(client, order, OrderEvent.MERCHANT_ACCEPT, actor, {
         ctx: { allergyAcknowledged: ack || Boolean(order.allergy_ack_at) },
         set: {
@@ -511,6 +587,15 @@ export class OrdersService implements OnModuleInit {
       prepState: o.prep_state,
       deliveryMode: o.delivery_mode,
       kind: o.kind ?? 'FOOD',
+      // Mua hộ (Phần 3.8): PROXY = shipper tới quán đặt & trả tiền hộ; acceptedChannel cho biết ai xác nhận Cổng A.
+      fulfillment: o.fulfillment ?? 'STORE',
+      proxyAllowed: !!o.proxy_allowed,
+      acceptedChannel: o.accepted_channel,
+      proxyPaidAmount: o.proxy_paid_amount == null ? null : Number(o.proxy_paid_amount),
+      proxyReceiptUrl: o.proxy_receipt_url,
+      // Mốc thời gian để app hiện "đã chờ 0:35" ở từng trạng thái.
+      createdAt: o.created_at,
+      stateSince: o.updated_at,
       storeId: o.store_id ? Number(o.store_id) : null,
       riderId: o.rider_id ? Number(o.rider_id) : null,
       storeName: x.store_name ?? (o.kind === 'PARCEL' ? 'Gửi hàng' : null),
@@ -527,6 +612,9 @@ export class OrdersService implements OnModuleInit {
       dropoffNote: o.dropoff_note,
       // Khách không cần xác minh khi đặt: quán/shipper xem tên và số đơn đã thành công để gọi xác minh (Phần 13.9).
       ...(isCustomer ? {} : { customerName: o.recipient_name ?? x.customer_name, customerCompletedOrders: x.customer_done }),
+      // Người đặt (tên + SĐT) để quán/shipper liên lạc và để khách sao chép đơn gửi quán (Phần 2.1.6).
+      // Chỉ các bên của đơn thấy, và chỉ khi đơn còn đang chạy (Ops luôn thấy).
+      buyer: isCustomer || ((active || isOps) && (isStore || isRider || isOps)) ? { name: x.customer_name, phone: x.customer_phone } : null,
       paymentMethod: o.payment_method,
       subtotal: Number(o.subtotal),
       deliveryFee: Number(o.delivery_fee),

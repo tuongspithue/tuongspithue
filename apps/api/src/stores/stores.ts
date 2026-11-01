@@ -79,6 +79,8 @@ const storeJson = (r: any) => ({
   isOpen: r.is_open,
   status: r.status,
   deliveryMode: r.delivery_mode,
+  // APP / PROXY (shipper mua hộ) / HYBRID — app khách hiện nhãn để khách biết ai xác nhận đơn.
+  orderMode: r.order_mode ?? 'APP',
   prepTimeDefaultMin: r.prep_time_default_min,
   ...(r.distance_m !== undefined ? { distanceM: Math.round(Number(r.distance_m)) } : {}),
   // Uy tín hiển thị ngay trên thẻ quán (Phần 9.4, 11.5).

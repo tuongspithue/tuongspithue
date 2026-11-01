@@ -8,7 +8,7 @@ import { ContactButtons } from '@/components/ContactButtons';
 import { LeafletMap } from '@/components/LeafletMap';
 import { StateBadge } from '@/components/Shell';
 import { Avatar, Badge, CategoryBadge, Empty, History, Loading, PageHead, Stat, StatusBadge, TierBadge, askReason } from '@/components/ui';
-import { CATEGORY_LABELS, STATE_LABELS, api, money, time } from '@/lib/api';
+import { CATEGORY_LABELS, ORDER_MODES, STATE_LABELS, api, money, time } from '@/lib/api';
 
 const ROLE = { MERCHANT_OWNER: 'Chủ quán', MERCHANT_STAFF: 'Nhân viên' } as Record<string, string>;
 const COMPONENT_LABELS: Record<string, string> = {
@@ -217,10 +217,32 @@ export default function StoreDetailPage() {
                 <dt>Bán kính giao</dt><dd>{(s.deliveryRadiusM / 1000).toLocaleString('vi-VN')} km</dd>
                 <dt>Chuẩn bị</dt><dd>{s.prepTimeDefaultMin} phút</dd>
                 <dt>Kiểu giao</dt><dd>{s.deliveryMode}</dd>
+                <dt>Nhận đơn</dt><dd>{ORDER_MODES[s.orderMode]?.label ?? s.orderMode}</dd>
                 <dt>Tham gia</dt><dd>{time(s.createdAt)}</dd>
               </dl>
             )}
             <div style={{ marginTop: 12 }}><LeafletMap markers={markers} className="map small" zoom={16} /></div>
+          </div>
+
+          <div className="card">
+            <h2>Chế độ nhận đơn</h2>
+            <div style={{ display: 'grid', gap: 8 }}>
+              {Object.entries(ORDER_MODES).map(([k, m]) => (
+                <label key={k} className="row" style={{ alignItems: 'flex-start', cursor: 'pointer', color: 'var(--text)' }}>
+                  <input
+                    type="radio"
+                    name="orderMode"
+                    checked={s.orderMode === k}
+                    onChange={() => update({ orderMode: k }, `Đổi chế độ nhận đơn thành "${m.label}"`, `Đã chuyển sang ${m.label}`)}
+                    style={{ marginTop: 4 }}
+                  />
+                  <span>
+                    <strong>{m.label}</strong>
+                    <div className="cell-sub">{m.hint}</div>
+                  </span>
+                </label>
+              ))}
+            </div>
           </div>
 
           <div className="card">

@@ -7,7 +7,7 @@ import { StateBadge } from '@/components/Shell';
 import { ALLERGEN_LABELS, EVENT_LABELS, STATE_LABELS, api, money, time } from '@/lib/api';
 
 const ROLE_LABELS: Record<string, string> = { CUSTOMER: 'Khách', MERCHANT: 'Quán', RIDER: 'Shipper', OPS: 'Điều phối viên', SYSTEM: 'Hệ thống' };
-const CHANNEL_LABELS: Record<string, string> = { APP: 'app', OPS_CALL: 'Ops gọi điện', SYSTEM: 'tự động', WEB: 'web' };
+const CHANNEL_LABELS: Record<string, string> = { APP: 'app', OPS_CALL: 'Ops gọi điện', SYSTEM: 'tự động', WEB: 'web', RIDER_PROXY: 'shipper đặt tại quán' };
 
 /** Hồ sơ đơn: dòng thời gian ai xác nhận, lúc nào, qua kênh nào (Phần 14.5). */
 export default function OrderDetailPage() {

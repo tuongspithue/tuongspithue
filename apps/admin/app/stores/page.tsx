@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { Avatar, CategoryBadge, Chips, Empty, Loading, Meter, PageHead, Stat, StatusBadge, TierBadge } from '@/components/ui';
-import { CATEGORY_LABELS, api, money } from '@/lib/api';
+import { CATEGORY_LABELS, ORDER_MODES, api, money } from '@/lib/api';
 
 interface Store {
   id: number;
@@ -12,6 +12,7 @@ interface Store {
   category: string;
   status: string;
   isOpen: boolean;
+  orderMode: string;
   address: string;
   phone: string;
   ownerName: string | null;
@@ -137,6 +138,7 @@ export default function StoresPage() {
                       <td>
                         <StatusBadge status={s.status} />
                         {s.status === 'APPROVED' && <div className={`cell-sub ${s.isOpen ? 'tone-ok' : ''}`}>{s.isOpen ? '● Đang mở cửa' : '○ Đóng cửa'}</div>}
+                        {s.orderMode !== 'APP' && <div className="cell-sub">{ORDER_MODES[s.orderMode]?.label}</div>}
                       </td>
                       <td>
                         <TierBadge tier={s.tier} score={s.score} />

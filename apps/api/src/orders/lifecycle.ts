@@ -18,6 +18,7 @@ export type OrderRow = Record<string, any> & { id: string; state: OrderState; ve
 /** Cột được phép cập nhật cùng lúc với chuyển trạng thái. */
 const UPDATABLE = new Set([
   'prep_state',
+  'fulfillment',
   'prep_time_min',
   'accepted_by',
   'accepted_channel',

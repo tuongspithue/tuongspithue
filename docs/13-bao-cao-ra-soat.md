@@ -166,6 +166,7 @@ Lần rà soát này đọc lại toàn bộ 15 phần theo bốn góc: **logic 
 | 01/11/2026 | **Dịch vụ Gửi hàng** (đặt shipper giao hộ từ A tới B): ghim điểm trên bản đồ, báo giá theo quãng đường + kích cỡ, người gửi hoặc người nhận trả phí, mời shipper gần điểm lấy (shipper nhận chuyến là người thật xác nhận), mã đơn khi lấy hàng, mã nhận hàng gửi qua SMS cho người nhận; app shipper và Admin hiển thị đơn gửi hàng | 2.1.9 |
 | 01/11/2026 | **Đổi nền bản đồ sang OpenStreetMap** (Admin và web app khách): CARTO đã đòi khoá API và trả ảnh "API KEY REQUIRED". OSM miễn phí, chỉ cần ghi nguồn; lỗi thì Admin tự chuyển sang máy chủ OSM Pháp | 14, 2.1.9 |
 | 01/11/2026 | **Giỏ hàng hiện đủ phí trước khi đặt**: thêm báo giá `/v1/orders/quote` (cùng công thức với lúc đặt đơn); giỏ hàng hiện tiền món, phí ship theo quãng đường, phí dịch vụ và tổng cộng, tự tính lại khi đổi món/số lượng/cách nhận; địa chỉ ngoài vùng giao được báo trước và khoá nút đặt | 2.1.5 |
+| 01/11/2026 | **Ba chế độ nhận đơn & shipper mua hộ** (Quán tự nhận / Shipper mua hộ / Song song chờ quán 60 giây), hạn mức ứng tiền shipper, khách mới mua hộ dưới 200.000đ, không thu phí mua hộ, các thông số Admin chỉnh được; **hình động trạng thái đơn** cho khách; **sao chép đơn** gửi quán qua Zalo/SMS; đơn gửi quán hiện **tên + SĐT người đặt** | 3.8 |
 
 ## 13.9. Đăng nhập không dùng SMS/Zalo (chốt 31/10/2026)
 

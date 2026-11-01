@@ -86,6 +86,9 @@ export const OrderEvent = {
   MERCHANT_RECONFIRM_MISSED: 'MERCHANT_RECONFIRM_MISSED',
   RIDER_RECONFIRM_MISSED: 'RIDER_RECONFIRM_MISSED',
   SLOT_START: 'SLOT_START',
+  // Shipper mua hộ (Phần 3.8)
+  SWITCH_TO_PROXY: 'SWITCH_TO_PROXY',
+  PROXY_STORE_UNAVAILABLE: 'PROXY_STORE_UNAVAILABLE',
 } as const;
 export type OrderEvent = (typeof OrderEvent)[keyof typeof OrderEvent];
 
@@ -204,6 +207,14 @@ const RULES: TransitionRule[] = [
     actors: [A.OPS],
     to: S.DA_HUY,
   },
+
+  // ---- Shipper mua hộ (Phần 3.8) ----
+  // Quán không dùng app / im lặng quá hạn ở chế độ song song: chuyển sang mời shipper tới quán mua hộ.
+  // Bước này KHÔNG xác nhận đơn — đơn chỉ thành có người lo khi shipper bấm nhận chuyến (Cổng B) và
+  // tự đặt món trực tiếp tại quán (thay Cổng A). SYSTEM vẫn không đi qua cổng nào.
+  { from: [S.CHO_QUAN_XAC_NHAN], event: E.SWITCH_TO_PROXY, actors: [A.SYSTEM], to: S.DANG_TIM_SHIPPER },
+  // Tới nơi quán đóng cửa / hết món: shipper báo, đơn huỷ và hoàn tiền.
+  { from: [S.SHIPPER_DEN_QUAN], event: E.PROXY_STORE_UNAVAILABLE, actors: [A.RIDER, A.OPS], to: S.DA_HUY },
 
   // ---- Sau Cổng A ----
   { from: [S.QUAN_DA_NHAN], event: E.START_DISPATCH, actors: [A.SYSTEM], to: S.DANG_TIM_SHIPPER },

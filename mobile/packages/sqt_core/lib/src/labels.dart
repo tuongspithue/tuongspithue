@@ -48,6 +48,10 @@ const Map<String, String> kEventLabels = {
   'CUSTOMER_CANCEL': 'Bạn đã huỷ',
   'POST_TO_BOARD': 'Đăng cho shipper giữ chuyến',
   'SLOT_START': 'Bắt đầu chuyến hẹn',
+  // Shipper mua hộ (Phần 3.8)
+  'SWITCH_TO_PROXY': 'Nhờ shipper tới quán mua giúp',
+  'PROXY_ORDERED': 'Shipper đã đặt món tại quán',
+  'PROXY_STORE_UNAVAILABLE': 'Quán không bán được — đã huỷ',
 };
 
 const Map<String, String> kAllergenLabels = {

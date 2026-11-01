@@ -99,6 +99,9 @@ export const ALLERGEN_LABELS: Record<string, string> = {
 /** Tên sự kiện trên dòng thời gian đơn. */
 export const EVENT_LABELS: Record<string, string> = {
   ORDER_PLACED: 'Khách đặt đơn',
+  SWITCH_TO_PROXY: 'Quán im lặng → nhờ shipper mua hộ',
+  PROXY_ORDERED: 'Shipper đặt món tại quán (xác nhận thay quán)',
+  PROXY_STORE_UNAVAILABLE: 'Shipper báo quán không bán được',
   PAYMENT_SUCCEEDED: 'Đã thanh toán',
   MERCHANT_ACCEPT: 'Quán nhận đơn',
   MERCHANT_REJECT: 'Quán từ chối',
@@ -155,6 +158,13 @@ export const PARTNER_STATUS: Record<string, { label: string; tone: string }> = {
   REJECTED: { label: 'Đã từ chối', tone: 'muted' },
   ACTIVE: { label: 'Hoạt động', tone: 'ok' },
   LOCKED: { label: 'Đã khoá', tone: 'bad' },
+};
+
+/** Ba chế độ nhận đơn của quán (Phần 3.8). */
+export const ORDER_MODES: Record<string, { label: string; hint: string }> = {
+  APP: { label: '📱 Quán tự nhận', hint: 'Quán nhận đơn trên app, rồi mới mời shipper' },
+  HYBRID: { label: '🔀 Song song', hint: 'Quán có ít giây để nhận (Cấu hình → proxy); im lặng thì mời shipper tới mua hộ, quán vẫn nhận muộn được' },
+  PROXY: { label: '🛒 Shipper mua hộ', hint: 'Quán không dùng app: mời shipper ngay, shipper tới quán đặt & trả tiền hộ' },
 };
 
 export const VEHICLE_LABELS: Record<string, string> = { MOTORBIKE: '🏍️ Xe máy', EMOTORBIKE: '🛵 Xe điện', CARGO: '🛺 Ba gác' };

@@ -17,6 +17,8 @@ import {
   RiderStatusDto,
   StepDto,
   QuoteOrderDto,
+  ProxyOrderedDto,
+  ProxyPurchasedDto,
 } from './dto';
 import { OrdersService } from './orders.service';
 import { RiderService } from './rider.service';
@@ -240,6 +242,28 @@ export class RiderController {
   @HttpCode(200)
   pickedUp(@CurrentUser() user: AuthUser, @Param('id', ParseIntPipe) id: number, @Body() dto: PickupDto) {
     return this.rider.pickedUp(user.id, id, dto.code, dto);
+  }
+
+  // ---- Mua hộ (Phần 3.8) ----
+  @Post('orders/:id/proxy-ordered')
+  @Roles('RIDER')
+  @HttpCode(200)
+  proxyOrdered(@CurrentUser() user: AuthUser, @Param('id', ParseIntPipe) id: number, @Body() dto: ProxyOrderedDto) {
+    return this.rider.proxyOrdered(user.id, id, dto.allergyAck === true);
+  }
+
+  @Post('orders/:id/proxy-purchased')
+  @Roles('RIDER')
+  @HttpCode(200)
+  proxyPurchased(@CurrentUser() user: AuthUser, @Param('id', ParseIntPipe) id: number, @Body() dto: ProxyPurchasedDto) {
+    return this.rider.proxyPurchased(user.id, id, { amount: dto.amount, receiptUrl: dto.receiptUrl, customerAgreed: dto.customerAgreed, at: { lat: dto.lat, lng: dto.lng } });
+  }
+
+  @Post('orders/:id/store-unavailable')
+  @Roles('RIDER')
+  @HttpCode(200)
+  storeUnavailable(@CurrentUser() user: AuthUser, @Param('id', ParseIntPipe) id: number, @Body() dto: ReasonDto) {
+    return this.rider.proxyStoreUnavailable(user.id, id, dto.reason);
   }
 
   @Post('orders/:id/arrived-dropoff')

@@ -174,3 +174,24 @@ describe('chuyển không hợp lệ', () => {
     expect(() => transition(S.HOAN_THANH, E.DELIVERED, A.RIDER)).toThrow(/HOAN_THANH/);
   });
 });
+
+describe('shipper mua hộ (Phần 3.8)', () => {
+  it('chỉ hệ thống chuyển đơn đang chờ quán sang mời shipper mua hộ; không ai khác làm thay', () => {
+    expect(transition(S.CHO_QUAN_XAC_NHAN, E.SWITCH_TO_PROXY, A.SYSTEM).to).toBe(S.DANG_TIM_SHIPPER);
+    expect(() => transition(S.CHO_QUAN_XAC_NHAN, E.SWITCH_TO_PROXY, A.RIDER)).toThrow(TransitionError);
+    expect(() => transition(S.QUAN_DA_NHAN, E.SWITCH_TO_PROXY, A.SYSTEM)).toThrow(TransitionError);
+  });
+
+  it('chuyển sang mua hộ không phải là xác nhận: đơn vẫn phải chờ shipper bấm nhận', () => {
+    const s = transition(S.CHO_QUAN_XAC_NHAN, E.SWITCH_TO_PROXY, A.SYSTEM).to;
+    expect(() => transition(s, E.RIDER_ACCEPT, A.SYSTEM)).toThrow(TransitionError);
+    expect(transition(s, E.RIDER_ACCEPT, A.RIDER).to).toBe(S.SHIPPER_DA_NHAN);
+  });
+
+  it('shipper tới quán thấy không bán được thì báo huỷ; hệ thống không tự huỷ thay', () => {
+    expect(transition(S.SHIPPER_DEN_QUAN, E.PROXY_STORE_UNAVAILABLE, A.RIDER).to).toBe(S.DA_HUY);
+    expect(() => transition(S.SHIPPER_DEN_QUAN, E.PROXY_STORE_UNAVAILABLE, A.SYSTEM)).toThrow(TransitionError);
+    expect(() => transition(S.DANG_GIAO, E.PROXY_STORE_UNAVAILABLE, A.RIDER)).toThrow(TransitionError);
+  });
+});
+

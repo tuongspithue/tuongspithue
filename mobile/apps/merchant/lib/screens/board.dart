@@ -8,6 +8,9 @@ import 'menu_import.dart';
 const kMerchantTokenKey = 'sqt-merchant-token';
 
 const _newStates = kMerchantPendingStates;
+/// Chế độ song song: quán chưa nhận kịp nên đã nhờ shipper tới mua hộ — quán vẫn bấm nhận được (Phần 3.8).
+bool proxyPending(Map<String, dynamic> o) => o['fulfillment'] == 'PROXY' && o['acceptedChannel'] == null && !_doneStates.contains(o['state']);
+
 const _doneStates = {'HOAN_THANH', 'DA_HUY', 'HOAN_TRA_QUAN', 'GIAO_THAT_BAI'};
 
 /// Bảng đơn của quán: Mới → Đang làm → Đơn hẹn → Xong (Phần 2.2.3, 9.5 "Chế độ Đơn giản").
@@ -69,9 +72,9 @@ class _BoardScreenState extends State<BoardScreen> with Polling {
 
   @override
   Widget build(BuildContext context) {
-    final fresh = _where((o) => _newStates.contains(o['state']));
+    final fresh = _where((o) => _newStates.contains(o['state']) || proxyPending(o));
     final scheduled = _where((o) => o['schedule'] != null && !_newStates.contains(o['state']) && !_doneStates.contains(o['state']) && (o['state'] as String).startsWith('HEN_'));
-    final working = _where((o) => !_newStates.contains(o['state']) && !_doneStates.contains(o['state']) && !(o['state'] as String).startsWith('HEN_'));
+    final working = _where((o) => !_newStates.contains(o['state']) && !proxyPending(o) && !_doneStates.contains(o['state']) && !(o['state'] as String).startsWith('HEN_'));
     final done = _where((o) => _doneStates.contains(o['state']));
     return DefaultTabController(
       length: 4,
@@ -177,7 +180,9 @@ class OrderCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = order['state'] as String;
     final schedule = order['schedule'] as Map<String, dynamic>?;
-    final isNew = _newStates.contains(state);
+    final pendingProxy = proxyPending(order);
+    final isNew = _newStates.contains(state) || pendingProxy;
+    final buyer = (order['buyer'] as Map?) ?? const {};
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -191,18 +196,30 @@ class OrderCard extends StatelessWidget {
           // Khách đặt không cần mã xác minh: khách mới thì quán gọi xác nhận trước khi làm món (Phần 13.9).
           if (isNew && (order['customerCompletedOrders'] ?? 0) == 0)
             const Text('🆕 Khách mới — bấm Gọi để xác nhận đơn trước khi nhận', style: TextStyle(color: SqtColors.danger, fontWeight: FontWeight.bold)),
+          if (pendingProxy)
+            Container(
+              margin: const EdgeInsets.only(top: 6),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(color: SqtColors.scheduled.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12)),
+              child: const Text('🛵 Quán chưa nhận kịp nên shipper đang tới quán đặt món trực tiếp. Bấm NHẬN ĐƠN nếu quán làm kịp — shipper sẽ chỉ việc lấy món.'),
+            ),
+          if (order['fulfillment'] == 'PROXY' && order['acceptedChannel'] == 'RIDER_PROXY')
+            const Text('🛒 Shipper đã đặt món trực tiếp tại quầy', style: TextStyle(color: SqtColors.scheduled, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           OrderItemsView(order),
-          ContactButtons(label: 'Khách', phone: (order['contacts'] as Map?)?['customer'] as String?),
+          // Tên + SĐT người đặt để quán liên lạc và ghi lên túi hàng.
+          ContactButtons(label: 'Người đặt ${buyer['name'] ?? ''}'.trim(), phone: (order['contacts'] as Map?)?['customer'] as String? ?? buyer['phone'] as String?),
           ContactButtons(label: 'Shipper', phone: (order['contacts'] as Map?)?['rider'] as String?),
           const SizedBox(height: 8),
           if (isNew)
             Row(children: [
-              Expanded(child: OutlinedButton(onPressed: () => _reject(context), child: const Text('✖ Từ chối'))),
-              const SizedBox(width: 8),
+              if (!pendingProxy) ...[
+                Expanded(child: OutlinedButton(onPressed: () => _reject(context), child: const Text('✖ Từ chối'))),
+                const SizedBox(width: 8),
+              ],
               Expanded(flex: 2, child: FilledButton(key: Key('accept-$_id'), onPressed: () => _accept(context), child: const Text('✅ NHẬN ĐƠN'))),
             ]),
-          if (order['prepState'] == 'PREPARING' && !_doneStates.contains(state))
+          if (order['prepState'] == 'PREPARING' && order['fulfillment'] != 'PROXY' && !_doneStates.contains(state))
             FilledButton(onPressed: () => _run(context, () => api.post('/v1/merchant/orders/$_id/ready'), 'Đã báo món xong'), child: const Text('🍜 XONG MÓN')),
           if (state == 'CHO_KHACH_DEN_LAY') OutlinedButton(onPressed: () => _handover(context), child: const Text('Khách đến lấy — nhập mã đơn')),
           if (schedule != null && schedule['merchantReconfirmed'] == false && state.startsWith('HEN_') && !isNew && state != 'HEN_CHO_KHACH_DUYET_GIO')

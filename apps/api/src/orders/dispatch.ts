@@ -80,6 +80,8 @@ export class DispatchService implements OnModuleInit {
            AND r.location_at > $2::timestamptz - interval '2 minutes'
            AND ST_DWithin(r.location, s.location, $3)
            AND r.cod_balance + $4 <= r.cod_limit
+           -- Mua hộ: shipper phải ứng trước tiền món, chỉ mời người có hạn mức ứng đủ (Phần 3.8).
+           AND ($9 = 0 OR r.advance_limit >= $9)
            AND ($4 = 0 OR ${RIDER_COD_ALLOWED})
            AND NOT EXISTS (SELECT 1 FROM orders o WHERE o.rider_id = r.user_id AND o.state = ANY($5))
            AND NOT EXISTS (SELECT 1 FROM dispatch_offers d WHERE d.rider_id = r.user_id AND d.order_id = $6)
@@ -87,7 +89,7 @@ export class DispatchService implements OnModuleInit {
          -- Khoảng cách điều chỉnh theo uy tín: điểm 100 như gần hơn 20%, điểm 0 như xa hơn 20% (Phần 3.4.1, w3).
          ORDER BY ST_Distance(r.location, s.location) * (1 - (LEAST(GREATEST(COALESCE(ts.score, $8), 0), 100) - 50) / 250)
          LIMIT $7`,
-        [order.id, now, cfg.radiusM, codNeeded, ACTIVE_RIDER_STATES, order.id, cfg.maxRiders, ROOKIE_DEFAULT_SCORE],
+        [order.id, now, cfg.radiusM, codNeeded, ACTIVE_RIDER_STATES, order.id, cfg.maxRiders, ROOKIE_DEFAULT_SCORE, order.fulfillment === 'PROXY' ? Number(order.subtotal) : 0],
       );
       if (rows.length === 0) continue;
 
@@ -109,7 +111,7 @@ export class DispatchService implements OnModuleInit {
 
   async offersFor(riderId: number) {
     const { rows } = await this.db.query(
-      `SELECT d.id, d.order_id, d.wave, d.distance_m, d.earning, d.expires_at, o.kind, o.fee_payer, o.parcel_size, o.dropoff_address,
+      `SELECT d.id, d.order_id, d.wave, d.distance_m, d.earning, d.expires_at, o.kind, o.fee_payer, o.parcel_size, o.dropoff_address, o.fulfillment, o.subtotal,
               COALESCE(s.name, '📦 Gửi hàng') AS store_name, COALESCE(s.address_text, o.pickup_address) AS store_address,
               o.payment_method, o.total, o.distance_m AS trip_m
        FROM dispatch_offers d JOIN orders o ON o.id = d.order_id LEFT JOIN stores s ON s.id = o.store_id
@@ -134,6 +136,9 @@ export class DispatchService implements OnModuleInit {
         feePayer: r.fee_payer,
         parcelSize: r.parcel_size,
         dropoffAddress: r.dropoff_address,
+        // Mua hộ: shipper tới quán đặt món và ứng trước tiền món.
+        fulfillment: r.fulfillment,
+        advanceAmount: r.fulfillment === 'PROXY' ? Number(r.subtotal) : 0,
       })),
     };
   }

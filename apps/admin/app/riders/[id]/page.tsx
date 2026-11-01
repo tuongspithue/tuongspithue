@@ -18,12 +18,14 @@ export default function RiderDetailPage() {
   const [msg, setMsg] = useState<string | null>(null);
   const [activation, setActivation] = useState<Activation | null>(null);
   const [codLimit, setCodLimit] = useState(0);
+  const [advanceLimit, setAdvanceLimit] = useState(0);
 
   const load = useCallback(() => {
     api(`/v1/admin/riders/${id}`)
       .then((x) => {
         setR(x);
         setCodLimit(x.codLimit);
+        setAdvanceLimit(x.advanceLimit ?? 0);
       })
       .catch((e) => setError(e.message));
   }, [id]);
@@ -146,6 +148,15 @@ export default function RiderDetailPage() {
             <div className="row">
               <input type="number" min={0} step={100000} value={codLimit} onChange={(e) => setCodLimit(Number(e.target.value))} aria-label="Hạn mức mới" />
               <button className="btn secondary" disabled={codLimit === r.codLimit} onClick={() => update({ codLimit }, `Đổi hạn mức thu hộ thành ${money(codLimit)}`, 'Đã đổi hạn mức')}>Lưu hạn mức</button>
+            </div>
+          </div>
+
+          <div className="card">
+            <h2>Hạn mức ứng tiền mua hộ</h2>
+            <p className="muted">Shipper chỉ được mời các đơn "mua hộ" có tiền món không vượt hạn mức này (phải ứng trước tiền món cho quán).</p>
+            <div className="row">
+              <input type="number" min={0} step={50000} value={advanceLimit} onChange={(e) => setAdvanceLimit(Number(e.target.value))} aria-label="Hạn mức ứng tiền" />
+              <button className="btn secondary" disabled={advanceLimit === r.advanceLimit} onClick={() => update({ advanceLimit }, `Đổi hạn mức ứng tiền thành ${money(advanceLimit)}`, 'Đã đổi hạn mức ứng tiền')}>Lưu hạn mức</button>
             </div>
           </div>
 

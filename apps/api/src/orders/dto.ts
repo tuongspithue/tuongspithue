@@ -1,23 +1,5 @@
 import { Type } from 'class-transformer';
-import {
-  ArrayMaxSize,
-  ArrayMinSize,
-  IsArray,
-  IsBoolean,
-  IsIn,
-  IsISO8601,
-  IsInt,
-  IsLatitude,
-  IsLongitude,
-  IsOptional,
-  IsString,
-  Length,
-  Matches,
-  Max,
-  MaxLength,
-  Min,
-  ValidateNested,
-} from 'class-validator';
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsIn, IsISO8601, IsInt, IsLatitude, IsLongitude, IsOptional, IsString, Length, Matches, Max, MaxLength, Min, ValidateNested } from 'class-validator';
 import { ALLERGENS } from '@sqt/domain';
 
 export class OrderItemDto {
@@ -58,6 +40,20 @@ export class CreateOrderDto {
   @IsOptional() @ValidateNested() @Type(() => RecipientDto) recipient?: RecipientDto;
   @IsOptional() @IsString() @MaxLength(400) orderNote?: string;
   @IsOptional() @ValidateNested() @Type(() => ScheduleDto) schedule?: ScheduleDto;
+}
+
+export class ProxyOrderedDto {
+  @IsOptional() @IsBoolean() allergyAck?: boolean;
+}
+
+export class ProxyPurchasedDto {
+  @IsLatitude() lat!: number;
+  @IsLongitude() lng!: number;
+  /** Tiền món thật trả cho quán. */
+  @IsInt() @Min(0) @Max(20_000_000) amount!: number;
+  @IsOptional() @IsString() @MaxLength(500) receiptUrl?: string;
+  /** Giá lệch quá ngưỡng: shipper đã gọi và khách đồng ý. */
+  @IsOptional() @IsBoolean() customerAgreed?: boolean;
 }
 
 /** Báo giá giỏ hàng: như đặt đơn nhưng chưa cần cách thanh toán. */

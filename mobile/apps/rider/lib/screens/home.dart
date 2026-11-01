@@ -157,6 +157,14 @@ class _OfferCard extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('Thu nhập ${money(offer['earning'] as num)}', style: Theme.of(context).textTheme.headlineSmall),
+          if (offer['fulfillment'] == 'PROXY')
+            Container(
+              margin: const EdgeInsets.only(bottom: 6),
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(color: SqtColors.scheduled.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
+              child: Text('🛒 MUA HỘ — tới quán đặt món và ứng trước ${money(offer['advanceAmount'] as num)}, thu lại của khách khi giao',
+                  style: const TextStyle(fontWeight: FontWeight.w700)),
+            ),
           if (offer['kind'] == 'PARCEL') ...[
             const Text('📦 GỬI HÀNG', style: TextStyle(fontWeight: FontWeight.w800, color: SqtColors.scheduled)),
             Text('Lấy: ${offer['storeAddress']} · cách bạn ${offer['distanceToStoreM']} m'),
@@ -241,6 +249,123 @@ class TripCard extends StatelessWidget {
     }
   }
 
+  /// Mua hộ (Phần 3.8): đặt món tại quầy → trả tiền & nhận món → giao. Quán không bán được thì báo huỷ.
+  void _proxyActions(BuildContext context, List<Widget> actions, Map<String, double> p) {
+    final ordered = trip['acceptedChannel'] != null;
+    if (!ordered) {
+      actions.add(FilledButton(
+        key: const Key('proxy-ordered'),
+        onPressed: () async {
+          final hasAllergens = trip['hasAllergens'] == true;
+          var ack = false;
+          final ok = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => StatefulBuilder(
+              builder: (ctx, set) => AlertDialog(
+                title: const Text('Đặt món với quán'),
+                content: SingleChildScrollView(
+                  child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    const Text('Đọc cho quán đúng món và ghi chú dưới đây:'),
+                    const SizedBox(height: 8),
+                    OrderItemsView(trip),
+                    if (hasAllergens)
+                      CheckboxListTile(
+                        contentPadding: EdgeInsets.zero,
+                        value: ack,
+                        onChanged: (v) => set(() => ack = v ?? false),
+                        title: const Text('Tôi đã đọc ghi chú DỊ ỨNG cho quán', style: TextStyle(color: SqtColors.danger, fontWeight: FontWeight.bold)),
+                      ),
+                  ]),
+                ),
+                actions: [
+                  TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Quay lại')),
+                  FilledButton(onPressed: hasAllergens && !ack ? null : () => Navigator.pop(ctx, true), child: const Text('Quán đã nhận món')),
+                ],
+              ),
+            ),
+          );
+          if (ok == true && context.mounted) await _call(context, '/v1/rider/orders/$_id/proxy-ordered', {'allergyAck': ack}, 'Đã ghi nhận đặt món tại quán');
+        },
+        child: const Text('🛒 ĐÃ ĐẶT MÓN VỚI QUÁN'),
+      ));
+    } else {
+      actions.add(FilledButton(key: const Key('proxy-purchased'), onPressed: () => _purchased(context, p, false), child: const Text('💵 ĐÃ TRẢ TIỀN & NHẬN MÓN')));
+    }
+    actions.add(OutlinedButton(
+      onPressed: () async {
+        const reasons = ['Quán đóng cửa', 'Hết món', 'Quán không bán mang đi', 'Quán quá đông, chờ quá lâu'];
+        final reason = await showDialog<String>(
+          context: context,
+          builder: (ctx) => SimpleDialog(title: const Text('Quán không bán được vì'), children: [
+            for (final r in reasons) SimpleDialogOption(onPressed: () => Navigator.pop(ctx, r), child: Padding(padding: const EdgeInsets.all(8), child: Text(r))),
+          ]),
+        );
+        if (reason != null && context.mounted) await _call(context, '/v1/rider/orders/$_id/store-unavailable', {'reason': reason}, 'Đã báo, đơn được huỷ và hoàn tiền cho khách');
+      },
+      child: const Text('Quán không bán được'),
+    ));
+  }
+
+  /// Nhập tiền món thật đã trả + ảnh hoá đơn. Giá lệch nhiều thì phải gọi khách đồng ý.
+  Future<void> _purchased(BuildContext context, Map<String, double> p, bool agreed) async {
+    final amount = TextEditingController(text: '${trip['subtotal']}');
+    String? receipt;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, set) => AlertDialog(
+          title: const Text('Tiền món đã trả cho quán'),
+          content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Theo app: ${money(trip['subtotal'] as num)}'),
+            TextField(key: const Key('proxy-amount'), controller: amount, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Số tiền thật (đồng)')),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: () async {
+                try {
+                  final url = await PartnerDevice.instance.takePhoto(api);
+                  if (url != null) set(() => receipt = url);
+                } on ApiException catch (e) {
+                  if (ctx.mounted) showError(ctx, e);
+                }
+              },
+              icon: Icon(receipt == null ? Icons.photo_camera_outlined : Icons.check_circle),
+              label: Text(receipt == null ? 'Chụp hoá đơn / menu' : 'Đã chụp ảnh'),
+            ),
+            if (agreed) const Text('✔ Khách đã đồng ý giá mới', style: TextStyle(color: SqtColors.confirmed)),
+          ]),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Quay lại')),
+            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Xác nhận')),
+          ],
+        ),
+      ),
+    );
+    if (ok != true || !context.mounted) return;
+    final value = int.tryParse(amount.text.replaceAll(RegExp(r'[^0-9]'), ''));
+    if (value == null) return showDone(context, 'Nhập số tiền hợp lệ');
+    try {
+      await api.post('/v1/rider/orders/$_id/proxy-purchased', {...p, 'amount': value, if (receipt != null) 'receiptUrl': receipt, if (agreed) 'customerAgreed': true});
+      if (context.mounted) showDone(context, 'Đã nhận món — bắt đầu giao');
+      await onChanged();
+    } on ApiException catch (e) {
+      if (!context.mounted) return;
+      if (e.code != 'PRICE_CHANGED') return showError(context, e);
+      // Giá lệch quá ngưỡng: gọi khách hỏi, khách đồng ý thì xác nhận lại.
+      final yes = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Giá thay đổi'),
+          content: Text('${e.message}\n\nGọi khách ở mục liên hệ bên dưới. Khách đồng ý thì bấm "Khách đã đồng ý".'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Chưa')),
+            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Khách đã đồng ý')),
+          ],
+        ),
+      );
+      if (yes == true && context.mounted) await _purchased(context, p, true);
+    }
+  }
+
   Future<String?> _ask(BuildContext context, String title, String hint) async {
     final c = TextEditingController();
     final ok = await showDialog<bool>(
@@ -268,6 +393,8 @@ class TripCard extends StatelessWidget {
           onPressed: () => _call(context, '/v1/rider/orders/$_id/arrived-store', p, parcel ? 'Đã báo tới điểm lấy' : 'Đã báo tới quán'),
           child: Text(parcel ? '📍 ĐÃ TỚI ĐIỂM LẤY HÀNG' : '📍 ĐÃ TỚI QUÁN'),
         ));
+      case 'SHIPPER_DEN_QUAN' when trip['fulfillment'] == 'PROXY':
+        _proxyActions(context, actions, p);
       case 'SHIPPER_DEN_QUAN':
         actions.add(FilledButton(
           onPressed: () async {

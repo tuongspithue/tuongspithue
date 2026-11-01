@@ -4,6 +4,7 @@ import { PoolClient } from 'pg';
 import { BusinessError } from '../common/errors';
 import { LatLng, point } from '../common/geo';
 import { APP_CONFIG, AppConfig } from '../config';
+import { ConfigCenter } from '../config-center/config.service';
 import { DATABASE, Database } from '../database/database';
 import { DispatchService } from './dispatch';
 import { Actor, OrderLifecycle, OrderRow, SYSTEM_ACTOR } from './lifecycle';
@@ -25,6 +26,7 @@ export class RiderService {
     private readonly dispatch: DispatchService,
     private readonly notifications: NotificationsService,
     private readonly orders: OrdersService,
+    private readonly configCenter: ConfigCenter,
   ) {}
 
   private actor(riderId: number): Actor {
@@ -103,6 +105,7 @@ export class RiderService {
   async pickedUp(riderId: number, orderId: number, code: string, at: LatLng) {
     return this.db.tx(async (client) => {
       const order = await this.lockOwn(client, riderId, orderId);
+      if (order.fulfillment === 'PROXY') throw new BusinessError('USE_PROXY_PURCHASED', 'Đơn mua hộ: bấm "Đã mua & nhận món" và nhập tiền món thật', 409);
       if (order.code !== code.trim().toUpperCase()) {
         throw new BusinessError('CODE_MISMATCH', order.kind === 'PARCEL' ? 'Mã đơn không khớp, hỏi lại người gửi' : 'Mã đơn không khớp, kiểm tra đúng túi hàng');
       }
@@ -110,6 +113,82 @@ export class RiderService {
       const delivering = await this.lifecycle.apply(client, picked, OrderEvent.START_DELIVERY, SYSTEM_ACTOR);
       await this.notifications.enqueue(client, order.customer_id, 'PUSH', 'ON_THE_WAY', { orderId });
       return { id: orderId, state: delivering.state };
+    });
+  }
+
+  // ---------------- Mua hộ (Phần 3.8) ----------------
+
+  private async lockProxy(client: PoolClient, riderId: number, orderId: number) {
+    const order = await this.lockOwn(client, riderId, orderId);
+    if (order.fulfillment !== 'PROXY') throw new BusinessError('NOT_PROXY', 'Đơn này quán đã nhận trên app — chỉ cần lấy món', 409);
+    if (order.state !== 'SHIPPER_DEN_QUAN') throw new BusinessError('NOT_AT_STORE', 'Bấm "Đã tới quán" trước', 409);
+    return order;
+  }
+
+  /**
+   * Shipper đặt món trực tiếp với quán — đây là người thật xác nhận thay Cổng A (kênh RIDER_PROXY).
+   * Đơn có ghi chú dị ứng thì shipper phải xác nhận đã đọc cho quán.
+   */
+  async proxyOrdered(riderId: number, orderId: number, allergyAck: boolean) {
+    return this.db.tx(async (client) => {
+      const order = await this.lockProxy(client, riderId, orderId);
+      if (order.accepted_at) return { id: orderId, state: order.state, alreadyOrdered: true };
+      if (order.has_allergens && !allergyAck) throw new BusinessError('ALLERGY_ACK_REQUIRED', 'Đơn có ghi chú dị ứng — hãy đọc cho quán và tick xác nhận');
+      const now = new Date();
+      await client.query(
+        `UPDATE orders SET accepted_by = $2, accepted_channel = 'RIDER_PROXY', accepted_at = $3, prep_state = 'PREPARING',
+           allergy_ack_by = CASE WHEN has_allergens THEN $2 ELSE allergy_ack_by END, allergy_ack_at = CASE WHEN has_allergens THEN $3 ELSE allergy_ack_at END, updated_at = now()
+         WHERE id = $1`,
+        [order.id, riderId, now],
+      );
+      await this.lifecycle.recordEvent(client, order.id, order.state, order.state, 'PROXY_ORDERED', this.actor(riderId), { allergyAck });
+      await this.notifications.enqueue(client, order.customer_id, 'PUSH', 'PROXY_ORDERED', { orderId });
+      return { id: orderId, state: order.state };
+    });
+  }
+
+  /**
+   * Shipper đã trả tiền cho quán và nhận món. Giá thật lệch quá ngưỡng thì phải gọi khách đồng ý trước.
+   * Tổng tiền khách trả được tính lại theo tiền món thật + phí ship + phí dịch vụ.
+   */
+  async proxyPurchased(riderId: number, orderId: number, input: { amount: number; receiptUrl?: string; customerAgreed?: boolean; at: LatLng }) {
+    return this.db.tx(async (client) => {
+      const order = await this.lockProxy(client, riderId, orderId);
+      if (!order.accepted_at) throw new BusinessError('NOT_ORDERED', 'Bấm "Đã đặt món với quán" trước', 409);
+      const listed = Number(order.subtotal);
+      const diffPct = listed ? (Math.abs(input.amount - listed) / listed) * 100 : 0;
+      const tolerancePct = this.configCenter.get<number>('proxy.price_tolerance_pct', { storeId: Number(order.store_id) });
+      if (diffPct > tolerancePct && !input.customerAgreed) {
+        throw new BusinessError('PRICE_CHANGED', `Tiền món thật ${input.amount.toLocaleString('vi-VN')}đ lệch ${Math.round(diffPct)}% so với app. Gọi khách đồng ý rồi tick "Khách đã đồng ý".`, 422);
+      }
+      const total = input.amount + Number(order.delivery_fee) + Number(order.service_fee);
+      const ready = (
+        await client.query(
+          `UPDATE orders SET prep_state = 'READY', subtotal = $2, total = $3, proxy_paid_amount = $2, proxy_receipt_url = $4, updated_at = now() WHERE id = $1 RETURNING *`,
+          [order.id, input.amount, total, input.receiptUrl ?? null],
+        )
+      ).rows[0] as OrderRow;
+      const picked = await this.lifecycle.apply(client, ready, OrderEvent.RIDER_PICKED_UP, this.actor(riderId), {
+        at: input.at,
+        payload: { proxy: true, listedSubtotal: listed, paidAmount: input.amount, customerAgreed: !!input.customerAgreed, receiptUrl: input.receiptUrl ?? null },
+      });
+      const delivering = await this.lifecycle.apply(client, picked, OrderEvent.START_DELIVERY, SYSTEM_ACTOR);
+      await this.notifications.enqueue(client, order.customer_id, 'PUSH', 'ON_THE_WAY', { orderId });
+      return { id: orderId, state: delivering.state, subtotal: input.amount, total };
+    });
+  }
+
+  /** Tới nơi quán đóng cửa / hết món: huỷ, hoàn tiền cho khách; ghi tiền bù chuyến đi cho shipper để đối soát. */
+  async proxyStoreUnavailable(riderId: number, orderId: number, reason: string) {
+    return this.db.tx(async (client) => {
+      const order = await this.lockProxy(client, riderId, orderId);
+      const failedTripFee = this.configCenter.get<number>('proxy.failed_trip_fee', {});
+      const cancelled = await this.lifecycle.apply(client, order, OrderEvent.PROXY_STORE_UNAVAILABLE, this.actor(riderId), {
+        set: { cancel_reason: 'STORE_UNAVAILABLE', cancelled_by_role: 'RIDER', refund_kind: 'FULL' },
+        payload: { reason, failedTripFee },
+      });
+      await this.notifications.enqueue(client, order.customer_id, 'PUSH', 'PROXY_STORE_UNAVAILABLE', { orderId, reason });
+      return { id: orderId, state: cancelled.state, failedTripFee };
     });
   }
 

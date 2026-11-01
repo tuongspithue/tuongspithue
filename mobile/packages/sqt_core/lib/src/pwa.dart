@@ -107,7 +107,11 @@ class ContactButtons extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 8, runSpacing: 4, children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+        // Hiện cả số để đọc/ghi lại được (VD quán ghi lên túi hàng), không chỉ có nút bấm.
+        Text.rich(TextSpan(children: [
+          TextSpan(text: label, style: const TextStyle(fontWeight: FontWeight.w600)),
+          TextSpan(text: '  $p', style: const TextStyle(fontFeatures: [FontFeature.tabularFigures()])),
+        ])),
         OutlinedButton.icon(onPressed: () => launchUrl(Uri.parse('tel:$p')), icon: const Icon(Icons.call), label: const Text('Gọi')),
         OutlinedButton.icon(onPressed: () => launchUrl(Uri.parse('sms:$p')), icon: const Icon(Icons.sms), label: const Text('SMS')),
         OutlinedButton.icon(

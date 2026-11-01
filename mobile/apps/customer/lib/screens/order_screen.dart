@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:sqt_core/sqt_core.dart';
+
+import '../order_text.dart';
+import '../status_animation.dart';
 
 /// Theo dõi đơn: trạng thái, ai đã xác nhận, mã PIN, huỷ, đánh giá (Phần 2.1.6, 2.1.7).
 class OrderScreen extends StatefulWidget {
@@ -107,7 +111,17 @@ class _OrderScreenState extends State<OrderScreen> with Polling {
       body: RefreshIndicator(
         onRefresh: _load,
         child: ListView(padding: const EdgeInsets.all(16), children: [
-          _StatusHero(state: state, selfPickup: o['deliveryMode'] == 'SELF_PICKUP', parcel: o['kind'] == 'PARCEL', schedule: schedule),
+          _StatusHero(
+            state: state,
+            selfPickup: o['deliveryMode'] == 'SELF_PICKUP',
+            parcel: o['kind'] == 'PARCEL',
+            schedule: schedule,
+            proxy: o['fulfillment'] == 'PROXY',
+            proxyAllowed: o['proxyAllowed'] == true,
+            orderedAtStore: o['acceptedChannel'] == 'RIDER_PROXY',
+            since: DateTime.tryParse(o['stateSince'] as String? ?? ''),
+          ),
+          if (o['kind'] != 'PARCEL' && !['HOAN_THANH', 'DA_HUY'].contains(state)) _SendToStoreCard(order: o),
           const SizedBox(height: 12),
           PushBanner(api: widget.api, app: 'CUSTOMER'),
           const InstallTip(),
@@ -267,10 +281,14 @@ class _Line extends StatelessWidget {
 
 /// Thẻ trạng thái lớn: đang ở bước nào, ai đang lo đơn, việc tiếp theo (Phần 2.1.6, 9.4).
 class _StatusHero extends StatelessWidget {
-  const _StatusHero({required this.state, required this.selfPickup, this.parcel = false, this.schedule});
+  const _StatusHero({required this.state, required this.selfPickup, this.parcel = false, this.schedule, this.proxy = false, this.proxyAllowed = false, this.orderedAtStore = false, this.since});
   final String state;
   final bool selfPickup;
   final bool parcel;
+  final bool proxy;
+  final bool proxyAllowed;
+  final bool orderedAtStore;
+  final DateTime? since;
   final Map<String, dynamic>? schedule;
 
   static const _messages = {
@@ -297,6 +315,14 @@ class _StatusHero extends StatelessWidget {
     'DA_LAY_HANG': ('📦', 'Shipper đã lấy hàng'),
   };
 
+  /// Shipper mua hộ (Phần 3.8): nói rõ ai đang lo đơn để khách yên tâm.
+  (String, String)? get _proxyMessage => switch (state) {
+        'DANG_TIM_SHIPPER' => ('🔎', 'Quán chưa nhận trên app — đang tìm shipper tới quán mua giúp bạn'),
+        'SHIPPER_DA_NHAN' => ('🛵', 'Shipper đã nhận, đang tới quán mua giúp bạn'),
+        'SHIPPER_DEN_QUAN' => orderedAtStore ? ('🛵', 'Shipper đã đặt món tại quán, đang chờ món') : ('🛵', 'Shipper đã tới quán, đang đặt món giúp bạn'),
+        _ => null,
+      };
+
   /// Bước hiện tại trên thanh tiến trình (0..4).
   int get _step {
     if (parcel) {
@@ -306,6 +332,8 @@ class _StatusHero extends StatelessWidget {
       if (['SHIPPER_DA_NHAN', 'SHIPPER_DEN_QUAN'].contains(state)) return 1;
       return 0;
     }
+    // Mua hộ: quán chưa nhận trên app, nên chưa tô bước "Quán nhận" khi còn đang tìm shipper.
+    if (proxy && ['DANG_TIM_SHIPPER', 'CAN_CAN_THIEP'].contains(state)) return 0;
     if (state == 'HOAN_THANH') return 4;
     if (['DA_LAY_HANG', 'DANG_GIAO', 'DA_DEN_NOI', 'CHO_KHACH_DEN_LAY'].contains(state)) return 3;
     if (['SHIPPER_DA_NHAN', 'SHIPPER_DEN_QUAN', 'HEN_SHIPPER_DA_GIU', 'HEN_SAN_SANG'].contains(state)) return 2;
@@ -316,7 +344,7 @@ class _StatusHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = stateColor(state);
-    final msg = (parcel ? _parcelMessages[state] : null) ?? _messages[state] ?? (state.startsWith('HEN_') ? ('🟣', 'Đơn hẹn giờ — chúng tôi nhắc quán & shipper đúng giờ') : ('📦', ''));
+    final msg = (proxy ? _proxyMessage : null) ?? (parcel ? _parcelMessages[state] : null) ?? _messages[state] ?? (state.startsWith('HEN_') ? ('🟣', 'Đơn hẹn giờ — chúng tôi nhắc quán & shipper đúng giờ') : ('📦', ''));
     final ended = state == 'DA_HUY' || state == 'GIAO_THAT_BAI';
     final labels = parcel
         ? ['Đặt', 'Shipper nhận', 'Lấy hàng', 'Đang giao', 'Đã giao']
@@ -332,13 +360,19 @@ class _StatusHero extends StatelessWidget {
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Text(msg.$1, style: const TextStyle(fontSize: 40)),
+          StatusAnimation(state: state, emoji: msg.$1, color: color),
           const SizedBox(width: 12),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               StateChip(state),
               const SizedBox(height: 4),
               Text(msg.$2, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+              if (!ended && state != 'HOAN_THANH') ElapsedText(since: since),
+              if (state == 'CHO_QUAN_XAC_NHAN' && proxyAllowed)
+                const Padding(
+                  padding: EdgeInsets.only(top: 4),
+                  child: Text('Nếu quán chưa phản hồi, chúng tôi sẽ nhờ shipper tới quán mua giúp bạn.', style: TextStyle(fontSize: 12.5)),
+                ),
               if (schedule != null) Text('🟣 Hẹn lấy hàng lúc ${hhmm(schedule!['pickupAt'] as String?)}', style: const TextStyle(color: SqtColors.scheduled, fontWeight: FontWeight.w600)),
             ]),
           ),
@@ -382,3 +416,47 @@ class _Stars extends StatelessWidget {
           ),
       ]);
 }
+
+/// Sao chép đơn để gửi thẳng cho quán qua Zalo/SMS (VD quán chưa thấy đơn trên app) — có tên + SĐT người đặt.
+class _SendToStoreCard extends StatelessWidget {
+  const _SendToStoreCard({required this.order});
+  final Map<String, dynamic> order;
+
+  Future<void> _copy(BuildContext context) async {
+    await Clipboard.setData(ClipboardData(text: orderText(order)));
+    if (context.mounted) showDone(context, 'Đã sao chép đơn — dán vào Zalo/tin nhắn gửi quán');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final storePhone = (order['contacts'] as Map?)?['store'] as String?;
+    return Card(
+      margin: const EdgeInsets.only(top: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('📤 Gửi đơn cho quán', style: TextStyle(fontWeight: FontWeight.w800)),
+          const SizedBox(height: 2),
+          const Text('Sao chép nội dung đơn (món, ghi chú, địa chỉ, SĐT của bạn) để gửi thẳng cho quán.', style: TextStyle(fontSize: 12.5)),
+          const SizedBox(height: 8),
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            FilledButton.tonalIcon(key: const Key('copy-order'), onPressed: () => _copy(context), icon: const Icon(Icons.copy), label: const Text('Sao chép đơn')),
+            if (storePhone != null) ...[
+              OutlinedButton.icon(
+                onPressed: () async {
+                  // Zalo không cho điền sẵn nội dung: sao chép trước rồi mở Zalo của quán để dán.
+                  await _copy(context);
+                  await openZalo(storePhone);
+                },
+                icon: const Icon(Icons.chat_outlined),
+                label: const Text('Zalo quán'),
+              ),
+              OutlinedButton.icon(onPressed: () => openSms(storePhone, orderText(order)), icon: const Icon(Icons.sms_outlined), label: const Text('SMS quán')),
+            ],
+          ]),
+        ]),
+      ),
+    );
+  }
+}
+

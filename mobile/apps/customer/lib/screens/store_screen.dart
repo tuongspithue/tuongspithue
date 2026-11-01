@@ -229,6 +229,15 @@ class _StoreInfo extends StatelessWidget {
           const SizedBox(width: 4),
           Expanded(child: Text(store['address'] as String, style: Theme.of(context).textTheme.bodySmall)),
         ]),
+        if (store['orderMode'] == 'PROXY' || store['orderMode'] == 'HYBRID')
+          Container(
+            margin: const EdgeInsets.only(top: 10),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: SqtColors.scheduled.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+            child: Text(store['orderMode'] == 'PROXY'
+                ? '🛒 Quán chưa dùng app — shipper sẽ tới quán đặt món và mua giúp bạn.'
+                : '🛒 Nếu quán chưa kịp nhận đơn, shipper sẽ tới quán mua giúp bạn.'),
+          ),
         if (!open)
           Container(
             margin: const EdgeInsets.only(top: 10),

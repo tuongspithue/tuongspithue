@@ -186,3 +186,28 @@ score = w1 * (1 / ETA_tới_quán)
 | Có vấn đề | Push + SMS | Push | Push |
 
 Kênh: **FCM/APNs** (push), **WebSocket** (trong app), **Zalo ZNS / SMS** (dự phòng & OTP), **IVR** (quán).
+
+## 3.8. Ba chế độ nhận đơn & "Shipper mua hộ"
+
+Admin chọn cho **từng quán** một chế độ (Admin Console → Quán → hồ sơ quán → *Chế độ nhận đơn*):
+
+| Chế độ | Dùng cho | Luồng |
+|---|---|---|
+| 📱 **Quán tự nhận** (mặc định) | Quán có cài app | Cổng A (quán) → Cổng B (shipper) như 3.3–3.4 |
+| 🛒 **Shipper mua hộ** | Quán không dùng app (vỉa hè, tạp hoá nhỏ) | Bỏ Cổng A; mời shipper ngay; shipper tới quán đặt món, ứng tiền, giao |
+| 🔀 **Song song** | Quán có app nhưng hay lỡ đơn | Quán có **N giây** (mặc định 60) để nhận; im lặng thì mời shipper tới mua hộ. Trong lúc shipper đang tới, quán **vẫn nhận muộn được** → đơn quay về "quán làm món, shipper lấy" |
+
+**Người thật xác nhận vẫn bắt buộc:** chuyển sang mua hộ *không* xác nhận đơn. Đơn chỉ có người lo khi shipper bấm nhận chuyến (Cổng B), và Cổng A được thay bằng việc **shipper đặt món trực tiếp tại quầy** (kênh `RIDER_PROXY`, ghi trong nhật ký đơn).
+
+**Các bước của shipper mua hộ:**
+1. Lời mời ghi rõ "🛒 MUA HỘ — ứng trước X đ". Chỉ mời shipper có **hạn mức ứng tiền** ≥ tiền món (Admin đặt cho từng shipper, mặc định 500.000đ).
+2. Tới quán → **Đã đặt món với quán**: đọc món + ghi chú cho quán; đơn có dị ứng phải tick "đã đọc ghi chú dị ứng".
+3. **Đã trả tiền & nhận món**: nhập tiền món thật, chụp hoá đơn/menu. Lệch quá **10%** so với app thì phải gọi khách, khách đồng ý mới xác nhận được. Tổng khách trả = tiền món thật + phí ship + phí dịch vụ (**không thu phí mua hộ** — đã nằm trong phí ship).
+4. Giao như đơn thường (có mã nhận hàng nếu đơn lớn).
+5. Tới nơi quán đóng cửa/hết món → **Quán không bán được**: đơn huỷ, khách được hoàn toàn bộ; shipper được ghi **tiền bù chuyến đi** (mặc định 10.000đ) để đối soát.
+
+**Giới hạn:** chỉ giao tận nơi (không tự đến lấy, không hẹn giờ với quán mua hộ). **Khách mới** (chưa có đơn thành công) chỉ được mua hộ với tiền món **dưới 200.000đ**.
+
+**Admin chỉnh được** (Cấu hình → nhóm `proxy`): số giây chờ quán ở chế độ song song, mức tối đa cho khách mới, ngưỡng lệch giá, tiền bù chuyến đi; và hạn mức ứng tiền từng shipper (hồ sơ shipper).
+
+**Khách luôn biết đơn đang ở đâu:** màn theo dõi đơn có hình động — sóng lan khi đợi quán, radar khi tìm shipper, xe chạy khi shipper đang tới/đang giao — kèm đồng hồ "đã chờ m:ss" và lời giải thích ("Quán chưa nhận trên app — đang tìm shipper tới quán mua giúp bạn"). Khách có thể **sao chép đơn** (kèm tên + SĐT người đặt) để gửi thẳng cho quán qua Zalo/SMS.

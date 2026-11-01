@@ -412,6 +412,7 @@ class _StoreCard extends StatelessWidget {
                 Wrap(spacing: 6, runSpacing: 6, children: [
                   InfoPill(icon: Icons.schedule, text: '~$eta phút', color: SqtColors.confirmed),
                   InfoPill(icon: Icons.near_me, text: distanceText(dist)),
+                  if (store['orderMode'] == 'PROXY') const InfoPill(icon: Icons.shopping_bag_outlined, text: 'Shipper mua hộ', color: SqtColors.scheduled),
                 ]),
               ]),
             ),
