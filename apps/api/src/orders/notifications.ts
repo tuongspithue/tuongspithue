@@ -20,7 +20,8 @@ export class NotificationsService {
   }
 
   /** Báo cho mọi người đang làm ở quán (chủ + nhân viên). */
-  async toStore(client: PoolClient, storeId: number | string, channel: Channel, template: string, payload: object) {
+  async toStore(client: PoolClient, storeId: number | string | null, channel: Channel, template: string, payload: object) {
+    if (storeId == null) return; // đơn gửi hàng không có quán
     const { rows } = await client.query<{ user_id: string }>(
       `SELECT DISTINCT user_id FROM user_roles WHERE role IN ('MERCHANT_OWNER', 'MERCHANT_STAFF') AND scope_id = $1`,
       [storeId],

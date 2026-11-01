@@ -157,9 +157,18 @@ class _OfferCard extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('Thu nhập ${money(offer['earning'] as num)}', style: Theme.of(context).textTheme.headlineSmall),
-          Text('${offer['storeName']} · cách bạn ${offer['distanceToStoreM']} m'),
+          if (offer['kind'] == 'PARCEL') ...[
+            const Text('📦 GỬI HÀNG', style: TextStyle(fontWeight: FontWeight.w800, color: SqtColors.scheduled)),
+            Text('Lấy: ${offer['storeAddress']} · cách bạn ${offer['distanceToStoreM']} m'),
+            Text('Giao: ${offer['dropoffAddress'] ?? ''}'),
+          ] else
+            Text('${offer['storeName']} · cách bạn ${offer['distanceToStoreM']} m'),
           Text('Quãng đường giao ~${((offer['tripDistanceM'] as num? ?? 0) / 1000).toStringAsFixed(1)} km'),
-          Text(cash > 0 ? '💵 Thu tiền mặt ${money(cash)}' : '✔ Khách đã thanh toán'),
+          Text(cash == 0
+              ? '✔ Khách đã thanh toán'
+              : offer['kind'] == 'PARCEL'
+                  ? '💵 Thu ${money(cash)} ${offer['feePayer'] == 'RECEIVER' ? 'của người nhận khi giao' : 'của người gửi khi lấy hàng'}'
+                  : '💵 Thu tiền mặt ${money(cash)}'),
           const SizedBox(height: 8),
           Row(children: [
             Expanded(child: OutlinedButton(onPressed: onDecline, child: const Text('Bỏ qua'))),
@@ -251,14 +260,18 @@ class TripCard extends StatelessWidget {
     final schedule = trip['schedule'] as Map<String, dynamic>?;
     final p = pos.toJson();
     final contacts = (trip['contacts'] as Map?) ?? const {};
+    final parcel = trip['kind'] == 'PARCEL';
     final actions = <Widget>[];
     switch (state) {
       case 'SHIPPER_DA_NHAN':
-        actions.add(FilledButton(onPressed: () => _call(context, '/v1/rider/orders/$_id/arrived-store', p, 'Đã báo tới quán'), child: const Text('📍 ĐÃ TỚI QUÁN')));
+        actions.add(FilledButton(
+          onPressed: () => _call(context, '/v1/rider/orders/$_id/arrived-store', p, parcel ? 'Đã báo tới điểm lấy' : 'Đã báo tới quán'),
+          child: Text(parcel ? '📍 ĐÃ TỚI ĐIỂM LẤY HÀNG' : '📍 ĐÃ TỚI QUÁN'),
+        ));
       case 'SHIPPER_DEN_QUAN':
         actions.add(FilledButton(
           onPressed: () async {
-            final code = await _ask(context, 'Quét/nhập mã trên túi hàng', 'SQT-XXXXXX');
+            final code = await _ask(context, parcel ? 'Hỏi người gửi mã đơn' : 'Quét/nhập mã trên túi hàng', 'SQT-XXXXXX');
             if (code != null && context.mounted) await _call(context, '/v1/rider/orders/$_id/picked-up', {...p, 'code': code}, 'Đã lấy hàng');
           },
           child: const Text('📦 ĐÃ LẤY HÀNG'),
@@ -298,13 +311,20 @@ class TripCard extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Row(children: [Expanded(child: Text(trip['code'] as String, style: Theme.of(context).textTheme.titleMedium)), StateChip(state)]),
+          if (parcel) ...[
+            const Text('📦 Gửi hàng', style: TextStyle(fontWeight: FontWeight.w800, color: SqtColors.scheduled)),
+            Text('Lấy: ${trip['pickupAddress'] ?? ''}${trip['pickupNote'] != null ? ' (${trip['pickupNote']})' : ''}'),
+            Text('Giao: ${trip['dropoffAddress'] ?? ''}${trip['recipientName'] != null ? ' · ${trip['recipientName']}' : ''}'),
+            Text((trip['parcel'] as Map?)?['feePayer'] == 'RECEIVER' ? '💵 Thu tiền ship của người nhận khi giao' : '💵 Thu tiền ship của người gửi khi lấy hàng'),
+          ],
           if (schedule != null) Text('🟣 Lấy hàng lúc ${hhmm(schedule['pickupAt'] as String?)}'),
-          Text(trip['paymentMethod'] == 'COD' ? '💵 Thu tiền mặt ${money(trip['total'] as num)}' : '✔ Khách đã thanh toán'),
+          Text(trip['paymentMethod'] == 'COD' ? '💵 ${parcel ? 'Tổng tiền ship' : 'Thu tiền mặt'} ${money(trip['total'] as num)}' : '✔ Khách đã thanh toán'),
           Text('Khách ✔ ${trip['customerCompletedOrders'] ?? 0} đơn thành công'),
           const SizedBox(height: 8),
           OrderItemsView(trip),
           if (trip['dropoffAddress'] != null) Text('📍 Giao tới: ${trip['dropoffAddress']}${trip['dropoffNote'] != null ? ' — ${trip['dropoffNote']}' : ''}'),
           ContactButtons(label: 'Quán ${trip['storeName'] ?? ''}', phone: contacts['store'] as String?),
+          ContactButtons(label: 'Người gửi', phone: contacts['sender'] as String?),
           ContactButtons(label: 'Khách ${trip['customerName'] ?? ''}'.trim(), phone: contacts['customer'] as String?),
           const SizedBox(height: 8),
           ...actions.map((a) => Padding(padding: const EdgeInsets.only(top: 6), child: a)),

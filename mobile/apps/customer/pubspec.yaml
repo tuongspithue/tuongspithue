@@ -11,6 +11,8 @@ dependencies:
   sqt_core:
     path: ../../packages/sqt_core
   http: ^1.2.0
+  flutter_map: ^8.3.2
+  latlong2: ^0.10.1
 dev_dependencies:
   flutter_test:
     sdk: flutter

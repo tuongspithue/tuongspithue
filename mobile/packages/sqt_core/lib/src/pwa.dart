@@ -140,3 +140,10 @@ Future<({double lat, double lng})?> currentPosition({void Function(String reason
     return null;
   }
 }
+
+/// Mở app Tin nhắn với nội dung soạn sẵn (VD gửi mã nhận hàng cho người nhận) — không dùng dịch vụ SMS trả phí.
+Future<void> openSms(String phone, String body) => launchUrl(Uri.parse('sms:$phone?body=${Uri.encodeComponent(body)}'));
+
+/// Mở Zalo tới số điện thoại (Zalo không cho điền sẵn nội dung qua đường link).
+Future<void> openZalo(String phone) => launchUrl(Uri.parse('https://zalo.me/$phone'), mode: LaunchMode.externalApplication);
+

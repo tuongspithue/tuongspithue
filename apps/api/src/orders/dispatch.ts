@@ -70,8 +70,11 @@ export class DispatchService implements OnModuleInit {
       const cfg = waves[w - 1];
       const codNeeded = order.payment_method === 'COD' ? Number(order.total) : 0;
       const { rows } = await client.query<{ user_id: string; distance_m: number }>(
-        `SELECT r.user_id, ST_Distance(r.location, s.location) AS distance_m
-         FROM riders r JOIN stores s ON s.id = $1
+        `WITH p AS (
+           SELECT COALESCE(o.pickup_location, s.location) AS location FROM orders o LEFT JOIN stores s ON s.id = o.store_id WHERE o.id = $1
+         )
+         SELECT r.user_id, ST_Distance(r.location, s.location) AS distance_m
+         FROM riders r CROSS JOIN p s
          LEFT JOIN trust_scores ts ON ts.subject_type = 'RIDER' AND ts.subject_id = r.user_id
          WHERE r.status = 'APPROVED' AND r.is_online AND r.location IS NOT NULL
            AND r.location_at > $2::timestamptz - interval '2 minutes'
@@ -84,7 +87,7 @@ export class DispatchService implements OnModuleInit {
          -- Khoảng cách điều chỉnh theo uy tín: điểm 100 như gần hơn 20%, điểm 0 như xa hơn 20% (Phần 3.4.1, w3).
          ORDER BY ST_Distance(r.location, s.location) * (1 - (LEAST(GREATEST(COALESCE(ts.score, $8), 0), 100) - 50) / 250)
          LIMIT $7`,
-        [order.store_id, now, cfg.radiusM, codNeeded, ACTIVE_RIDER_STATES, order.id, cfg.maxRiders, ROOKIE_DEFAULT_SCORE],
+        [order.id, now, cfg.radiusM, codNeeded, ACTIVE_RIDER_STATES, order.id, cfg.maxRiders, ROOKIE_DEFAULT_SCORE],
       );
       if (rows.length === 0) continue;
 
@@ -106,9 +109,10 @@ export class DispatchService implements OnModuleInit {
 
   async offersFor(riderId: number) {
     const { rows } = await this.db.query(
-      `SELECT d.id, d.order_id, d.wave, d.distance_m, d.earning, d.expires_at,
-              s.name AS store_name, s.address_text AS store_address, o.payment_method, o.total, o.distance_m AS trip_m
-       FROM dispatch_offers d JOIN orders o ON o.id = d.order_id JOIN stores s ON s.id = o.store_id
+      `SELECT d.id, d.order_id, d.wave, d.distance_m, d.earning, d.expires_at, o.kind, o.fee_payer, o.parcel_size, o.dropoff_address,
+              COALESCE(s.name, '📦 Gửi hàng') AS store_name, COALESCE(s.address_text, o.pickup_address) AS store_address,
+              o.payment_method, o.total, o.distance_m AS trip_m
+       FROM dispatch_offers d JOIN orders o ON o.id = d.order_id LEFT JOIN stores s ON s.id = o.store_id
        WHERE d.rider_id = $1 AND d.status = 'SENT' AND d.expires_at > now()
        ORDER BY d.sent_at`,
       [riderId],
@@ -125,6 +129,11 @@ export class DispatchService implements OnModuleInit {
         earning: Number(r.earning),
         cashToCollect: r.payment_method === 'COD' ? Number(r.total) : 0,
         expiresAt: r.expires_at,
+        kind: r.kind,
+        // Gửi hàng: thu tiền ở điểm lấy (người gửi trả) hay điểm giao (người nhận trả).
+        feePayer: r.fee_payer,
+        parcelSize: r.parcel_size,
+        dropoffAddress: r.dropoff_address,
       })),
     };
   }

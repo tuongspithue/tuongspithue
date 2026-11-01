@@ -6,6 +6,7 @@ import '../main.dart';
 import '../ui.dart';
 import 'cart_screen.dart';
 import 'order_screen.dart';
+import 'parcel_screen.dart';
 import 'store_screen.dart';
 
 /// "Quanh tôi": các quán đang mở quanh vị trí, sắp theo khoảng cách (Phần 2.1.2, 9.4).
@@ -163,6 +164,9 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
+          SliverToBoxAdapter(
+            child: _ParcelEntry(onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ParcelScreen(api: widget.api, place: _place)))),
+          ),
           const SliverToBoxAdapter(child: _PromiseBanner()),
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -306,6 +310,41 @@ class _CategoryTile extends StatelessWidget {
               const SizedBox(height: 6),
               Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12.5, fontWeight: selected ? FontWeight.w800 : FontWeight.w500)),
             ]),
+          ),
+        ),
+      );
+}
+
+/// Lối vào dịch vụ Gửi hàng: đặt shipper lấy & giao giúp (Phần 2.1.9).
+class _ParcelEntry extends StatelessWidget {
+  const _ParcelEntry({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+        child: Material(
+          borderRadius: BorderRadius.circular(20),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            key: const Key('open-parcel'),
+            onTap: onTap,
+            child: Ink(
+              padding: const EdgeInsets.all(16),
+              decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xFF5B41E0), Color(0xFF8B5CF6)])),
+              child: const Row(children: [
+                Text('📦', style: TextStyle(fontSize: 36)),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('Gửi hàng', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 17)),
+                    SizedBox(height: 2),
+                    Text('Đặt shipper tới lấy và giao tận tay người nhận', style: TextStyle(color: Colors.white70)),
+                  ]),
+                ),
+                Icon(Icons.arrow_forward, color: Colors.white),
+              ]),
+            ),
           ),
         ),
       );

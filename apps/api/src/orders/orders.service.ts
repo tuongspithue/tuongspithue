@@ -28,7 +28,7 @@ import { EntitlementService } from '../config-center/entitlements.service';
 import { SlaStep } from '@sqt/domain';
 
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-const newOrderCode = () =>
+export const newOrderCode = () =>
   'SQT-' + Array.from(randomBytes(6), (b) => CODE_ALPHABET[b % CODE_ALPHABET.length]).join('');
 
 const PAYMENT_TTL_SECONDS = 600;
@@ -201,8 +201,10 @@ export class OrdersService implements OnModuleInit {
       const { rows } = await client.query<OrderRow>(
         `INSERT INTO orders (code, customer_id, store_id, state, delivery_mode, dropoff_location, dropoff_address, dropoff_note,
            recipient_name, recipient_phone, order_note, distance_m, subtotal, delivery_fee, service_fee, total,
-           payment_method, has_allergens, delivery_pin, is_scheduled, schedule_type, scheduled_for, scheduled_pickup_at, customer_device)
-         VALUES ($1, $2, $3, $4, $5, ${point(6, 7)}, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)
+           payment_method, has_allergens, delivery_pin, is_scheduled, schedule_type, scheduled_for, scheduled_pickup_at, customer_device,
+           pickup_location, pickup_address)
+         VALUES ($1, $2, $3, $4, $5, ${point(6, 7)}, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25,
+           (SELECT location FROM stores WHERE id = $3), (SELECT address_text FROM stores WHERE id = $3))
          RETURNING *`,
         [
           newOrderCode(),
@@ -392,7 +394,8 @@ export class OrdersService implements OnModuleInit {
       );
       const decision = decideCustomerCancellation({
         state: order.state,
-        prepStarted: order.prep_state === 'READY',
+        // Gửi hàng không có bước chuẩn bị món: huỷ trước khi lấy hàng như đơn chưa làm.
+        prepStarted: order.kind !== 'PARCEL' && order.prep_state === 'READY',
         secondsSinceAccepted: order.accepted_at ? (now.getTime() - new Date(order.accepted_at).getTime()) / 1000 : null,
         secondsUntilSlot: order.scheduled_pickup_at ? (new Date(order.scheduled_pickup_at).getTime() - now.getTime()) / 1000 : null,
         freeCancellationsUsedThisMonth: Number(rows[0].n),
@@ -449,8 +452,10 @@ export class OrdersService implements OnModuleInit {
     const contacts: Record<string, string | null> = {};
     if (active || isOps) {
       if (!isCustomer || isOps) contacts.customer = receiverPhone;
-      if (!isStore || isOps) contacts.store = x.store_phone;
+      if ((!isStore || isOps) && x.store_phone) contacts.store = x.store_phone;
       if (o.rider_id && (!isRider || isOps)) contacts.rider = x.rider_phone;
+      // Gửi hàng: shipper và Ops cần gọi người gửi ở điểm lấy hàng.
+      if (o.kind === 'PARCEL' && (isRider || isOps)) contacts.sender = o.sender_phone;
     }
     const events = await q.query(
       `SELECT e.event, e.from_state, e.to_state, e.actor_role, e.channel, e.created_at, u.full_name
@@ -463,12 +468,19 @@ export class OrdersService implements OnModuleInit {
       state: o.state,
       prepState: o.prep_state,
       deliveryMode: o.delivery_mode,
-      storeId: Number(o.store_id),
+      kind: o.kind ?? 'FOOD',
+      storeId: o.store_id ? Number(o.store_id) : null,
       riderId: o.rider_id ? Number(o.rider_id) : null,
-      storeName: x.store_name,
+      storeName: x.store_name ?? (o.kind === 'PARCEL' ? 'Gửi hàng' : null),
       riderTier: o.rider_id ? (x.rider_tier ?? 'ROOKIE') : null,
       contacts,
       recipientName: o.recipient_name,
+      recipientPhone: o.kind === 'PARCEL' && (isCustomer || isRider || isOps) ? o.recipient_phone : undefined,
+      pickupAddress: o.pickup_address,
+      pickupNote: o.pickup_note,
+      ...(o.kind === 'PARCEL'
+        ? { parcel: { type: o.parcel_type, size: o.parcel_size, feePayer: o.fee_payer, senderName: o.sender_name, senderPhone: isCustomer || isRider || isOps ? o.sender_phone : undefined } }
+        : {}),
       dropoffAddress: o.dropoff_address,
       dropoffNote: o.dropoff_note,
       // Khách không cần xác minh khi đặt: quán/shipper xem tên và số đơn đã thành công để gọi xác minh (Phần 13.9).

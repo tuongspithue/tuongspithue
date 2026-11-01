@@ -70,6 +70,14 @@ export default function OrderDetailPage() {
         <ContactButtons label={`Quán ${o.storeName ?? ''}`} phone={o.contacts?.store} />
         <ContactButtons label={o.recipientName ? `Người nhận ${o.recipientName}` : 'Khách'} phone={o.contacts?.customer} />
         <ContactButtons label="Shipper" phone={o.contacts?.rider} />
+        <ContactButtons label={`Người gửi ${o.parcel?.senderName ?? ''}`} phone={o.contacts?.sender} />
+        {o.kind === 'PARCEL' && (
+          <div>
+            <strong>📦 Gửi hàng</strong> — lấy tại {o.pickupAddress}
+            {o.pickupNote ? ` (${o.pickupNote})` : ''} · loại {o.parcel?.type} · cỡ {o.parcel?.size} ·{' '}
+            {o.parcel?.feePayer === 'RECEIVER' ? 'người nhận trả phí' : 'người gửi trả phí'}
+          </div>
+        )}
         {o.dropoffAddress && <div className="muted">Giao tới: {o.dropoffAddress}{o.dropoffNote ? ` — ${o.dropoffNote}` : ''}</div>}
       </div>
 

@@ -81,7 +81,7 @@ export class OrderLifecycle {
     );
     await this.recordEvent(client, order.id, order.state, result.to, event, actor, opts.payload, opts.at);
     if (TRUST_EVENTS.has(event) || result.to === 'HOAN_THANH') {
-      await this.trust.enqueue(client, 'STORE', order.store_id);
+      if (order.store_id) await this.trust.enqueue(client, 'STORE', order.store_id);
       if (order.rider_id) await this.trust.enqueue(client, 'RIDER', order.rider_id);
     }
     if (result.to === 'DA_HUY' && order.is_scheduled && order.scheduled_pickup_at) {

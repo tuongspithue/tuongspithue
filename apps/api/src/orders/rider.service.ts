@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { OrderEvent } from '@sqt/domain';
 import { PoolClient } from 'pg';
 import { BusinessError } from '../common/errors';
-import { LatLng, distanceToStoreM, point } from '../common/geo';
+import { LatLng, point } from '../common/geo';
 import { APP_CONFIG, AppConfig } from '../config';
 import { DATABASE, Database } from '../database/database';
 import { DispatchService } from './dispatch';
@@ -84,7 +84,12 @@ export class RiderService {
   async arrivedStore(riderId: number, orderId: number, input: StepInput) {
     return this.db.tx(async (client) => {
       const order = await this.lockOwn(client, riderId, orderId);
-      const d = await distanceToStoreM(client, Number(order.store_id), input);
+      // Điểm lấy hàng: quán, hoặc địa chỉ người gửi với đơn gửi hàng.
+      const { rows } = await client.query<{ d: number }>(
+        `SELECT ST_Distance(COALESCE(o.pickup_location, s.location), ${point(2, 3)}) AS d FROM orders o LEFT JOIN stores s ON s.id = o.store_id WHERE o.id = $1`,
+        [order.id, input.lng, input.lat],
+      );
+      const d = Number(rows[0]?.d ?? Infinity);
       await this.checkGeofence(client, order, d, this.config.business.storeGeofenceM, input, 'GEOFENCE_OVERRIDE_STORE');
       const next = await this.lifecycle.apply(client, order, OrderEvent.RIDER_ARRIVED_STORE, this.actor(riderId), {
         at: input,
@@ -98,7 +103,9 @@ export class RiderService {
   async pickedUp(riderId: number, orderId: number, code: string, at: LatLng) {
     return this.db.tx(async (client) => {
       const order = await this.lockOwn(client, riderId, orderId);
-      if (order.code !== code.trim().toUpperCase()) throw new BusinessError('CODE_MISMATCH', 'Mã đơn không khớp, kiểm tra đúng túi hàng');
+      if (order.code !== code.trim().toUpperCase()) {
+        throw new BusinessError('CODE_MISMATCH', order.kind === 'PARCEL' ? 'Mã đơn không khớp, hỏi lại người gửi' : 'Mã đơn không khớp, kiểm tra đúng túi hàng');
+      }
       const picked = await this.lifecycle.apply(client, order, OrderEvent.RIDER_PICKED_UP, this.actor(riderId), { at });
       const delivering = await this.lifecycle.apply(client, picked, OrderEvent.START_DELIVERY, SYSTEM_ACTOR);
       await this.notifications.enqueue(client, order.customer_id, 'PUSH', 'ON_THE_WAY', { orderId });

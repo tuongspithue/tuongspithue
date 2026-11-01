@@ -276,8 +276,8 @@ export class AdminManageController {
     if (!r) throw new BusinessError('RIDER_NOT_FOUND', 'Không tìm thấy shipper', 404);
     const [trips, stats, history] = await Promise.all([
       this.db.query(
-        `SELECT o.id, o.code, o.state, o.total, o.payment_method, o.created_at, s.name AS store_name
-         FROM orders o JOIN stores s ON s.id = o.store_id WHERE o.rider_id = $1 ORDER BY o.created_at DESC LIMIT 30`,
+        `SELECT o.id, o.code, o.state, o.total, o.payment_method, o.created_at, COALESCE(s.name, '📦 Gửi hàng') AS store_name
+         FROM orders o LEFT JOIN stores s ON s.id = o.store_id WHERE o.rider_id = $1 ORDER BY o.created_at DESC LIMIT 30`,
         [id],
       ),
       this.db.query(
@@ -366,8 +366,8 @@ export class AdminManageController {
     if (!u) throw new BusinessError('USER_NOT_FOUND', 'Không tìm thấy khách', 404);
     const [orders, stats, history] = await Promise.all([
       this.db.query(
-        `SELECT o.id, o.code, o.state, o.total, o.payment_method, o.created_at, o.dropoff_address, s.name AS store_name
-         FROM orders o JOIN stores s ON s.id = o.store_id WHERE o.customer_id = $1 ORDER BY o.created_at DESC LIMIT 50`,
+        `SELECT o.id, o.code, o.state, o.total, o.payment_method, o.created_at, o.dropoff_address, COALESCE(s.name, '📦 Gửi hàng') AS store_name
+         FROM orders o LEFT JOIN stores s ON s.id = o.store_id WHERE o.customer_id = $1 ORDER BY o.created_at DESC LIMIT 50`,
         [id],
       ),
       this.db.query(

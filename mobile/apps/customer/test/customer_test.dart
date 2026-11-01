@@ -59,6 +59,8 @@ void main() {
     expect(find.text('Phở Cô Lan'), findsOneWidget);
     expect(find.text('🏅 Vàng'), findsOneWidget);
 
+    await tester.ensureVisible(find.text('Phở Cô Lan'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Phở Cô Lan'));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('item-10')));

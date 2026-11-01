@@ -127,8 +127,8 @@ export class AdminController {
   async listOrders(@Query('state') state?: string, @Query('problem') problem?: string, @Query('q') q?: string) {
     const { rows } = await this.db.query(
       `SELECT o.id, o.code, o.state, o.total, o.payment_method, o.is_scheduled, o.scheduled_pickup_at, o.created_at, o.updated_at,
-              s.name AS store_name, s.phone AS store_phone, u.phone AS customer_phone, ${PROBLEM_REASON_SQL} AS problem
-       FROM orders o JOIN stores s ON s.id = o.store_id JOIN users u ON u.id = o.customer_id
+              COALESCE(s.name, '📦 Gửi hàng') AS store_name, COALESCE(s.phone, o.sender_phone) AS store_phone, u.phone AS customer_phone, o.kind, ${PROBLEM_REASON_SQL} AS problem
+       FROM orders o LEFT JOIN stores s ON s.id = o.store_id JOIN users u ON u.id = o.customer_id
        WHERE ($1::text IS NULL OR o.state = $1)
          AND ($2::boolean IS NOT TRUE OR ${PROBLEM_SQL})
          AND ($3::text IS NULL OR o.code ILIKE '%' || $3 || '%' OR u.phone LIKE '%' || $3 || '%' OR s.name ILIKE '%' || $3 || '%')

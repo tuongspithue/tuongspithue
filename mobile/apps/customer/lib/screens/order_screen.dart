@@ -61,14 +61,14 @@ class _OrderScreenState extends State<OrderScreen> with Polling {
     int storeStars = 5;
     int riderStars = 5;
     final hasRider = _o!['riderId'] != null;
+    final hasStore = _o!['storeId'] != null;
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, set) => AlertDialog(
           title: const Text('Đánh giá đơn hàng'),
           content: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Text('Món ăn của quán'),
-            _Stars(value: storeStars, onChanged: (v) => set(() => storeStars = v)),
+            if (hasStore) ...[const Text('Món ăn của quán'), _Stars(value: storeStars, onChanged: (v) => set(() => storeStars = v))],
             if (hasRider) ...[const Text('Shipper'), _Stars(value: riderStars, onChanged: (v) => set(() => riderStars = v))],
           ]),
           actions: [FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Gửi đánh giá'))],
@@ -78,7 +78,7 @@ class _OrderScreenState extends State<OrderScreen> with Polling {
     if (ok != true) return;
     try {
       await widget.api.post('/v1/orders/${widget.orderId}/review', {
-        'store': {'stars': storeStars},
+        if (hasStore) 'store': {'stars': storeStars},
         if (hasRider) 'rider': {'stars': riderStars},
       });
       setState(() => _reviewed = true);
@@ -107,7 +107,7 @@ class _OrderScreenState extends State<OrderScreen> with Polling {
       body: RefreshIndicator(
         onRefresh: _load,
         child: ListView(padding: const EdgeInsets.all(16), children: [
-          _StatusHero(state: state, selfPickup: o['deliveryMode'] == 'SELF_PICKUP', schedule: schedule),
+          _StatusHero(state: state, selfPickup: o['deliveryMode'] == 'SELF_PICKUP', parcel: o['kind'] == 'PARCEL', schedule: schedule),
           const SizedBox(height: 12),
           PushBanner(api: widget.api, app: 'CUSTOMER'),
           const InstallTip(),
@@ -121,7 +121,8 @@ class _OrderScreenState extends State<OrderScreen> with Polling {
                 Expanded(child: FilledButton(onPressed: () => _respondProposal(true), child: const Text('Đồng ý giờ mới'))),
               ]),
             ]),
-          if (o['deliveryPin'] != null && state != 'HOAN_THANH')
+          if (o['kind'] == 'PARCEL' && !['HOAN_THANH', 'DA_HUY'].contains(state)) ..._parcelCards(o, state),
+          if (o['deliveryPin'] != null && state != 'HOAN_THANH' && o['kind'] != 'PARCEL')
             _card(color: SqtColors.primary.withValues(alpha: 0.08), [
               const Text('🔐 Mã nhận hàng', style: TextStyle(fontWeight: FontWeight.w700)),
               Text('${o['deliveryPin']}', style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w900, letterSpacing: 8, color: SqtColors.primary)),
@@ -143,9 +144,9 @@ class _OrderScreenState extends State<OrderScreen> with Polling {
           _card([
             Text(o['storeName'] as String? ?? 'Món đã đặt', style: const TextStyle(fontWeight: FontWeight.w800)),
             const SizedBox(height: 6),
-            OrderItemsView(o),
+            if (o['kind'] == 'PARCEL') _ParcelRoute(o) else OrderItemsView(o),
             const Divider(height: 24),
-            _Line('Tiền món', money(o['subtotal'] as num)),
+            if (o['kind'] != 'PARCEL') _Line('Tiền món', money(o['subtotal'] as num)),
             _Line('Phí ship', money(o['deliveryFee'] as num)),
             _Line('Phí dịch vụ', money(o['serviceFee'] as num)),
             const SizedBox(height: 4),
@@ -161,6 +162,90 @@ class _OrderScreenState extends State<OrderScreen> with Polling {
         ]),
       ),
     );
+  }
+}
+
+/// Gửi hàng: mã đơn để đọc cho shipper lúc lấy hàng; mã nhận hàng để gửi cho người nhận.
+List<Widget> _parcelCards(Map<String, dynamic> o, String state) {
+  final pin = o['deliveryPin'] as String?;
+  final receiver = o['recipientPhone'] as String?;
+  final beforePickup = ['DANG_TIM_SHIPPER', 'CAN_CAN_THIEP', 'SHIPPER_DA_NHAN', 'SHIPPER_DEN_QUAN'].contains(state);
+  return [
+    if (beforePickup)
+      Card(
+        color: SqtColors.confirmed.withValues(alpha: 0.08),
+        margin: const EdgeInsets.only(bottom: 12),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('📤 Mã đơn — đọc cho shipper khi giao hàng cho shipper', style: TextStyle(fontWeight: FontWeight.w700)),
+            Text('${o['code']}', style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, letterSpacing: 2, color: SqtColors.confirmed)),
+          ]),
+        ),
+      ),
+    if (pin != null)
+      Card(
+        color: SqtColors.primary.withValues(alpha: 0.08),
+        margin: const EdgeInsets.only(bottom: 12),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('📥 Mã nhận hàng — gửi cho người nhận', style: TextStyle(fontWeight: FontWeight.w700)),
+            Text(pin, style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w900, letterSpacing: 8, color: SqtColors.primary)),
+            const Text('Người nhận đọc mã này cho shipper khi đã nhận đủ hàng.'),
+            if (receiver != null) ...[
+              const SizedBox(height: 8),
+              Wrap(spacing: 8, runSpacing: 8, children: [
+                FilledButton.tonalIcon(
+                  onPressed: () => openSms(receiver, 'Ship Quanh Tôi: đơn ${o['code']} đang được giao tới bạn. Mã nhận hàng là $pin — chỉ đọc cho shipper khi đã nhận đủ hàng.'),
+                  icon: const Icon(Icons.sms_outlined),
+                  label: const Text('Gửi mã qua SMS'),
+                ),
+                OutlinedButton.icon(onPressed: () => openZalo(receiver), icon: const Icon(Icons.chat_outlined), label: const Text('Mở Zalo người nhận')),
+              ]),
+            ],
+          ]),
+        ),
+      ),
+  ];
+}
+
+/// Lộ trình gửi hàng: lấy ở đâu → giao tới đâu, loại hàng, ai trả phí.
+class _ParcelRoute extends StatelessWidget {
+  const _ParcelRoute(this.o);
+  final Map<String, dynamic> o;
+
+  static const _types = {'DOCUMENT': '📄 Giấy tờ', 'FOOD': '🍱 Đồ ăn', 'CLOTHES': '👕 Quần áo', 'ELECTRONICS': '📱 Điện tử', 'OTHER': '📦 Khác'};
+  static const _sizes = {'SMALL': 'Nhỏ', 'MEDIUM': 'Vừa', 'LARGE': 'Lớn'};
+
+  @override
+  Widget build(BuildContext context) {
+    final p = (o['parcel'] as Map?) ?? const {};
+    Widget stop(IconData icon, Color color, String title, String? address, String? who) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Icon(icon, color: color, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(title, style: Theme.of(context).textTheme.bodySmall),
+                Text(address ?? '', style: const TextStyle(fontWeight: FontWeight.w700)),
+                if (who != null) Text(who),
+              ]),
+            ),
+          ]),
+        );
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      stop(Icons.trip_origin, SqtColors.confirmed, 'Lấy hàng', o['pickupAddress'] as String?, p['senderName'] == null ? null : 'Người gửi: ${p['senderName']}'),
+      stop(Icons.place, SqtColors.danger, 'Giao tới', o['dropoffAddress'] as String?, o['recipientName'] == null ? null : 'Người nhận: ${o['recipientName']}'),
+      const SizedBox(height: 6),
+      Wrap(spacing: 6, runSpacing: 6, children: [
+        Chip(label: Text(_types[p['type']] ?? '📦 Hàng hoá'), visualDensity: VisualDensity.compact),
+        Chip(label: Text('Cỡ ${_sizes[p['size']] ?? ''}'), visualDensity: VisualDensity.compact),
+        Chip(label: Text(p['feePayer'] == 'RECEIVER' ? '💵 Người nhận trả phí' : '💵 Người gửi trả phí'), visualDensity: VisualDensity.compact),
+      ]),
+      if (o['orderNote'] != null) Text('Ghi chú: ${o['orderNote']}'),
+    ]);
   }
 }
 
@@ -182,9 +267,10 @@ class _Line extends StatelessWidget {
 
 /// Thẻ trạng thái lớn: đang ở bước nào, ai đang lo đơn, việc tiếp theo (Phần 2.1.6, 9.4).
 class _StatusHero extends StatelessWidget {
-  const _StatusHero({required this.state, required this.selfPickup, this.schedule});
+  const _StatusHero({required this.state, required this.selfPickup, this.parcel = false, this.schedule});
   final String state;
   final bool selfPickup;
+  final bool parcel;
   final Map<String, dynamic>? schedule;
 
   static const _messages = {
@@ -204,8 +290,22 @@ class _StatusHero extends StatelessWidget {
     'GIAO_THAT_BAI': ('⚠️', 'Giao không thành công — CSKH sẽ liên hệ bạn'),
   };
 
+  static const _parcelMessages = {
+    'DANG_TIM_SHIPPER': ('🔎', 'Đang mời shipper gần điểm lấy hàng'),
+    'SHIPPER_DA_NHAN': ('🛵', 'Shipper đã nhận chuyến, đang tới lấy hàng'),
+    'SHIPPER_DEN_QUAN': ('📍', 'Shipper đã tới điểm lấy — đọc mã đơn cho shipper'),
+    'DA_LAY_HANG': ('📦', 'Shipper đã lấy hàng'),
+  };
+
   /// Bước hiện tại trên thanh tiến trình (0..4).
   int get _step {
+    if (parcel) {
+      if (state == 'HOAN_THANH') return 4;
+      if (['DANG_GIAO', 'DA_DEN_NOI'].contains(state)) return 3;
+      if (state == 'DA_LAY_HANG') return 2;
+      if (['SHIPPER_DA_NHAN', 'SHIPPER_DEN_QUAN'].contains(state)) return 1;
+      return 0;
+    }
     if (state == 'HOAN_THANH') return 4;
     if (['DA_LAY_HANG', 'DANG_GIAO', 'DA_DEN_NOI', 'CHO_KHACH_DEN_LAY'].contains(state)) return 3;
     if (['SHIPPER_DA_NHAN', 'SHIPPER_DEN_QUAN', 'HEN_SHIPPER_DA_GIU', 'HEN_SAN_SANG'].contains(state)) return 2;
@@ -216,9 +316,13 @@ class _StatusHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = stateColor(state);
-    final msg = _messages[state] ?? (state.startsWith('HEN_') ? ('🟣', 'Đơn hẹn giờ — chúng tôi nhắc quán & shipper đúng giờ') : ('📦', ''));
+    final msg = (parcel ? _parcelMessages[state] : null) ?? _messages[state] ?? (state.startsWith('HEN_') ? ('🟣', 'Đơn hẹn giờ — chúng tôi nhắc quán & shipper đúng giờ') : ('📦', ''));
     final ended = state == 'DA_HUY' || state == 'GIAO_THAT_BAI';
-    final labels = selfPickup ? ['Đặt', 'Quán nhận', 'Chuẩn bị', 'Sẵn sàng', 'Đã lấy'] : ['Đặt', 'Quán nhận', 'Shipper nhận', 'Đang giao', 'Đã giao'];
+    final labels = parcel
+        ? ['Đặt', 'Shipper nhận', 'Lấy hàng', 'Đang giao', 'Đã giao']
+        : selfPickup
+            ? ['Đặt', 'Quán nhận', 'Chuẩn bị', 'Sẵn sàng', 'Đã lấy']
+            : ['Đặt', 'Quán nhận', 'Shipper nhận', 'Đang giao', 'Đã giao'];
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(

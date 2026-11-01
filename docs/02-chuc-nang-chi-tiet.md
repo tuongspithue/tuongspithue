@@ -115,6 +115,18 @@ Thanh tiến trình rõ ràng, mỗi bước có **tên người xác nhận + g
 - [P2] Chương trình điểm thưởng "Hạt Gạo" — tích điểm đổi voucher.
 - [P1] Trung tâm trợ giúp + chat CSKH (bot trả lời câu hỏi thường gặp, chuyển người thật khi cần).
 
+### 2.1.9. Gửi hàng — đặt shipper giao hộ
+Khách đặt shipper tới lấy một món hàng ở **điểm A** và giao tận tay người nhận ở **điểm B**, không qua quán.
+- [P0] Điểm lấy & điểm giao: nhập địa chỉ + **ghim trên bản đồ** (kéo bản đồ cho ghim nằm đúng chỗ; nền OSM/CARTO miễn phí). Điểm lấy mặc định là vị trí hiện tại.
+- [P0] Người gửi, người nhận (tên + SĐT); ghi chú cho từng điểm (VD "gọi khi tới cổng", "để ở bảo vệ").
+- [P0] Loại hàng (giấy tờ, đồ ăn, quần áo, điện tử, khác) và **kích cỡ**: Nhỏ < 5 kg, Vừa < 15 kg (+5.000đ), Lớn < 30 kg (+15.000đ).
+- [P0] **Báo giá trước khi đặt**: phí ship theo quãng đường (cùng bảng phí giao đồ ăn) + phụ phí kích cỡ + phí dịch vụ; hiện thời gian ước tính. Phạm vi tối đa 20 km.
+- [P0] Thanh toán tiền mặt, chọn **người gửi trả** (khi shipper tới lấy) hoặc **người nhận trả** (khi nhận hàng).
+- [P0] **Người thật xác nhận:** đơn không có quán nên không có Cổng A; hệ thống mời shipper gần **điểm lấy hàng**, shipper bấm nhận chuyến là xác nhận (Cổng B). Không ai nhận thì chuyển Ops như đơn thường.
+- [P0] Lấy hàng: người gửi đọc **mã đơn** cho shipper (thay cho mã trên túi của quán). Giao hàng: luôn có **mã nhận hàng 4 số**; khách bấm "Gửi mã qua SMS" (mở app Tin nhắn soạn sẵn) cho người nhận; người nhận đọc mã cho shipper khi nhận đủ hàng.
+- [P0] Theo dõi đơn với thanh tiến trình riêng: Đặt → Shipper nhận → Lấy hàng → Đang giao → Đã giao. Huỷ miễn phí trước khi shipper lấy hàng. Sau khi giao chỉ đánh giá shipper.
+- [P1] Thu hộ tiền hàng (COD cho người bán online), gửi nhiều điểm, đặt hẹn giờ gửi hàng.
+
 ---
 
 ## 2.2. App Đối tác Quán — "SQT Đối Tác" (+ Web quản trị quán)

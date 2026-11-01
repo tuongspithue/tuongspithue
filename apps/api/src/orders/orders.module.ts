@@ -9,6 +9,7 @@ import { OrderLifecycle } from './lifecycle';
 import { NotificationsService } from './notifications';
 import { OrdersService } from './orders.service';
 import { RiderService } from './rider.service';
+import { ParcelController, ParcelService } from './parcels';
 import { TrustService } from '../trust/trust.service';
 import { TrustController } from '../trust/trust.controller';
 
@@ -30,8 +31,8 @@ export class DevPaymentController {
 }
 
 @Module({
-  controllers: [SlotsController, CustomerOrdersController, MerchantOrdersController, OpsOrdersController, RiderController, DevPaymentController, TrustController],
-  providers: [OrderLifecycle, JobsService, NotificationsService, DispatchService, OrdersService, RiderService, IdempotencyService, ScheduledService, TrustService],
+  controllers: [SlotsController, CustomerOrdersController, MerchantOrdersController, OpsOrdersController, RiderController, DevPaymentController, TrustController, ParcelController],
+  providers: [OrderLifecycle, JobsService, NotificationsService, DispatchService, OrdersService, RiderService, IdempotencyService, ScheduledService, TrustService, ParcelService],
   exports: [JobsService, OrdersService],
 })
 export class OrdersModule {}
