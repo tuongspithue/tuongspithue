@@ -107,7 +107,7 @@ export class TrustService implements OnModuleInit {
     const { rows: decisions } = await q.query<{ ok: number; age: number }>(
       `SELECT CASE WHEN accepted_at IS NOT NULL THEN 1 ELSE 0 END AS ok, extract(epoch FROM now() - created_at) / 86400 AS age
        FROM orders WHERE store_id = $1 AND created_at > now() - ${LOOKBACK}
-         AND (accepted_at IS NOT NULL OR cancelled_by_role = 'MERCHANT' OR cancel_reason = 'MERCHANT_TIMEOUT')`,
+         AND (accepted_at IS NOT NULL OR cancelled_by_role = 'MERCHANT' OR cancel_reason = 'MERCHANT_TIMEOUT' OR store_missed)`,
       [id],
     );
     const acceptance = decayedRate(decisions.map((d) => ({ value: d.ok ? 1 : 0, ageDays: Number(d.age) })));

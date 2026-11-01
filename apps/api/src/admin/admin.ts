@@ -61,7 +61,7 @@ export class AdminController {
                 count(*) FILTER (WHERE accepted_at - created_at <= interval '60 seconds')::int AS within_60s,
                 count(*) FILTER (WHERE accepted_at - created_at <= interval '180 seconds')::int AS within_180s
          FROM orders WHERE NOT is_scheduled AND created_at >= date_trunc('day', now())
-           AND (accepted_at IS NOT NULL OR cancel_reason IN ('MERCHANT_TIMEOUT') OR cancelled_by_role = 'MERCHANT')`,
+           AND (accepted_at IS NOT NULL OR cancel_reason IN ('MERCHANT_TIMEOUT') OR cancelled_by_role = 'MERCHANT' OR store_missed)`,
       ),
       this.db.query(
         `SELECT count(*) FILTER (WHERE is_online)::int AS online,

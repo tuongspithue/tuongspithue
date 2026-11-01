@@ -65,9 +65,16 @@ export class OrdersService implements OnModuleInit {
           await this.requestOpsCall(client, order, 'MERCHANT_SILENT');
           break;
         case 'SUGGEST_SCHEDULE':
+          // Đơn sẽ được chuyển cho shipper mua hộ thì không gợi ý khách đặt hẹn giờ.
+          if (await this.fallsBackToProxy(client, order)) break;
           await this.notifications.enqueue(client, order.customer_id, 'PUSH', 'SUGGEST_SCHEDULE', info);
           break;
         case 'AUTO_CANCEL':
+          // Quán không liên hệ được: đơn giao tận nơi chuyển sang shipper tới quán mua hộ, không huỷ (Phần 3.8).
+          if (await this.fallsBackToProxy(client, order)) {
+            await this.switchToProxy(client, order, job.run_at ? new Date(job.run_at) : new Date(), { store_missed: true });
+            break;
+          }
           await this.lifecycle.apply(client, order, OrderEvent.MERCHANT_TIMEOUT, SYSTEM_ACTOR, {
             set: { cancel_reason: 'MERCHANT_TIMEOUT', cancelled_by_role: 'SYSTEM', refund_kind: 'FULL' },
           });
@@ -127,7 +134,8 @@ export class OrdersService implements OnModuleInit {
 
   /**
    * Đơn này có được chuyển sang "shipper mua hộ" không (Phần 3.8). Quán chế độ PROXY (không dùng app)
-   * thì bắt buộc mua hộ nên chặn ngay các trường hợp không làm được; HYBRID thì chỉ đánh dấu được/không.
+   * thì bắt buộc mua hộ nên chặn ngay các trường hợp không làm được; HYBRID và APP thì chỉ đánh dấu được/không
+   * (APP: dùng khi quán im lặng hết hạn Cổng A, nếu Admin bật proxy.fallback_on_store_silent).
    */
   private async proxyAllowed(
     client: PoolClient,
@@ -137,7 +145,7 @@ export class OrdersService implements OnModuleInit {
     o: { isDelivery: boolean; scheduled: boolean; subtotal: number },
   ): Promise<boolean> {
     const mode = store.order_mode ?? 'APP';
-    if (mode === 'APP') return false;
+    if (mode === 'APP' && !this.configCenter.get<boolean>('proxy.fallback_on_store_silent', scope)) return false;
     const { rows } = await client.query<{ n: number }>(`SELECT count(*)::int AS n FROM orders WHERE customer_id = $1 AND state = 'HOAN_THANH'`, [user.id]);
     const maxNew = this.configCenter.get<number>('proxy.new_customer_max_value', scope);
     const valueOk = rows[0].n > 0 || o.subtotal < maxNew;
@@ -166,9 +174,16 @@ export class OrdersService implements OnModuleInit {
     }
   }
 
+  /** Quán im lặng hết hạn Cổng A thì đơn này có chuyển sang shipper mua hộ thay vì huỷ không. */
+  private async fallsBackToProxy(client: PoolClient, order: OrderRow): Promise<boolean> {
+    if (order.state !== OrderState.CHO_QUAN_XAC_NHAN || !order.proxy_allowed) return false;
+    const { rows } = await client.query<{ category: string }>('SELECT category FROM stores WHERE id = $1', [order.store_id]);
+    return this.configCenter.get<boolean>('proxy.fallback_on_store_silent', { storeId: Number(order.store_id), category: rows[0]?.category });
+  }
+
   /** Quán không nhận (không dùng app / im lặng quá hạn): mời shipper tới quán mua hộ. Chưa phải xác nhận. */
-  private async switchToProxy(client: PoolClient, order: OrderRow, now: Date) {
-    const switched = await this.lifecycle.apply(client, order, OrderEvent.SWITCH_TO_PROXY, SYSTEM_ACTOR, { set: { fulfillment: 'PROXY' } });
+  private async switchToProxy(client: PoolClient, order: OrderRow, now: Date, extra: Record<string, unknown> = {}) {
+    const switched = await this.lifecycle.apply(client, order, OrderEvent.SWITCH_TO_PROXY, SYSTEM_ACTOR, { set: { fulfillment: 'PROXY', ...extra } });
     await this.notifications.enqueue(client, order.customer_id, 'PUSH', 'PROXY_STARTED', { orderId: Number(order.id) });
     return this.dispatch.sendWave(client, switched, 1, now);
   }

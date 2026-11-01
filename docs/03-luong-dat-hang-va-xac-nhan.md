@@ -99,8 +99,8 @@ stateDiagram-v2
 | 0s | Đẩy thông báo + chuông toàn màn hình trên **tất cả thiết bị** của quán (chủ + nhân viên có quyền nhận đơn) |
 | 45s | Nhắc lại bằng thông báo đẩy tới mọi thiết bị của quán |
 | 90s | **Điều phối viên gọi quán**: Admin Console hiện việc "Gọi quán" kèm SĐT (bấm để mở app gọi) và lời đọc đơn có ghi chú, dị ứng; quán đồng ý thì Ops xác nhận thay (kênh `OPS_CALL`). *Thay cho cuộc gọi tự động (IVR) trả phí — xem 13.8.* |
-| 120s | Hiện gợi ý cho khách: **"Chuyển sang hẹn giờ"** (giữ nguyên giỏ) hoặc chọn quán tương tự |
-| 180s | Huỷ tự động, **hoàn tiền 100%**, khách nhận voucher xin lỗi + gợi ý 3 quán tương tự có món tương tự |
+| 120s | Hiện gợi ý cho khách: **"Chuyển sang hẹn giờ"** (giữ nguyên giỏ) hoặc chọn quán tương tự — *bỏ qua nếu đơn sẽ chuyển shipper mua hộ* |
+| 180s | **Đơn giao tận nơi: chuyển sang "Shipper mua hộ"** (3.8) — mời shipper tới quán đặt món & giao, *không huỷ*; vẫn tính quán lỡ đơn. Đơn không mua hộ được (tự đến lấy, hẹn giờ, khách mới vượt mức, hoặc Admin tắt `proxy.fallback_on_store_silent`): huỷ tự động, **hoàn tiền 100%** + gợi ý quán tương tự |
 
 - **Nhận đơn = cam kết làm theo ghi chú của từng món.** Ghi chú nào không làm được thì quán phải dùng *Nhận với điều chỉnh* (khách đồng ý) chứ không được bỏ qua. Đơn có ghi chú dị ứng cần thêm thao tác *"Đã đọc ghi chú dị ứng"* trước khi nhận.
 - Quán bị **lỡ đơn** nhiều: lần 1 nhắc nhở; ≥ 3 lần/ngày → **tự động chuyển "Tạm nghỉ"** 30 phút và báo chủ quán (tránh khách tiếp tục đặt vào quán không người trực).
@@ -193,7 +193,7 @@ Admin chọn cho **từng quán** một chế độ (Admin Console → Quán →
 
 | Chế độ | Dùng cho | Luồng |
 |---|---|---|
-| 📱 **Quán tự nhận** (mặc định) | Quán có cài app | Cổng A (quán) → Cổng B (shipper) như 3.3–3.4 |
+| 📱 **Quán tự nhận** (mặc định) | Quán có cài app | Cổng A (quán) → Cổng B (shipper) như 3.3–3.4. Quán im lặng hết hạn Cổng A (180 giây) thì đơn giao tận nơi **chuyển sang shipper mua hộ thay vì huỷ** (Admin tắt được) |
 | 🛒 **Shipper mua hộ** | Quán không dùng app (vỉa hè, tạp hoá nhỏ) | Bỏ Cổng A; mời shipper ngay; shipper tới quán đặt món, ứng tiền, giao |
 | 🔀 **Song song** | Quán có app nhưng hay lỡ đơn | Quán có **N giây** (mặc định 60) để nhận; im lặng thì mời shipper tới mua hộ. Trong lúc shipper đang tới, quán **vẫn nhận muộn được** → đơn quay về "quán làm món, shipper lấy" |
 
@@ -208,6 +208,6 @@ Admin chọn cho **từng quán** một chế độ (Admin Console → Quán →
 
 **Giới hạn:** chỉ giao tận nơi (không tự đến lấy, không hẹn giờ với quán mua hộ). **Khách mới** (chưa có đơn thành công) chỉ được mua hộ với tiền món **dưới 200.000đ**.
 
-**Admin chỉnh được** (Cấu hình → nhóm `proxy`): số giây chờ quán ở chế độ song song, mức tối đa cho khách mới, ngưỡng lệch giá, tiền bù chuyến đi; và hạn mức ứng tiền từng shipper (hồ sơ shipper).
+**Admin chỉnh được** (Cấu hình → nhóm `proxy`): bật/tắt chuyển shipper khi quán im lặng (`proxy.fallback_on_store_silent`, theo toàn hệ thống / ngành / từng quán), số giây chờ quán ở chế độ song song, mức tối đa cho khách mới, ngưỡng lệch giá, tiền bù chuyến đi; và hạn mức ứng tiền từng shipper (hồ sơ shipper).
 
 **Khách luôn biết đơn đang ở đâu:** màn theo dõi đơn có hình động — sóng lan khi đợi quán, radar khi tìm shipper, xe chạy khi shipper đang tới/đang giao — kèm đồng hồ "đã chờ m:ss" và lời giải thích ("Quán chưa nhận trên app — đang tìm shipper tới quán mua giúp bạn"). Khách có thể **sao chép đơn** (kèm tên + SĐT người đặt) để gửi thẳng cho quán qua Zalo/SMS.

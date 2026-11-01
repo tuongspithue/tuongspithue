@@ -104,7 +104,7 @@ describe('trung tâm cấu hình phân tầng (Phần 14.6)', () => {
     expect(badSteps.body.error.message).toMatch(/AUTO_CANCEL/);
   });
 
-  it('mốc Cổng A chỉnh được: quán im lặng 120 giây thì tự huỷ', async () => {
+  it('mốc Cổng A chỉnh được: quán im lặng 120 giây thì hết hạn (đơn giao tận nơi chuyển shipper mua hộ)', async () => {
     await t
       .http()
       .put('/v1/admin/config/sla.gate_a.steps')
@@ -112,9 +112,12 @@ describe('trung tâm cấu hình phân tầng (Phần 14.6)', () => {
       .send({ scope: 'GLOBAL', value: [{ afterSeconds: 60, action: 'OPS_CALL' }, { afterSeconds: 120, action: 'AUTO_CANCEL' }], reason: 'Rút ngắn chờ ở khu thí điểm' })
       .expect(200);
     const o = (await order().expect(201)).body;
+    await t.jobs.runDue(new Date(Date.now() + 100_000));
+    expect((await t.http().get(`/v1/orders/${o.id}`).set(auth(customer.token)).expect(200)).body.state).toBe('CHO_QUAN_XAC_NHAN');
     await t.jobs.runDue(new Date(Date.now() + 125_000));
     const v = await t.http().get(`/v1/orders/${o.id}`).set(auth(customer.token)).expect(200);
-    expect(v.body.state).toBe('DA_HUY');
+    expect(v.body.fulfillment).toBe('PROXY');
+    expect(v.body.state).not.toBe('DA_HUY');
   });
 
   it('có phiên bản, hoàn tác về bản cũ và nhật ký thao tác', async () => {

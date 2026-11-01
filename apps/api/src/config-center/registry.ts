@@ -48,6 +48,7 @@ export const CONFIG_DEFINITIONS: ConfigDefinition[] = [
   // ---- Phí ----
   // ---- Shipper mua hộ (Phần 3.8) ----
   { key: 'proxy.hybrid_wait_seconds', module: 'proxy', description: 'Chế độ song song: số giây chờ quán nhận trước khi mời shipper tới mua hộ', type: 'INT', default: 60, min: 15, max: 600, scopes: ['GLOBAL', 'CATEGORY', 'STORE'] },
+  { key: 'proxy.fallback_on_store_silent', module: 'proxy', description: 'Quán im lặng hết hạn Cổng A: chuyển đơn giao tận nơi sang shipper mua hộ thay vì huỷ (cả quán chế độ "Quán tự nhận")', type: 'BOOL', default: true, scopes: ['GLOBAL', 'CATEGORY', 'STORE'] },
   { key: 'proxy.new_customer_max_value', module: 'proxy', description: 'Khách mới (chưa có đơn thành công) chỉ được mua hộ với tiền món dưới mức này (đồng)', type: 'MONEY', default: 200_000, min: 0, max: 5_000_000, scopes: ['GLOBAL', 'CATEGORY', 'STORE'] },
   { key: 'proxy.price_tolerance_pct', module: 'proxy', description: 'Giá thật tại quán lệch quá % này so với app thì shipper phải gọi khách đồng ý', type: 'INT', default: 10, min: 0, max: 50, scopes: ['GLOBAL', 'CATEGORY', 'STORE'] },
   { key: 'proxy.failed_trip_fee', module: 'proxy', description: 'Tiền bù cho shipper khi tới nơi quán không bán được (đồng, ghi để đối soát)', type: 'MONEY', default: 10_000, min: 0, max: 100_000, scopes: ['GLOBAL'] },

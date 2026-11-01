@@ -133,7 +133,7 @@ describe('chế độ "Song song"', () => {
     expect((await t.http().post(`/v1/rider/orders/${placed.id}/proxy-ordered`).set(auth(rider.token)).send({}).expect(409)).body.error.code).toBe('NOT_PROXY');
   });
 
-  it('quán nhận trong 60 giây thì không mời shipper mua hộ; chế độ "Quán tự nhận" không bao giờ chuyển', async () => {
+  it('quán nhận trong 60 giây thì không mời shipper mua hộ; chế độ "Quán tự nhận" chỉ chuyển khi hết hạn Cổng A (Admin tắt được)', async () => {
     await freeRiders();
     const quick = (await order(regular.token).expect(201)).body;
     await t.http().post(`/v1/merchant/orders/${quick.id}/accept`).set(auth(merchant)).send({ prepTimeMin: 10 }).expect(200);
@@ -143,8 +143,24 @@ describe('chế độ "Song song"', () => {
     await freeRiders();
     await setMode('APP');
     const app = (await order(regular.token).expect(201)).body;
-    expect(app.proxyAllowed).toBe(false);
+    expect(app.proxyAllowed).toBe(true);
     await t.jobs.runDue(new Date(Date.now() + 61_000));
     expect((await t.http().get(`/v1/orders/${app.id}`).set(auth(regular.token)).expect(200)).body.state).toBe('CHO_QUAN_XAC_NHAN');
+    // Hết hạn Cổng A (180 giây) mà quán vẫn im lặng: mời shipper tới quán mua hộ thay vì huỷ.
+    // (Giả lập shipper vẫn gửi vị trí tới thời điểm đó — điều phối chỉ mời shipper có vị trí trong 2 phút.)
+    await t.pool.query(`UPDATE riders SET location_at = now() + interval '3 minutes'`);
+    await t.jobs.runDue(new Date(Date.now() + 181_000));
+    expect((await t.http().get(`/v1/orders/${app.id}`).set(auth(regular.token)).expect(200)).body).toMatchObject({ state: 'DANG_TIM_SHIPPER', fulfillment: 'PROXY' });
+
+    // Admin tắt "chuyển shipper khi quán im lặng" cho quán này: hết hạn thì huỷ như cũ.
+    await freeRiders();
+    await t.http().put('/v1/admin/config/proxy.fallback_on_store_silent').set(auth(admin))
+      .send({ scope: 'STORE', scopeId: String(storeId), value: false, reason: 'Quán chỉ bán tại chỗ' }).expect(200);
+    const off = (await order(regular.token).expect(201)).body;
+    expect(off.proxyAllowed).toBe(false);
+    await t.jobs.runDue(new Date(Date.now() + 181_000));
+    expect((await t.http().get(`/v1/orders/${off.id}`).set(auth(regular.token)).expect(200)).body.state).toBe('DA_HUY');
+    await t.http().delete('/v1/admin/config/proxy.fallback_on_store_silent').set(auth(admin))
+      .send({ scope: 'STORE', scopeId: String(storeId), reason: 'Bật lại' }).expect(200);
   });
 });

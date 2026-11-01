@@ -263,7 +263,7 @@ describe('luồng đầy đủ: đặt đơn → Cổng A → Cổng B → giao 
 });
 
 describe('Cổng A — hẹn giờ và dự phòng', () => {
-  it('quán im lặng: nhắc, nhờ Ops gọi quán (kèm SĐT & lời đọc có ghi chú), 180 giây thì huỷ và hoàn tiền', async () => {
+  it('quán im lặng: nhắc, nhờ Ops gọi quán (kèm SĐT & lời đọc có ghi chú), 180 giây thì chuyển shipper tới quán mua hộ — không huỷ', async () => {
     const order = await placeOrder({ items: [{ itemId: phoId, quantity: 1, noteTags: ['Không hành'], allergens: ['SEAFOOD'] }] });
     const placedAt = Date.now();
 
@@ -279,12 +279,25 @@ describe('Cổng A — hẹn giờ và dự phòng', () => {
 
     await t.jobs.runDue(new Date(placedAt + 181_000));
     view = await t.http().get(`/v1/orders/${order.id}`).set(auth(customer)).expect(200);
+    expect(view.body.state).not.toBe('DA_HUY');
+    expect(view.body.fulfillment).toBe('PROXY');
+    const templates = (await t.pool.query(`SELECT template FROM notifications WHERE (payload->>'orderId')::int = $1 ORDER BY id`, [order.id])).rows.map((r) => r.template);
+    expect(templates).toEqual(expect.arrayContaining(['NEW_ORDER', 'NEW_ORDER_REMINDER', 'OPS_CALL_STORE', 'PROXY_STARTED']));
+    // Đơn sẽ có shipper mua hộ nên không gợi ý hẹn giờ, không báo huỷ.
+    expect(templates).not.toContain('SUGGEST_SCHEDULE');
+    expect(templates).not.toContain('ORDER_CANCELLED_MERCHANT_SILENT');
+    const missed = await t.pool.query('SELECT store_missed FROM orders WHERE id = $1', [order.id]);
+    expect(missed.rows[0].store_missed).toBe(true);
+  });
+
+  it('quán im lặng với đơn tự đến lấy (shipper không mua hộ được) thì 180 giây vẫn huỷ và hoàn tiền', async () => {
+    const order = await placeOrder({ deliveryMode: 'SELF_PICKUP', dropoff: undefined });
+    await t.jobs.runDue(new Date(Date.now() + 181_000));
+    const view = await t.http().get(`/v1/orders/${order.id}`).set(auth(customer)).expect(200);
     expect(view.body.state).toBe('DA_HUY');
     expect(view.body.refund).toBe('FULL');
-    const templates = (await t.pool.query('SELECT template FROM notifications ORDER BY id')).rows.map((r) => r.template);
-    expect(templates).toEqual(
-      expect.arrayContaining(['NEW_ORDER', 'NEW_ORDER_REMINDER', 'OPS_CALL_STORE', 'SUGGEST_SCHEDULE', 'ORDER_CANCELLED_MERCHANT_SILENT']),
-    );
+    const templates = (await t.pool.query(`SELECT template FROM notifications WHERE (payload->>'orderId')::int = $1`, [order.id])).rows.map((r) => r.template);
+    expect(templates).toEqual(expect.arrayContaining(['SUGGEST_SCHEDULE', 'ORDER_CANCELLED_MERCHANT_SILENT']));
   });
 
   it('quán đã nhận thì các mốc nhắc sau đó không làm gì', async () => {

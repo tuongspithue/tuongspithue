@@ -31,6 +31,7 @@ const UPDATABLE = new Set([
   'cancel_reason',
   'cancelled_by_role',
   'refund_kind',
+  'store_missed',
 ]);
 
 /**
@@ -38,7 +39,7 @@ const UPDATABLE = new Set([
  * gói domain, ghi sự kiện bất biến vào order_events và outbox trong cùng transaction.
  */
 /** Sự kiện làm thay đổi điểm uy tín của quán/shipper (Phần 11). */
-const TRUST_EVENTS = new Set<string>(['MERCHANT_ACCEPT', 'MERCHANT_REJECT', 'MERCHANT_TIMEOUT', 'RIDER_RELEASE', 'RIDER_RECONFIRM_MISSED', 'DELIVERED']);
+const TRUST_EVENTS = new Set<string>(['MERCHANT_ACCEPT', 'MERCHANT_REJECT', 'MERCHANT_TIMEOUT', 'SWITCH_TO_PROXY', 'RIDER_RELEASE', 'RIDER_RECONFIRM_MISSED', 'DELIVERED']);
 
 @Injectable()
 export class OrderLifecycle {
