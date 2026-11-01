@@ -24,10 +24,12 @@ export interface MapMarker {
 
 export const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
-// Nền bản đồ CARTO Voyager: sáng, rõ tên đường, miễn phí (ghi nguồn OSM + CARTO). Lỗi thì quay về OSM gốc.
+// Nền bản đồ OpenStreetMap: miễn phí, không cần khoá API (chỉ cần ghi nguồn). Lỗi thì chuyển sang máy chủ
+// OSM Pháp (cùng dữ liệu). Không dùng CARTO: dịch vụ này đã đòi khoá API và trả ảnh "API KEY REQUIRED".
+const OSM_ATTRIBUTION = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
 const TILES = {
-  carto: { url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · © <a href="https://carto.com/attributions">CARTO</a>', subdomains: 'abcd' },
-  osm: { url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', subdomains: 'abc' },
+  primary: { url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', attribution: OSM_ATTRIBUTION, subdomains: 'abc', maxZoom: 19 },
+  fallback: { url: 'https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', attribution: `${OSM_ATTRIBUTION} · OSM France`, subdomains: 'abc', maxZoom: 19 },
 };
 
 /**
@@ -48,12 +50,12 @@ export function LeafletMap({ markers, className = 'map', zoom = 15, fitSignal = 
       if (cancelled || !el.current) return;
       if (!map.current) {
         const m = L.map(el.current, { zoomControl: true, preferCanvas: false }).setView([16.0, 106.5], 6);
-        let tiles = L.tileLayer(TILES.carto.url, { maxZoom: 20, attribution: TILES.carto.attribution, subdomains: TILES.carto.subdomains, detectRetina: true }).addTo(m);
+        let tiles = L.tileLayer(TILES.primary.url, { maxZoom: TILES.primary.maxZoom, attribution: TILES.primary.attribution }).addTo(m);
         let errors = 0;
         tiles.on('tileerror', () => {
           if (++errors !== 6) return;
           m.removeLayer(tiles);
-          tiles = L.tileLayer(TILES.osm.url, { maxZoom: 19, attribution: TILES.osm.attribution }).addTo(m);
+          tiles = L.tileLayer(TILES.fallback.url, { maxZoom: TILES.fallback.maxZoom, attribution: TILES.fallback.attribution, subdomains: TILES.fallback.subdomains }).addTo(m);
         });
         layer.current = L.layerGroup().addTo(m);
         map.current = m;

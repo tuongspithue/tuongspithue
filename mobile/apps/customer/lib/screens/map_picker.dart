@@ -3,7 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:sqt_core/sqt_core.dart';
 
-/// Chọn vị trí bằng cách kéo bản đồ cho ghim nằm đúng chỗ (nền OSM/CARTO miễn phí, không cần khoá API).
+/// Chọn vị trí bằng cách kéo bản đồ cho ghim nằm đúng chỗ (nền OpenStreetMap miễn phí, không cần khoá API).
 class MapPickerScreen extends StatefulWidget {
   const MapPickerScreen({super.key, required this.initial, required this.title});
   final LatLng initial;
@@ -37,11 +37,11 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
             ),
             children: [
               TileLayer(
-                urlTemplate: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
-                subdomains: const ['a', 'b', 'c', 'd'],
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                maxZoom: 19,
                 userAgentPackageName: 'vn.shipquanhtoi.customer',
               ),
-              const RichAttributionWidget(attributions: [TextSourceAttribution('© OpenStreetMap · © CARTO')]),
+              const RichAttributionWidget(attributions: [TextSourceAttribution('© OpenStreetMap')]),
             ],
           ),
           // Ghim cố định giữa màn hình: kéo bản đồ để chọn điểm.

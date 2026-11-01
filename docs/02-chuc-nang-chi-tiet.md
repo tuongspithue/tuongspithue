@@ -117,7 +117,7 @@ Thanh tiến trình rõ ràng, mỗi bước có **tên người xác nhận + g
 
 ### 2.1.9. Gửi hàng — đặt shipper giao hộ
 Khách đặt shipper tới lấy một món hàng ở **điểm A** và giao tận tay người nhận ở **điểm B**, không qua quán.
-- [P0] Điểm lấy & điểm giao: nhập địa chỉ + **ghim trên bản đồ** (kéo bản đồ cho ghim nằm đúng chỗ; nền OSM/CARTO miễn phí). Điểm lấy mặc định là vị trí hiện tại.
+- [P0] Điểm lấy & điểm giao: nhập địa chỉ + **ghim trên bản đồ** (kéo bản đồ cho ghim nằm đúng chỗ; nền OpenStreetMap miễn phí). Điểm lấy mặc định là vị trí hiện tại.
 - [P0] Người gửi, người nhận (tên + SĐT); ghi chú cho từng điểm (VD "gọi khi tới cổng", "để ở bảo vệ").
 - [P0] Loại hàng (giấy tờ, đồ ăn, quần áo, điện tử, khác) và **kích cỡ**: Nhỏ < 5 kg, Vừa < 15 kg (+5.000đ), Lớn < 30 kg (+15.000đ).
 - [P0] **Báo giá trước khi đặt**: phí ship theo quãng đường (cùng bảng phí giao đồ ăn) + phụ phí kích cỡ + phí dịch vụ; hiện thời gian ước tính. Phạm vi tối đa 20 km.
