@@ -46,7 +46,8 @@ class Watcher {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_kMode, mode.name);
     await prefs.setString(_kTokenKey, tokenKey);
-    await prefs.setString(_kApiUrl, kApiUrl);
+    // Địa chỉ máy chủ người dùng nhập ở lần mở đầu (ServerSetupScreen), không có thì dùng bản build.
+    await prefs.setString(_kApiUrl, prefs.getString('sqt-server-url') ?? kApiUrl);
     if (storeId != null) await prefs.setInt(_kStore, storeId);
     if (!await _service.isRunning()) await _service.startService();
   }

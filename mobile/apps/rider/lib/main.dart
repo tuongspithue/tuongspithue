@@ -36,16 +36,34 @@ class _Gate extends StatefulWidget {
 
 class _GateState extends State<_Gate> {
   bool? _signedIn;
+  bool _needsServer = false;
 
   @override
   void initState() {
     super.initState();
-    widget.api.restore().then((ok) => setState(() => _signedIn = ok));
+    _start();
+  }
+
+  Future<void> _start() async {
+    // Lần đầu dùng: chưa có địa chỉ máy chủ thì hướng dẫn nhập trước.
+    if (!await widget.api.loadServer()) {
+      setState(() {
+        _needsServer = true;
+        _signedIn = false;
+      });
+      return;
+    }
+    final ok = await widget.api.restore();
+    setState(() {
+      _needsServer = false;
+      _signedIn = ok;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     if (_signedIn == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (_needsServer) return ServerSetupScreen(api: widget.api, onDone: _start);
     if (_signedIn == false) {
       return PartnerSignInScreen(
         api: widget.api,

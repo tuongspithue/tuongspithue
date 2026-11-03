@@ -3,7 +3,7 @@
 import { useSearchParams } from 'next/navigation';
 import { FormEvent, Suspense, useCallback, useEffect, useState } from 'react';
 import { Avatar, Badge, Loading, PageHead } from '@/components/ui';
-import { api, setToken } from '@/lib/api';
+import { API_BASE, api, setToken } from '@/lib/api';
 
 interface Me {
   id: number;
@@ -123,7 +123,39 @@ function AccountInner() {
           </dl>
         </div>
       </div>
+
+      <ServerAddressCard />
     </>
+  );
+}
+
+/** Địa chỉ máy chủ để quán/shipper nhập vào app ở lần mở đầu tiên (màn "Kết nối máy chủ"). */
+function ServerAddressCard() {
+  const [copied, setCopied] = useState(false);
+  const local = API_BASE.includes('localhost');
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(API_BASE);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  };
+  return (
+    <div className="card" style={{ marginTop: 16, display: 'grid', gap: 10 }}>
+      <h2>📱 Địa chỉ máy chủ cho app quán & shipper</h2>
+      <div className="muted">Lần đầu mở app, quán/shipper được hỏi địa chỉ này. Bấm Sao chép rồi gửi cho họ qua Zalo.</div>
+      <div className="row" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+        <code data-testid="server-address" style={{ padding: '8px 10px', borderRadius: 8, background: 'var(--bg-soft, rgba(0,0,0,.05))', wordBreak: 'break-all' }}>{API_BASE}</code>
+        <button type="button" className="btn" onClick={copy}>{copied ? 'Đã sao chép ✓' : 'Sao chép'}</button>
+      </div>
+      {local && (
+        <div className="tone-bad" style={{ fontSize: 13 }}>
+          Đây là địa chỉ trên máy chạy thử, điện thoại không vào được. Trong Codespace hãy chạy <code>bash scripts/codespace.sh</code> để Admin Console dùng địa chỉ cổng 3000 công khai.
+        </div>
+      )}
+    </div>
   );
 }
 

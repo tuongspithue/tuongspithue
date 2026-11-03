@@ -37,7 +37,7 @@ docker compose -f infra/docker-compose.prod.yml --env-file infra/.env.prod exec 
 
 ## 16.3. Lấy file cài app quán & shipper (APK)
 
-1. Trên GitHub: **Settings → Secrets and variables → Actions → Variables** → tạo biến `API_URL` = `https://api.<tên miền>`.
+1. *(Không bắt buộc)* Trên GitHub: **Settings → Secrets and variables → Actions → Variables** → tạo biến `API_URL` = `https://api.<tên miền>` để gắn sẵn địa chỉ máy chủ vào APK. Không đặt cũng được: **lần đầu mở app, quán/shipper được hướng dẫn nhập địa chỉ máy chủ** (màn "Kết nối máy chủ", có nút Dán, kiểm tra kết nối trước khi lưu). Admin lấy địa chỉ ở Admin Console → **Tài khoản của tôi → Địa chỉ máy chủ cho app** → Sao chép → gửi Zalo. Đổi máy chủ sau này: màn đăng nhập → "Máy chủ: … · Đổi".
 2. Mỗi lần đẩy code, GitHub Actions tự build. Vào **Actions → lần chạy mới nhất → Artifacts**, tải `sqt-merchant-apk` (app quán) và `sqt-rider-apk` (app shipper).
 3. Gửi file `app-release.apk` qua Zalo/Drive cho quán và shipper; trên máy bấm mở file → cho phép **"Cài ứng dụng không rõ nguồn"** → Cài đặt.
 

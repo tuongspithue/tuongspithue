@@ -1,6 +1,8 @@
 'use client';
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
+/** Địa chỉ máy chủ API — Admin gửi cho quán/shipper để nhập vào app ở lần mở đầu. */
+export const API_BASE = BASE;
 const TOKEN_KEY = 'sqt-admin-token';
 
 export class ApiError extends Error {

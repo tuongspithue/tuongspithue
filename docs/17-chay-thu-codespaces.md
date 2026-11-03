@@ -9,7 +9,7 @@
 |---|---|
 | Miễn phí khoảng **60 giờ chạy/tháng** với máy 2 lõi (hạn mức tài khoản cá nhân, xem GitHub → Settings → Billing) | Tắt Codespace khi không thử để tiết kiệm giờ |
 | **Không ai thao tác ~30 phút thì máy tự tắt** | App quán/shipper không nhận đơn, chuông không kêu. Có thể tăng lên tối đa 4 giờ: GitHub → Settings → Codespaces → *Default idle timeout* |
-| Địa chỉ đổi khi tạo Codespace **mới** | Phải build lại APK. Mở lại Codespace cũ thì địa chỉ giữ nguyên, dữ liệu vẫn còn |
+| Địa chỉ đổi khi tạo Codespace **mới** | Quán/shipper bấm "Máy chủ: … · Đổi" trên màn đăng nhập và dán địa chỉ mới (không cần build lại APK). Mở lại Codespace cũ thì địa chỉ giữ nguyên, dữ liệu vẫn còn |
 
 ## 17.2. Tạo Codespace (một lần, ~10 phút)
 
@@ -55,11 +55,10 @@ Kịch bản thử: xem Phần 16.6.
 
 ## 17.6. App Android trỏ về Codespace
 
-1. GitHub → repo → **Settings → Secrets and variables → Actions → Variables** → đặt `API_URL` = địa chỉ **API** ở 17.3.
-2. **Actions** → lần chạy CI mới nhất → **Re-run all jobs** → tải `sqt-merchant-apk`, `sqt-rider-apk` ở mục **Artifacts**.
-3. Cài lên điện thoại như Phần 16.3.
+1. **Actions** → lần chạy CI mới nhất → tải `sqt-merchant-apk`, `sqt-rider-apk` ở mục **Artifacts**, cài lên điện thoại như Phần 16.3.
+2. Mở app lần đầu → màn **"Kết nối máy chủ"** → dán địa chỉ **API** ở 17.3 (cổng 3000, để Public; Admin Console → Tài khoản của tôi có sẵn nút Sao chép) → **Kiểm tra & lưu**.
 
-> Khi chuyển sang VPS hoặc tạo Codespace mới, đổi lại `API_URL` và build lại APK.
+> Tạo Codespace mới (địa chỉ đổi) hoặc chuyển sang VPS: **không cần build lại APK** — trên màn đăng nhập bấm "Máy chủ: … · Đổi" và dán địa chỉ mới.
 
 ## 17.7. Lệnh thường dùng
 

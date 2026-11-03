@@ -6,7 +6,23 @@ import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Địa chỉ API, đặt khi build: `--dart-define=API_URL=https://api.example.vn`.
+/// App quán/shipper còn cho người dùng nhập địa chỉ ở lần mở đầu tiên (xem [ApiClient.loadServer]).
 const String kApiUrl = String.fromEnvironment('API_URL', defaultValue: 'http://localhost:3000');
+
+/// Bản build có gắn sẵn địa chỉ máy chủ thật hay chỉ là mặc định để chạy thử trên máy.
+bool get kHasBuiltInServer => !kApiUrl.contains('localhost') && !kApiUrl.contains('vidu.vn');
+
+/// Chuẩn hoá địa chỉ người dùng gõ/dán: thêm https://, bỏ "/" cuối, bỏ "/health" hoặc "/v1" dán thừa.
+String normalizeServerUrl(String input) {
+  var s = input.trim().replaceAll(RegExp(r'\s'), '');
+  if (s.isEmpty) return s;
+  if (!RegExp(r'^https?://', caseSensitive: false).hasMatch(s)) s = 'https://$s';
+  s = s.replaceFirst(RegExp(r'/+$'), '');
+  s = s.replaceFirst(RegExp(r'/(health|v1)$'), '');
+  return s.replaceFirst(RegExp(r'/+$'), '');
+}
+
+const _kServerKey = 'sqt-server-url';
 
 /// Lỗi nghiệp vụ trả về từ API theo dạng `{ error: { code, message } }` (Phần 6.4).
 class ApiException implements Exception {
@@ -62,8 +78,49 @@ class ApiClient {
 
   final TokenStore tokens;
   final http.Client _http;
-  final String baseUrl;
+  String baseUrl;
   String? _token;
+
+  /// Đọc địa chỉ máy chủ người dùng đã lưu. Trả về false nếu chưa có và bản build cũng không gắn sẵn
+  /// → app hiện màn "Kết nối máy chủ" để người dùng nhập.
+  Future<bool> loadServer() async {
+    final saved = (await SharedPreferences.getInstance()).getString(_kServerKey);
+    if (saved != null && saved.isNotEmpty) {
+      baseUrl = saved;
+      return true;
+    }
+    return kHasBuiltInServer;
+  }
+
+  /// Thử kết nối tới địa chỉ (gọi /health), được thì lưu lại và dùng luôn.
+  Future<void> setServer(String input) async {
+    final url = normalizeServerUrl(input);
+    if (url.isEmpty) throw ApiException(0, 'SERVER_EMPTY', 'Hãy nhập địa chỉ máy chủ');
+    final Uri uri;
+    try {
+      uri = Uri.parse('$url/health');
+      if (uri.host.isEmpty) throw const FormatException();
+    } catch (_) {
+      throw ApiException(0, 'SERVER_INVALID', 'Địa chỉ không hợp lệ');
+    }
+    late http.Response res;
+    try {
+      res = await _http.get(uri).timeout(const Duration(seconds: 10));
+    } catch (_) {
+      throw ApiException(0, 'SERVER_UNREACHABLE', 'Không kết nối được tới $url. Kiểm tra lại địa chỉ, mạng, và máy chủ đã bật chưa');
+    }
+    Object? data;
+    try {
+      data = jsonDecode(utf8.decode(res.bodyBytes));
+    } catch (_) {}
+    if (res.statusCode != 200 || data is! Map || data['status'] != 'ok') {
+      throw ApiException(res.statusCode, 'SERVER_NOT_SQT',
+          'Địa chỉ này không phải máy chủ Ship Quanh Tôi (mã ${res.statusCode}). Codespace: dùng địa chỉ cổng 3000 và để chế độ Public');
+    }
+    if (url != baseUrl) await signOut();
+    baseUrl = url;
+    await (await SharedPreferences.getInstance()).setString(_kServerKey, url);
+  }
 
   Future<bool> restore() async {
     _token = await tokens.read();

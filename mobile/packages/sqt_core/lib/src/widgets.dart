@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'api.dart';
 import 'labels.dart';
@@ -251,7 +252,103 @@ class _PartnerSignInScreenState extends State<PartnerSignInScreen> {
         OutlinedButton(key: const Key('apply'), onPressed: widget.onApply, child: const Text('Chưa có tài khoản? Đăng ký đối tác')),
         const SizedBox(height: 8),
         const Text('Đổi hoặc mất điện thoại: liên hệ Admin để nhận mã mới.', textAlign: TextAlign.center),
+        const SizedBox(height: 16),
+        TextButton.icon(
+          key: const Key('change-server'),
+          icon: const Icon(Icons.dns_outlined, size: 18),
+          label: Text('Máy chủ: ${Uri.tryParse(widget.api.baseUrl)?.host ?? widget.api.baseUrl} · Đổi', overflow: TextOverflow.ellipsis),
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (ctx) => ServerSetupScreen(api: widget.api, onDone: () => Navigator.pop(ctx))),
+          ).then((_) => setState(() {})),
+        ),
       ]);
+}
+
+/// Lần đầu mở app quán/shipper: hướng dẫn nhập địa chỉ máy chủ Admin gửi, kiểm tra kết nối rồi lưu.
+/// Nhờ vậy một bản APK dùng được với mọi máy chủ (Codespace, VPS…) mà không cần build lại.
+class ServerSetupScreen extends StatefulWidget {
+  const ServerSetupScreen({super.key, required this.api, required this.onDone});
+  final ApiClient api;
+  final VoidCallback onDone;
+
+  @override
+  State<ServerSetupScreen> createState() => _ServerSetupScreenState();
+}
+
+class _ServerSetupScreenState extends State<ServerSetupScreen> {
+  late final _url = TextEditingController(text: widget.api.baseUrl.contains('localhost') ? '' : widget.api.baseUrl);
+  bool _busy = false;
+  String? _error;
+
+  Future<void> _paste() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    if (data?.text != null) setState(() => _url.text = data!.text!.trim());
+  }
+
+  Future<void> _save() async {
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await widget.api.setServer(_url.text);
+      widget.onDone();
+    } on ApiException catch (e) {
+      setState(() => _error = e.message);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Widget _step(String n, String text) => Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          CircleAvatar(radius: 11, child: Text(n, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800))),
+          const SizedBox(width: 10),
+          Expanded(child: Text(text)),
+        ]),
+      );
+
+  @override
+  Widget build(BuildContext context) => _SignInFrame(
+        title: 'Kết nối máy chủ',
+        emoji: '🔌',
+        subtitle: 'Lần đầu dùng app, hãy nhập địa chỉ máy chủ do Admin gửi cho bạn. Chỉ cần làm một lần.',
+        children: [
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                _step('1', 'Hỏi Admin địa chỉ máy chủ. Admin xem ở Admin Console → "Tài khoản của tôi" → "Địa chỉ máy chủ cho app", bấm Sao chép rồi gửi qua Zalo.'),
+                _step('2', 'Sao chép địa chỉ trong tin nhắn Zalo, bấm "Dán" ở ô bên dưới.'),
+                _step('3', 'Bấm "Kiểm tra & lưu". Thấy báo lỗi thì hỏi lại Admin xem máy chủ đã bật chưa.'),
+              ]),
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            key: const Key('server-url'),
+            controller: _url,
+            keyboardType: TextInputType.url,
+            autocorrect: false,
+            decoration: InputDecoration(
+              labelText: 'Địa chỉ máy chủ',
+              hintText: 'https://…-3000.app.github.dev',
+              helperText: 'VD: https://api.ten-mien.vn',
+              suffixIcon: TextButton(key: const Key('server-paste'), onPressed: _paste, child: const Text('Dán')),
+            ),
+            onSubmitted: (_) => _save(),
+          ),
+          if (_error != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text(_error!, style: const TextStyle(color: SqtColors.danger))),
+          const SizedBox(height: 16),
+          FilledButton(
+            key: const Key('server-save'),
+            onPressed: _busy ? null : _save,
+            child: _busy ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5)) : const Text('Kiểm tra & lưu'),
+          ),
+        ],
+      );
 }
 
 /// Tải lại dữ liệu định kỳ (MVP chưa dùng WebSocket ở app — Phần 5.11: realtime lỗi thì hỏi định kỳ).
