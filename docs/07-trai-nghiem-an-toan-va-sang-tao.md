@@ -18,9 +18,9 @@
 **Bộ nhận diện gợi ý:** màu chủ đạo **cam ấm** (#FF6B2C – năng động, đồ ăn) + **xanh lá tin cậy** (#1DB954 cho trạng thái "đã xác nhận ✔"); biểu tượng: ghim bản đồ có hình chiếc giỏ, vòng sóng lan toả quanh = "quanh tôi".
 
 ### Các màn hình chính cần thiết kế
-- **App khách (≈ 25 màn):** Onboarding, Chọn vị trí, Trang chủ (danh sách/bản đồ), Danh mục, Tìm kiếm, Trang quán, Chi tiết món, Giỏ hàng, Checkout, Thanh toán, Chờ xác nhận, Theo dõi đơn, Chat, Đánh giá, Báo sự cố, Lịch sử, Ví, Voucher, Địa chỉ, Hồ sơ, Trợ giúp, Đơn nhóm.
-- **App quán (≈ 20 màn):** Đăng ký 8 bước, Bảng đơn (Mới / Đang làm / Chờ shipper / Đang giao / Xong), Chi tiết đơn, Popup đơn mới toàn màn hình, Menu, Sửa món, OCR menu, Cài đặt cửa hàng, Shipper của quán, Doanh thu, Khuyến mãi, Nhân viên, Đánh giá.
-- **App shipper (≈ 18 màn):** Đăng ký & eKYC, Khoá học, Trang chủ bản đồ nhiệt, Popup mời chuyến, Dẫn đường, Checklist lấy hàng, Xác nhận giao, Thu nhập, Ví & COD, Lịch sử, Thưởng, SOS, Hỗ trợ.
+- **App khách (≈ 25 màn):** Onboarding, Chọn vị trí, Trang chủ (danh sách/bản đồ), Danh mục, Tìm kiếm, Trang quán, Chi tiết món, Giỏ hàng, Checkout, Thanh toán, Chờ xác nhận, Theo dõi đơn, Chat, Đánh giá, Báo sự cố, Lịch sử, Tín dụng hoàn tiền, Voucher, Địa chỉ, Hồ sơ, Trợ giúp, Đơn nhóm.
+- **App quán (≈ 20 màn):** Đăng ký 8 bước, Bảng đơn (Mới / Đang làm / Chờ shipper / Đang giao / Xong), Chi tiết đơn, Popup đơn mới toàn màn hình, Menu, Sửa món, Nhập menu từ danh sách chữ, Cài đặt cửa hàng, Shipper của quán, Doanh thu, Khuyến mãi, Nhân viên, Đánh giá.
+- **App shipper (≈ 18 màn):** Đăng ký & eKYC, Khoá học, Trang chủ bản đồ nhiệt, Popup mời chuyến, Dẫn đường, Checklist lấy hàng, Xác nhận giao, Thu nhập & COD, Lịch sử, Thưởng, SOS, Hỗ trợ.
 
 > Chi tiết giao diện sinh động xem [Phần 9](09-giao-dien-truc-quan-sinh-dong.md).
 
@@ -33,7 +33,7 @@
 |---|---|
 | Quán | Tỷ lệ xác nhận đơn, thời gian xác nhận TB, tỷ lệ huỷ, chuẩn bị đúng giờ, đánh giá, khiếu nại sai/thiếu món |
 | Shipper | Tỷ lệ nhận chuyến, tỷ lệ huỷ, đúng giờ, đánh giá, khiếu nại, tuân thủ quy trình (ảnh giao, geofence) |
-| Khách | Tỷ lệ huỷ, bom hàng COD, khiếu nại ảo, lạm dụng voucher |
+| Khách | Chỉ dùng nội bộ, không xếp hạng: số đơn hoàn thành, số lần bỏ đơn COD, khiếu nại ảo, lạm dụng voucher |
 
 Điểm ảnh hưởng: thứ hạng hiển thị (quán), ưu tiên nhận chuyến & thưởng (shipper), quyền dùng COD (khách).
 
@@ -63,10 +63,10 @@
 1. **🔔 "Chuông Xóm" — Quán xác nhận bằng một cú gọi**
    Quán nhỏ không quen app vẫn tham gia được: hệ thống gọi điện đọc đơn, chủ quán bấm phím để nhận. Shipper đến lấy hàng, chụp ảnh hoá đơn. *Mở rộng thị trường tới hàng trăm nghìn quán vỉa hè, tạp hoá.*
 
-2. **🛵 "Shipper Quen" — Shipper của khu phố**
+2. **🛵 "Shipper Quen" — Shipper của khu phố** *(giai đoạn Tăng trưởng)*
    Khách có thể **ghim shipper yêu thích**; khi đặt, shipper quen được mời trước nếu đang ở gần. Shipper xây dựng tệp khách riêng → thu nhập ổn định, dịch vụ ấm áp như "người nhà".
 
-3. **🏘️ "Gom Đơn Toà Nhà" — Đặt chung, ship rẻ**
+3. **🏘️ "Gom Đơn Toà Nhà" — Đặt chung, ship rẻ** *(giai đoạn Tăng trưởng)*
    Trong cùng toà nhà/ngõ, đơn từ cùng quán trong 10 phút được **gom một chuyến**, phí ship chia đều (rẻ hơn tới 50%). Hiện banner: *"3 người ở toà A đang đặt Cơm tấm Bụi — vào chung để giảm 8.000đ ship!"*.
 
 4. **⏱️ "Đồng hồ thật" — ETA trung thực**
@@ -94,7 +94,7 @@
     Quán tự giao trả chiết khấu thấp hơn, được gắn nhãn *"Quán tự giao – ship gần rẻ"*, giúp quán giữ quan hệ trực tiếp với khách quen.
 
 12. **🤖 Trợ lý AI cho quán** *(chi tiết toàn bộ ứng dụng AI: [Phần 12](12-tich-hop-ai.md))*
-    Tạo menu từ ảnh, viết mô tả món hấp dẫn, gợi ý giá & combo theo dữ liệu khu vực, cảnh báo "Hôm nay mưa — nên chuẩn bị thêm món nóng", tóm tắt đánh giá khách tuần qua.
+    Tạo menu từ danh sách chữ, viết mô tả món hấp dẫn, gợi ý tên combo, hiển thị mặt bằng giá khu vực dạng số liệu (AI không khuyên giá), cảnh báo "Hôm nay mưa — nên chuẩn bị thêm món nóng", tóm tắt đánh giá khách tuần qua.
 
 13. **🎁 "Treo món" — Lan toả yêu thương** *(giai đoạn sau, P2)*
     Khách có thể "treo" một suất cơm/ly nước cho shipper hoặc người khó khăn trong khu vực; quán và nền tảng đồng góp. Xây dựng hình ảnh thương hiệu nhân văn.

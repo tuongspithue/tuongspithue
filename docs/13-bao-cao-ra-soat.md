@@ -75,13 +75,15 @@
 | Điểm uy tín shipper & quán khu vực đặc biệt quan trọng | Phần 11 (dùng ở 3.4, 5.5, 10.5) | ✅ |
 | AI gợi ý, tư vấn, vận hành thông minh — **dùng Groq** | Phần 12 | ✅ |
 | Trang admin tuỳ biến cài đặt mềm dẻo, nhìn tổng quan & chi tiết vận hành | Phần 14 | ✅ |
+| Khả năng tiếp cận của mọi người dùng | Phần 9.9 | ✅ |
+| Admin phân quyền chức năng người dùng, chủ động đánh giá, xếp loại, đặt mức ưu tiên trong tác vụ | Phần 15 | ✅ |
 
 ## 13.5. Việc cần xác nhận trước khi bắt đầu xây dựng
 
 Đây là những điểm **tài liệu không thể tự chốt** — cần chủ sản phẩm hoặc chuyên gia quyết định:
 
 1. **Pháp lý:** thủ tục đăng ký sàn TMĐT; quy định khấu trừ thuế cho hộ kinh doanh & shipper; điều kiện kinh doanh thuốc không kê đơn trực tuyến; thủ tục chuyển dữ liệu cá nhân ra nước ngoài (do Groq xử lý ở nước ngoài). → *Luật sư & chuyên gia thuế.*
-2. **Groq:** kiểm tra trên console Groq danh sách model hiện hành, hạn mức tốc độ của gói tài khoản, giá, và chính sách lưu trữ dữ liệu; chạy bộ đánh giá tiếng Việt để chọn model cho từng tác vụ; chọn nhà cung cấp LLM dự phòng.
+2. **AI:** Admin tạo tài khoản Groq và **nhập key trên Admin Console** (Phần 12.8); kiểm tra hạn mức tốc độ, giá, chính sách lưu trữ dữ liệu của gói tài khoản; chạy bộ đánh giá tiếng Việt để chọn model mặc định cho từng tác vụ; (tuỳ chọn) thêm nhà cung cấp dự phòng.
 3. **Khu vực thí điểm** đầu tiên (phường/quận cụ thể).
 4. **Mức phí & chiết khấu** thực tế (các con số trong tài liệu là đề xuất ban đầu).
 5. **Cổng thanh toán** sẽ ký đầu tiên (ảnh hưởng luồng hoàn tiền & chia tiền).
@@ -99,3 +101,102 @@
 | AI (Groq) | Trung bình–Cao | Kiến trúc đã chốt; tên model & hạn mức cần xác nhận trên console Groq |
 
 **Bước tiếp theo đề xuất:** (1) chốt 6 điểm ở 13.5 → (2) thiết kế Figma 3 app theo Phần 9 → (3) viết đặc tả OpenAPI từ Phần 6 → (4) khởi động MVP theo Phần 8.
+
+---
+
+## 13.7. Rà soát cuối & chốt bản đặc tả (v1.1)
+
+Lần rà soát này đọc lại toàn bộ 15 phần theo bốn góc: **logic luồng**, **tính năng**, **nhất quán số liệu**, **khả năng tiếp cận**. Mọi chỉnh sửa đã được cập nhật trực tiếp vào từng phần.
+
+### Logic luồng (máy trạng thái & chính sách)
+| Vấn đề tìm thấy | Đã sửa | Phần |
+|---|---|---|
+| Đơn **khách tự đến lấy** chưa có trạng thái riêng | Thêm `CHO_KHACH_DEN_LAY` → hoàn thành khi khách đọc mã đơn; chỉ cần Cổng A | 3.2, 2.1.5, 6.4 |
+| Shipper **nhả chuyến khi chờ món > 25 phút** không có đường quay lại | Thêm chuyển `SHIPPER_DEN_QUAN → DANG_TIM_SHIPPER` | 3.2 |
+| **Sự cố giữa đường** (tai nạn, SOS) không có trạng thái | Thêm `DANG_GIAO → CAN_CAN_THIEP` | 3.2 |
+| Hết 2 phút khách không trả lời đề xuất thay món — chưa rõ kết quả | Áp dụng lựa chọn "khi hết hàng" khách đã chọn lúc đặt; chỉ huỷ cả đơn khi mọi món đều hết | 3.2 |
+| Đơn hẹn: thiếu nhánh khách huỷ, quán không xác nhận lại T−30, shipper không xác nhận T−20 | Bổ sung đủ các chuyển trạng thái | 10.6 |
+| Khách **từ chối nhận hàng COD** sau khi shipper đã lấy hàng: chưa rõ ai chịu tiền | Quán & shipper vẫn được trả đủ, nền tảng chịu; khách bị ghi nhận và tắt COD sau 2 lần/90 ngày | 3.5 |
+| Đơn **giá ước tính** (hàng cân) vẫn dùng "giữ tiền", mâu thuẫn chính sách không tạm giữ | Thu theo ước tính +15%, hoàn chênh tự động; COD thu giá thực | 3.6 |
+| "Yêu cầu mở": chưa rõ thanh toán lúc nào, báo giá có phải là xác nhận không | Báo giá = Cổng A; khách thanh toán sau khi chọn; chỉ dùng cho đơn hẹn | 10.3 |
+| Huỷ miễn phí đơn hẹn: điều kiện "hoặc" gây hiểu nhầm | Áp dụng mốc đến trước (quán bắt đầu làm / 30 phút trước giờ hẹn); sửa giờ = quán nhận lại | 10.2 |
+| Thứ tự mốc thời gian Cổng A lệch (150s đứng trước 120s); 2.4 ghi "> 2 phút" | Sắp lại 0 → 45 → 90 → 120 → 150 → 180 giây; thống nhất ở 2.2.3, 2.4, 10.1 | 3.3 |
+| Dispatch chưa dùng quyền chức năng & điều chỉnh ưu tiên của Phần 15 | Thêm điều kiện loại trừ theo quyền và cộng điều chỉnh ưu tiên | 3.4.1 |
+| Chợ chuyến hẹn thiếu thời điểm hiển thị cho Kim cương & Tân binh | Kim cương & Vàng ngay, Bạc 5 phút, Đồng & Tân binh 10 phút, tính theo cấp hiệu lực | 10.5 |
+| Trọng số điểm uy tín không còn tổng 100% khi thêm "Đánh giá của nền tảng" | Các trọng số khác co theo tỷ lệ | 11.2 |
+
+### Tính năng & nhất quán
+| Vấn đề tìm thấy | Đã sửa | Phần |
+|---|---|---|
+| Còn dấu vết chức năng đã bỏ: "gợi ý giá" bằng AI, "làm đẹp ảnh bằng AI", "ví", "shipper ứng tiền", "giữ tiền" | Xoá hoặc thay bằng phương án đã chốt | 3, 4, 5, 7, 9 |
+| Danh sách ví điện tử khác nhau giữa các phần | MVP: COD + VietQR + MoMo; bản 1.0 thêm ZaloPay, ShopeePay, thẻ | 2.1.5, 4.3, 8 |
+| Mã PIN ở mức P1 nhưng ngành thuốc nhắc như có từ đầu | Chốt **thứ tự mở ngành hàng**: thuốc & gas mở ở bản 1.0 cùng PIN | 1.5, 2.1.6, 8 |
+| "Shipper hệ thống xác nhận thay quán" chưa rõ phạm vi | Chuyển sang P2, chỉ cho quán đăng ký chế độ này, ghi rõ người xác nhận | 1.4 |
+| Thời gian chờ khi khách không nghe máy: "5–10 phút" và "10 phút" | Thống nhất 10 phút, cấu hình được | 2.3.4, 3.6 |
+| Tham chiếu sai "chính sách huỷ (Phần 5)" | Sửa thành Phần 3.5 | 2.1.6 |
+| Vai trò nội bộ còn ghi "Web vận hành / Web quản trị" | Thống nhất **Admin Console** | 1.3, 5.2 |
+| Thiếu module Config, Entitlement, AI Gateway trong kiến trúc; thiếu API quyền, cài đặt, xoá tài khoản, nhả chuyến, bàn giao tự lấy | Bổ sung | 5.3, 6.4 |
+| Phạm vi MVP lớn so với 3 tháng | Kéo MVP thành 4 tháng (2–5), dời 1.0 sang tháng 6–8 | 8.1 |
+| "Shipper Quen", "Gom Đơn Toà Nhà" chưa gắn giai đoạn | Gắn giai đoạn Tăng trưởng | 7.3 |
+
+### Khả năng tiếp cận (mới)
+- Thêm **mục 9.9**: kênh đặt hàng cho người không cài app (Zalo Mini App, Web đặt nhanh, đặt hộ, đặt qua tổng đài); hỗ trợ khiếm thị, mù màu, khiếm thính (kể cả **shipper khiếm thính**), khó khăn vận động, nhạy cảm chuyển động; máy yếu, mạng yếu; mục tiêu **WCAG 2.1 AA** và cách kiểm chứng.
+- Thêm **bảng thuật ngữ** trong README để người đọc không chuyên kỹ thuật dễ hiểu tài liệu.
+
+### Kết luận
+- Bản đặc tả **v1.1 được chốt để bắt đầu xây dựng**: đủ để thiết kế giao diện, viết đặc tả API chi tiết (OpenAPI) và lập kế hoạch MVP.
+- Các điểm còn phụ thuộc bên ngoài vẫn là 6 mục ở **13.5** (pháp lý & thuế, thông tin Groq, khu vực thí điểm, mức phí, cổng thanh toán, hợp đồng shipper). Đây là quyết định kinh doanh/pháp lý, không chặn việc bắt đầu thiết kế và dựng khung kỹ thuật.
+- Từ nay, mọi thay đổi đặc tả đi qua pull request và được ghi vào bảng thay đổi của Phần 13.
+
+## 13.8. Thay đổi sau khi chốt v1.1
+
+| Ngày | Thay đổi | Phần |
+|---|---|---|
+| 31/10/2026 | **Tạm gác mọi khả năng phân tích hình ảnh bằng AI** (đọc menu từ ảnh, kiểm duyệt/nhận diện ảnh…). Thay bằng nhập menu từ danh sách chữ, kiểm duyệt ảnh thủ công. eKYC của nhà cung cấp vẫn giữ | 1, 2, 6, 7, 8, 12.9 |
+| 31/10/2026 | **Key, model, đường dẫn kết nối AI do Admin nhập** trên Admin Console; mặc định Groq; thêm được nhà cung cấp tương thích OpenAI làm dự phòng; key mã hoá, chỉ hiện 4 ký tự cuối, thay key cần duyệt 4 mắt | 5, 8, 12.8, 14 |
+| 31/10/2026 | **Ghi chú theo sở thích cho từng món**: chip ghi chú nhanh do quán gợi ý, ô chữ/giọng nói, sở thích đã lưu tự điền, tách dòng để ghi chú khác nhau cho từng phần, ghi chú chung cả đơn, cảnh báo dị ứng có xác nhận riêng của quán; ghi chú không tự làm đổi giá | 2.1.4a, 2.2, 3, 6, 9, 11, 12 |
+| 31/10/2026 | **Bắt đầu code MVP**: monorepo pnpm (`packages/domain`, `apps/api`). Việc hẹn giờ SLA ở MVP dùng bảng `scheduled_jobs` trên PostgreSQL thay cho BullMQ (ít thành phần hơn, vẫn bền vững) | 5.1, 5.6 |
+| 31/10/2026 | **Bỏ dịch vụ trả phí SMS brandname, Zalo ZNS, IVR, số ẩn**: liên hệ Gọi/SMS/Zalo mở app trên máy (SĐT chỉ lộ cho các bên của đơn khi đơn đang chạy); nhắc quán bằng **Web Push miễn phí**; 90 giây quán chưa nhận thì **điều phối viên gọi quán** từ Admin Console. OTP giai đoạn thử hiện trên màn hình; kênh OTP khi chạy thật cần chủ sản phẩm chọn | 3.3, 5.1, 16 |
+| 31/10/2026 | **Thử nghiệm bằng bản web (PWA) trước**, app cài đặt làm sau: yêu cầu thêm vào màn hình chính ngay lần đầu, GPS trình duyệt, chuông + giữ màn hình sáng khi trang mở, bộ triển khai Docker + HTTPS + dữ liệu mẫu | 16 |
+| 31/10/2026 | **Chốt lại: khách dùng web app** (không bắt cài, gợi ý cài chỉ là tuỳ chọn); **quán & shipper dùng app cài đặt Android** để xác nhận kịp thời: dịch vụ chạy nền kêu chuông lặp lại cả khi khoá máy, thông báo toàn màn hình, shipper gửi vị trí nền, chụp ảnh xác nhận thật khi GPS yếu, màn hình "Kiểm tra máy". APK build tự động trên GitHub Actions. Bỏ bản web của quán/shipper | 2, 5, 16 |
+| 31/10/2026 | **Đăng nhập không dùng SMS/Zalo**: khách chỉ nhập tên + SĐT, quán/shipper gọi xác minh khi nhận đơn (phiên khách gắn với máy, chỉ có quyền khách); quán/shipper/Ops đăng ký trong app, **Admin gọi xác minh rồi cấp mã kích hoạt 8 số** gửi bằng Zalo/SMS từ máy Admin. Bỏ hẳn OTP và chế độ hiện mã trên màn hình | 2, 5, 6, 13.9, 16 |
+| 31/10/2026 | **Admin Console mở rộng & làm lại giao diện**: quản lý **quán** (tìm, lọc ngành/trạng thái, hồ sơ 360°: menu bật/tắt món, đơn gần đây, uy tín, nhân sự, sửa thông tin, mở/đóng cửa hộ, tạm khoá, cấp mã đăng nhập), **shipper** (trực tuyến/đang chạy chuyến, tiền thu hộ & hạn mức, tỉ lệ nhận lời mời, vị trí, tạm khoá), **khách hàng** (khách mới, thân thiết, hay huỷ/bùng; khoá tài khoản), **bản đồ trực tiếp** (OpenStreetMap miễn phí), biểu đồ đơn theo giờ, quán nhiều đơn nhất. Mọi thao tác bắt buộc ghi lý do và vào nhật ký | 14, 15 |
+| 01/11/2026 | **Nâng cấp giao diện web app khách**: đầu trang màu cam có lời chào theo giờ, địa chỉ giao, ô tìm quán; ô ngành hàng có biểu tượng; thẻ quán có ảnh theo ngành, uy tín, **thời gian đến tay ước tính** và khoảng cách; sắp xếp gần nhất/nhanh nhất/uy tín; trang quán có ảnh bìa, menu theo nhóm, số món đã chọn; giỏ hàng chia khối, nút đặt luôn hiện; theo dõi đơn có thẻ trạng thái lớn và **thanh tiến trình 5 bước**; màn đăng nhập có nút quay lại. **Bản đồ Admin**: nền CARTO rõ hơn (tự quay về OSM nếu lỗi), ghim có biểu tượng theo ngành/shipper/điểm giao, shipper đang chạy nhấp nháy, nút "Xem toàn bộ", sửa mảng xám khi đổi kích thước | 9, 14 |
+| 01/11/2026 | **Mật khẩu đăng nhập cho Admin/Ops**: lần đầu dùng mã kích hoạt, sau đó đặt mật khẩu và đăng nhập bằng SĐT + mật khẩu; khoá 15 phút khi sai 5 lần; quên mật khẩu thì dùng mã kích hoạt để đặt lại | 13.9, 16, 17 |
+| 01/11/2026 | **Dịch vụ Gửi hàng** (đặt shipper giao hộ từ A tới B): ghim điểm trên bản đồ, báo giá theo quãng đường + kích cỡ, người gửi hoặc người nhận trả phí, mời shipper gần điểm lấy (shipper nhận chuyến là người thật xác nhận), mã đơn khi lấy hàng, mã nhận hàng gửi qua SMS cho người nhận; app shipper và Admin hiển thị đơn gửi hàng | 2.1.9 |
+| 01/11/2026 | **Đổi nền bản đồ sang OpenStreetMap** (Admin và web app khách): CARTO đã đòi khoá API và trả ảnh "API KEY REQUIRED". OSM miễn phí, chỉ cần ghi nguồn; lỗi thì Admin tự chuyển sang máy chủ OSM Pháp | 14, 2.1.9 |
+| 01/11/2026 | **Giỏ hàng hiện đủ phí trước khi đặt**: thêm báo giá `/v1/orders/quote` (cùng công thức với lúc đặt đơn); giỏ hàng hiện tiền món, phí ship theo quãng đường, phí dịch vụ và tổng cộng, tự tính lại khi đổi món/số lượng/cách nhận; địa chỉ ngoài vùng giao được báo trước và khoá nút đặt | 2.1.5 |
+| 01/11/2026 | **Ba chế độ nhận đơn & shipper mua hộ** (Quán tự nhận / Shipper mua hộ / Song song chờ quán 60 giây), hạn mức ứng tiền shipper, khách mới mua hộ dưới 200.000đ, không thu phí mua hộ, các thông số Admin chỉnh được; **hình động trạng thái đơn** cho khách; **sao chép đơn** gửi quán qua Zalo/SMS; đơn gửi quán hiện **tên + SĐT người đặt** | 3.8 |
+| 01/11/2026 | **Quán không liên lạc được thì chuyển shipper mua hộ, không huỷ**: hết hạn Cổng A (180 giây), đơn giao tận nơi được mời shipper tới quán đặt món & giao, áp dụng cả quán "Quán tự nhận"; vẫn tính quán lỡ đơn; Admin tắt được theo hệ thống/ngành/quán (`proxy.fallback_on_store_silent`). Đơn tự đến lấy, hẹn giờ, khách mới vượt mức vẫn huỷ & hoàn tiền | 3.3, 3.8 |
+| 01/11/2026 | **Rút ngắn chờ quán xác nhận** còn 90 giây, Admin cài một con số cho cả hệ thống (`sla.gate_a.timeout_seconds`), các mốc nhắc co giãn theo. **Không shipper nhận**: gọi lại quán, mời thêm một lượt sau 60 giây; vẫn không ai thì chỉ chuyển điều phối viên nếu có người đang trực Admin Console, không thì huỷ, hoàn tiền và báo khách. Khách không còn thấy "Điều phối viên đang hỗ trợ" khi không có ai trực | 3.3, 3.4 |
+| 03/11/2026 | **App quán/shipper hỏi địa chỉ máy chủ ở lần mở đầu** (màn "Kết nối máy chủ" có hướng dẫn 3 bước, nút Dán, kiểm tra `/health` trước khi lưu; đổi được từ màn đăng nhập) — một APK dùng cho mọi máy chủ, không cần build lại khi đổi Codespace/VPS. Admin Console → Tài khoản của tôi có thẻ "Địa chỉ máy chủ cho app" với nút Sao chép | 16.3, 17.6 |
+
+## 13.9. Đăng nhập không dùng SMS/Zalo (chốt 31/10/2026)
+
+Không tích hợp dịch vụ gửi tin trả phí. Thay bằng **người thật xác minh**, đúng với nguyên tắc cốt lõi của sản phẩm.
+
+### Khách hàng — không cần mã xác minh
+1. Khách xem quán, chọn món không cần đăng nhập. Khi bấm **Đặt hàng** mới hỏi **tên + số điện thoại**, bấm Tiếp tục là đặt được.
+2. **Người nhận đơn tự gọi xác minh**: thẻ đơn ở app quán hiện tên khách, số đơn đã thành công; khách mới (0 đơn) có dòng đỏ *"Khách mới — bấm Gọi để xác nhận đơn trước khi nhận"*. Shipper cũng có nút Gọi/Zalo khách.
+3. Các lớp chặn đơn ảo vẫn giữ: khách mới chưa đủ đơn thành công không được hẹn giờ trả tiền mặt (10.3), điểm uy tín khách, Ops khoá số điện thoại hay bùng đơn (Phần 15).
+
+**Bảo vệ khi ai cũng nhập được số bất kỳ:**
+| Rủi ro | Cách chặn |
+|---|---|
+| Người khác nhập trùng số để xem/huỷ đơn của khách | Mỗi lần đăng nhập là một **phiên gắn với máy**; khách chỉ xem, huỷ, đánh giá được đơn **đặt từ chính máy đó** |
+| Nhập số của quán/shipper/Admin để chiếm quyền | Phiên khách **chỉ mang quyền khách**, kể cả khi số đó là của đối tác |
+| Ghi đè tên khách cũ | Tên đã lưu không bị người đăng nhập sau thay đổi |
+
+### Quán, shipper, nhân viên Ops — Admin xác minh
+1. Trong app quán/shipper bấm **"Đăng ký đối tác"**, điền hồ sơ (quán: tên, ngành, địa chỉ, **lấy vị trí khi đứng tại quán**; shipper: phương tiện, biển số). Không cần đăng nhập.
+2. Admin vào **Duyệt đối tác**, bấm **Gọi** để xác minh đúng chủ số (hỏi tên quán, địa chỉ…), rồi bấm **Duyệt**.
+3. Hệ thống cấp **mã kích hoạt 8 số** (dùng 1 lần, hết hạn sau 3 ngày, sai 5 lần là khoá). Admin bấm **Gửi SMS** (mở app Tin nhắn soạn sẵn) hoặc **Mở Zalo** (tin đã được sao chép, dán vào chat) — gửi từ máy Admin, không tốn phí dịch vụ.
+4. Đối tác nhập số + mã → đăng nhập, giữ phiên 180 ngày trên máy đó.
+5. **Đổi/mất điện thoại:** Admin vào *Cấp lại mã kích hoạt*, nhập số; chọn *Đăng xuất các máy cũ* nếu mất máy.
+6. **Admin đầu tiên** (chưa có ai cấp mã): chạy trên máy chủ `node dist/src/database/activation-code.js <số điện thoại>` — số đó phải có trong `ADMIN_PHONES`.
+7. **Mật khẩu cho Admin/Ops:** đăng nhập lần đầu bằng mã kích hoạt rồi đặt mật khẩu ở mục **Tài khoản của tôi**; từ đó đăng nhập Admin Console bằng SĐT + mật khẩu trên máy nào cũng được (phiên 30 ngày). Mật khẩu băm một chiều (scrypt), tối thiểu 8 ký tự, không toàn chữ số; sai 5 lần khoá 15 phút; đổi mật khẩu thì đăng xuất mọi máy khác; đang đăng nhập bằng mật khẩu muốn đổi phải nhập mật khẩu cũ. **Quên mật khẩu:** đăng nhập bằng mã kích hoạt rồi đặt lại. Quán/shipper không dùng mật khẩu.
+
+### Hạn chế đã biết
+- Khách đổi máy thì không thấy lại đơn cũ đặt ở máy trước (đơn vẫn chạy bình thường, quán/shipper vẫn gọi được).
+- Thông báo đẩy gửi theo tài khoản số điện thoại: nếu người khác đăng nhập trùng số và bật thông báo, họ có thể nhận thông báo trạng thái (không có nội dung chi tiết đơn).
+- Khi lượng khách lớn hoặc gian lận tăng, có thể bổ sung "nhắn tin ngược" (khách tự gửi SMS tới số hệ thống) mà không đổi luồng hiện tại.

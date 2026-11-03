@@ -7,10 +7,10 @@ Ký hiệu mức ưu tiên: **[P0]** bắt buộc cho MVP · **[P1]** bản 1.0 
 ## 2.1. App Người mua — "Ship Quanh Tôi"
 
 ### 2.1.1. Đăng ký / Đăng nhập
-- [P0] Đăng nhập bằng **số điện thoại + OTP** (SMS/Zalo ZNS), không cần mật khẩu.
+- [P0] Chỉ nhập **tên + số điện thoại**, không cần mật khẩu hay mã xác minh; quán/shipper nhận đơn sẽ gọi xác minh (xem 13.9).
 - [P1] Đăng nhập Google / Apple / Zalo.
 - [P0] Cho phép **xem quán khi chưa đăng nhập**; chỉ yêu cầu đăng nhập khi bấm *Đặt hàng*.
-- [P1] Hồ sơ: tên, ảnh, ngày sinh (tặng voucher sinh nhật), sở thích ăn uống (chay, không cay, dị ứng…).
+- [P1] Hồ sơ: tên, ảnh, ngày sinh (tặng voucher sinh nhật), **sở thích ăn uống** (chay, không cay, ít ngọt, dị ứng…) — dùng để gợi ý sẵn ghi chú cho từng món (xem 2.1.4a).
 
 ### 2.1.2. Màn hình chính "Quanh tôi"
 - [P0] Xin quyền vị trí → hiển thị **địa chỉ hiện tại** trên đầu, cho phép đổi nhanh (Nhà / Công ty / địa chỉ đã lưu / ghim trên bản đồ).
@@ -34,11 +34,38 @@ Ký hiệu mức ưu tiên: **[P0]** bắt buộc cho MVP · **[P1]** bản 1.0 
 ### 2.1.4. Trang quán
 - [P0] Ảnh bìa, giờ mở cửa, địa chỉ, khoảng cách, ★ và số đánh giá, phí ship ước tính, thời gian chuẩn bị trung bình.
 - [P0] Menu theo nhóm, mỗi món: ảnh, tên, mô tả, giá, nhãn *Bán chạy / Mới / Cay / Chay*, trạng thái *Hết hàng*.
-- [P0] **Tuỳ chọn món (modifier)**: size, topping, mức đá/đường, ghi chú riêng cho món.
+- [P0] **Tuỳ chọn món (modifier)**: size, topping, mức đá/đường (có thể tính thêm tiền, do quán định nghĩa).
+- [P0] **Ghi chú riêng cho từng món** theo sở thích người đặt — chi tiết ở 2.1.4a.
 - [P0] Giỏ hàng nổi dưới cùng: số món, tổng tiền.
 - [P1] Thông tin: giấy phép ATTP (nếu có), ảnh bếp/quầy thực tế, "Quán đã xác minh ✔".
 - [P1] Lịch sử đánh giá có ảnh; quán phản hồi đánh giá.
 - [P2] Ảnh "món hôm nay" do quán đăng (không làm livestream — tốn tài nguyên, ít phù hợp quán nhỏ).
+
+### 2.1.4a. Ghi chú theo sở thích cho từng món
+
+Mỗi món trong giỏ đều có ô **"Ghi chú cho món này"**, để khách nói rõ mình muốn món đó thế nào.
+
+**Cách nhập — nhanh và dễ:**
+- [P0] **Chip ghi chú nhanh** bấm chọn, do quán gợi ý theo từng món và hệ thống gợi ý theo ngành. VD với phở: `Không hành` `Ít bánh` `Nhiều nước` `Tái riêng`; với trà sữa: `Ít ngọt` `Không đá` `Đá riêng`; với cơm: `Thêm nước mắm` `Không dưa leo`.
+- [P0] **Ô chữ tự do** tối đa 150 ký tự: *"Cho mình xin thêm ớt tươi, để riêng"*.
+- [P1] **Nói thay gõ**: bấm micro để đọc ghi chú (Phần 12, giọng nói).
+- [P1] **Sở thích đã lưu tự điền sẵn**: hồ sơ ghi *"Không ăn hành"* → món có hành tự gợi ý chip `Không hành` (khách bỏ chọn được). App hỏi một lần: *"Lưu 'Ít ngọt' cho các lần đặt trà sữa sau?"*.
+- [P0] **Ghi chú khác nhau cho từng phần cùng món**: đặt 2 bánh mì, 1 cái *không cay*, 1 cái *nhiều cay* → giỏ tách thành 2 dòng riêng, mỗi dòng một ghi chú (nút *"Tách để ghi chú riêng"*).
+- [P0] **Ghi chú chung cho cả đơn** (VD *"Gói riêng từng phần"*, *"Không lấy túi nilon"*), tách biệt với ghi chú cho shipper.
+- [P0] **Đặt lại đơn cũ giữ nguyên ghi chú** của từng món.
+
+**Cảnh báo dị ứng — quan trọng về an toàn:**
+- [P0] Chip riêng màu đỏ **`⚠ Dị ứng: …`** (đậu phộng, hải sản, sữa, gluten, trứng…). Ghi chú dị ứng hiển thị **nổi bật nhất** trên màn hình quán, phiếu bếp và được đọc to trong cuộc gọi IVR.
+- [P0] Quán **phải bấm xác nhận riêng** *"Đã đọc ghi chú dị ứng"* khi nhận đơn có dị ứng; nếu không đảm bảo được thì từ chối món đó qua *Nhận với điều chỉnh*. App ghi rõ cho khách: *ghi chú dị ứng là yêu cầu gửi quán, quán xác nhận trực tiếp* — nền tảng không thay quán cam kết.
+
+**Ghi chú không được làm thay đổi giá:**
+- Ghi chú là **miễn phí**. Yêu cầu nào tốn thêm tiền (thêm trứng, thêm thịt) phải là **tuỳ chọn có giá** do quán định nghĩa.
+- Nếu khách ghi một yêu cầu tốn thêm chi phí, quán dùng **Nhận với điều chỉnh** để đề xuất giá mới → **khách đồng ý** mới áp dụng (cùng luồng 2 phút ở 2.2.3). Quán không được tự cộng tiền.
+- Quán có thể bật **"Không nhận ghi chú"** cho một số món (VD món đóng gói sẵn); khi đó ô ghi chú ẩn và khách thấy lý do.
+
+**Kiểm soát nội dung:**
+- Lọc tự động số điện thoại, đường link, từ ngữ thô tục trong ghi chú (bộ lọc từ khoá; AI kiểm duyệt văn bản ở bản 1.0 nếu Admin bật).
+- Ghi chú chỉ quán (và shipper với ghi chú chung liên quan đóng gói) xem được; không hiển thị công khai.
 
 ### 2.1.5. Giỏ hàng & Thanh toán (Checkout)
 - [P0] Mỗi giỏ thuộc **1 quán** (MVP). [P2] Đơn ghép nhiều quán gần nhau, 1 shipper.
@@ -46,10 +73,10 @@ Ký hiệu mức ưu tiên: **[P0]** bắt buộc cho MVP · **[P1]** bản 1.0 
 - [P0] Chọn hình thức giao:
   - **Giao ngay** (mặc định)
   - [P0] **Hẹn giờ lấy/giao** (sau 1–3 giờ hoặc chọn giờ, trong 7 ngày) — đơn hiện trực tiếp cho quán & shipper để họ chọn nhận; đơn ngay chờ lâu có thể chuyển sang hẹn giờ bằng 1 chạm → xem [Phần 10](10-don-hen-gio.md)
-  - [P1] **Tự đến lấy** (miễn ship, quán chuẩn bị sẵn)
+  - [P1] **Tự đến lấy** (miễn ship, quán chuẩn bị sẵn; có thể hẹn giờ đến lấy). Đơn vẫn cần quán xác nhận (Cổng A); không có Cổng B vì không có người giao — khách đọc mã đơn khi nhận tại quầy.
 - [P0] **Người nhận khác** (đặt hộ bố mẹ, bạn bè): tên + SĐT người nhận; shipper gọi người nhận, khách đặt vẫn theo dõi được.
 - [P0] Địa chỉ giao + **ghi chú cho shipper** (VD: "Hẻm 45, cổng xanh, gọi trước 5 phút") + ảnh chỉ đường tuỳ chọn.
-- [P0] Thanh toán: **Tiền mặt (COD)**, **Ví điện tử** (MoMo, ZaloPay, VNPay), **QR chuyển khoản (VietQR)**, [P1] thẻ ATM/Visa.
+- [P0] Thanh toán: **Tiền mặt (COD)**, **QR chuyển khoản (VietQR)**, **1 ví điện tử** (MoMo). [P1] Thêm ZaloPay, ShopeePay, thẻ ATM/Visa qua cổng VNPay/OnePay.
 - [P0] Mã khuyến mãi / voucher.
 - [P1] Dụng cụ ăn uống: *Không lấy đũa thìa* (chọn mặc định xanh).
 - [P1] Tip cho shipper (trước hoặc sau giao).
@@ -69,8 +96,8 @@ Thanh tiến trình rõ ràng, mỗi bước có **tên người xác nhận + g
 
 - [P0] Bản đồ vị trí shipper cập nhật mỗi 3–5 giây.
 - [P0] **Gọi điện ẩn số** (số trung gian) và **chat trong app** với quán & shipper; có tin nhắn nhanh ("Tôi xuống ngay", "Để ở bảo vệ giúp").
-- [P0] Huỷ đơn: miễn phí trước khi quán xác nhận; sau đó theo chính sách (Phần 5).
-- [P1] **Mã nhận hàng 4 số (PIN)** cho đơn giá trị cao / thuốc — khách đọc PIN cho shipper mới hoàn tất.
+- [P0] Huỷ đơn: miễn phí trước khi quán xác nhận; sau đó theo chính sách ở Phần 3.5.
+- [P1] **Mã nhận hàng 4 số (PIN)** cho đơn giá trị cao và đơn có thuốc (ngành Nhà thuốc mở từ bản 1.0) — khách hoặc người nhận đọc PIN cho shipper mới hoàn tất.
 - [P1] Chia sẻ link theo dõi cho người khác (đặt hộ bố mẹ).
 
 ### 2.1.7. Sau giao hàng
@@ -88,13 +115,25 @@ Thanh tiến trình rõ ràng, mỗi bước có **tên người xác nhận + g
 - [P2] Chương trình điểm thưởng "Hạt Gạo" — tích điểm đổi voucher.
 - [P1] Trung tâm trợ giúp + chat CSKH (bot trả lời câu hỏi thường gặp, chuyển người thật khi cần).
 
+### 2.1.9. Gửi hàng — đặt shipper giao hộ
+Khách đặt shipper tới lấy một món hàng ở **điểm A** và giao tận tay người nhận ở **điểm B**, không qua quán.
+- [P0] Điểm lấy & điểm giao: nhập địa chỉ + **ghim trên bản đồ** (kéo bản đồ cho ghim nằm đúng chỗ; nền OpenStreetMap miễn phí). Điểm lấy mặc định là vị trí hiện tại.
+- [P0] Người gửi, người nhận (tên + SĐT); ghi chú cho từng điểm (VD "gọi khi tới cổng", "để ở bảo vệ").
+- [P0] Loại hàng (giấy tờ, đồ ăn, quần áo, điện tử, khác) và **kích cỡ**: Nhỏ < 5 kg, Vừa < 15 kg (+5.000đ), Lớn < 30 kg (+15.000đ).
+- [P0] **Báo giá trước khi đặt**: phí ship theo quãng đường (cùng bảng phí giao đồ ăn) + phụ phí kích cỡ + phí dịch vụ; hiện thời gian ước tính. Phạm vi tối đa 20 km.
+- [P0] Thanh toán tiền mặt, chọn **người gửi trả** (khi shipper tới lấy) hoặc **người nhận trả** (khi nhận hàng).
+- [P0] **Người thật xác nhận:** đơn không có quán nên không có Cổng A; hệ thống mời shipper gần **điểm lấy hàng**, shipper bấm nhận chuyến là xác nhận (Cổng B). Không ai nhận thì chuyển Ops như đơn thường.
+- [P0] Lấy hàng: người gửi đọc **mã đơn** cho shipper (thay cho mã trên túi của quán). Giao hàng: luôn có **mã nhận hàng 4 số**; khách bấm "Gửi mã qua SMS" (mở app Tin nhắn soạn sẵn) cho người nhận; người nhận đọc mã cho shipper khi nhận đủ hàng.
+- [P0] Theo dõi đơn với thanh tiến trình riêng: Đặt → Shipper nhận → Lấy hàng → Đang giao → Đã giao. Huỷ miễn phí trước khi shipper lấy hàng. Sau khi giao chỉ đánh giá shipper.
+- [P1] Thu hộ tiền hàng (COD cho người bán online), gửi nhiều điểm, đặt hẹn giờ gửi hàng.
+
 ---
 
 ## 2.2. App Đối tác Quán — "SQT Đối Tác" (+ Web quản trị quán)
 
 ### 2.2.1. Đăng ký & Xác minh quán (Onboarding)
 - [P0] Đăng ký trong **10 phút** trên điện thoại:
-  1. SĐT chủ quán + OTP
+  1. SĐT + họ tên chủ quán; Admin gọi xác minh rồi gửi **mã kích hoạt** qua Zalo/SMS (13.9)
   2. Thông tin quán: tên, ngành hàng, địa chỉ (ghim bản đồ chính xác vị trí cửa), giờ mở cửa
   3. Ảnh mặt tiền + ảnh bên trong
   4. CCCD chủ quán (eKYC: chụp 2 mặt + selfie khớp khuôn mặt)
@@ -107,22 +146,24 @@ Thanh tiến trình rõ ràng, mỗi bước có **tên người xác nhận + g
 
 ### 2.2.2. Quản lý Menu
 - [P0] Thêm/sửa món: ảnh, tên, giá, mô tả, nhóm, tuỳ chọn (size/topping), giới hạn số lượng/ngày.
+- [P0] **Chip ghi chú nhanh cho từng món**: quán tạo sẵn các lựa chọn hay gặp (VD `Không hành`, `Ít đá`) để khách bấm chọn; bật/tắt **"Không nhận ghi chú"** cho từng món.
 - [P0] **Bật/tắt "Hết hàng"** bằng 1 chạm (công tắc lớn) — tự bật lại ngày mai (tuỳ chọn).
-- [P1] **Tạo menu bằng ảnh**: chụp tờ menu giấy → AI nhận dạng (OCR) tên món + giá → quán chỉ cần kiểm tra.
+- [P1] **Tạo menu từ danh sách chữ**: quán dán/gõ danh sách món kèm giá → AI chuẩn hoá thành menu nháp → quán kiểm tra và đăng. *(Đọc menu từ ảnh chụp bằng AI: tạm gác — Phần 12.9.)*
 - [P1] Nhập món bằng giọng nói.
 - [P1] Menu theo khung giờ (sáng / trưa / tối).
 - [P2] Quản lý tồn kho cho tạp hoá: nhập/xuất, cảnh báo sắp hết, quét mã vạch.
 
 ### 2.2.3. Nhận & Xác nhận đơn (Cổng A) — **chức năng quan trọng nhất**
 - [P0] Đơn mới đến: **chuông lớn lặp lại + rung + màn hình toàn phần** (kể cả khi khoá máy), không tắt cho đến khi xử lý.
-- [P0] Màn hình đơn mới hiển thị: danh sách món + tuỳ chọn + ghi chú, tổng tiền, hình thức thanh toán, khoảng cách tới khách, **đồng hồ đếm ngược** (mặc định 3 phút).
+- [P0] Màn hình đơn mới hiển thị: danh sách món + tuỳ chọn + **ghi chú của từng món ngay dưới tên món** (chip in đậm, ghi chú dị ứng màu đỏ ở đầu đơn) + ghi chú chung, tổng tiền, hình thức thanh toán, khoảng cách tới khách, **đồng hồ đếm ngược** (mặc định 3 phút).
 - [P0] Thao tác:
   - ✅ **Nhận đơn** → chọn thời gian chuẩn bị (5 / 10 / 15 / 20 / 30 phút, gợi ý theo lịch sử).
   - ✏️ **Nhận với điều chỉnh**: một món hết → đề xuất món thay thế / bỏ món → gửi khách đồng ý (khách có 2 phút, không phản hồi thì theo lựa chọn "khi hết hàng" khách chọn lúc đặt).
   - ❌ **Từ chối** → bắt buộc chọn lý do (hết hàng, quá tải, sắp đóng cửa, ngoài vùng…).
 - [P0] **Không có chế độ tự động nhận đơn.** Mọi đơn phải có người bấm nhận (trên app, qua phím IVR, hoặc Ops gọi xác nhận). Để quán đông khách thao tác nhanh: **"Nhận nhanh"** — 1 chạm nhận với thời gian chuẩn bị gợi ý sẵn.
-- [P0] **Dự phòng khi quán không phản hồi**: sau 90 giây chưa xử lý → **cuộc gọi tự động IVR** tới SĐT quán ("Bấm 1 nhận, 2 từ chối"); sau 3 phút → huỷ, báo khách & gợi ý quán tương tự.
-- [P1] In phiếu bếp qua **máy in nhiệt Bluetooth/LAN** tự động khi nhận đơn.
+- [P0] **Dự phòng khi quán không phản hồi**: sau 90 giây chưa xử lý → **cuộc gọi tự động IVR** tới SĐT quán ("Bấm 1 nhận, 2 từ chối"); 150 giây → Ops gọi; sau 3 phút → huỷ, báo khách & gợi ý quán tương tự (chi tiết Phần 3.3).
+- [P1] In phiếu bếp qua **máy in nhiệt Bluetooth/LAN** tự động khi nhận đơn; ghi chú từng món in ngay dưới món, dị ứng in đậm có khung ở đầu phiếu.
+- [P0] Cuộc gọi IVR đọc cả ghi chú: *"Món 1: phở tái, ghi chú: không hành. Lưu ý dị ứng đậu phộng."* (ghi chú dài: *"có ghi chú, vui lòng xem trên app"*).
 - [P0] Tab **"Đơn hẹn 🟣"**: xem đơn hẹn giờ & yêu cầu mở trong khu vực theo thời gian thực, chọn Nhận / Đề xuất giờ khác / Từ chối, lịch năng lực theo khung 15 phút, xác nhận lại trước giờ → [Phần 10](10-don-hen-gio.md).
 - [P0] Bấm **"Đã chuẩn bị xong"** → báo shipper & khách.
 - [P0] **Bàn giao**: shipper quét **mã QR trên phiếu/app quán** hoặc nhập mã đơn 4 số → xác nhận đúng đơn, tránh nhầm lẫn.
@@ -162,7 +203,7 @@ Thanh tiến trình rõ ràng, mỗi bước có **tên người xác nhận + g
 ## 2.3. App Tài xế — "SQT Tài Xế" (Shipper hệ thống & Shipper của quán)
 
 ### 2.3.1. Đăng ký & Xác minh
-- [P0] SĐT + OTP → eKYC CCCD + selfie (kiểm tra người thật — liveness).
+- [P0] SĐT + họ tên → Admin gọi xác minh, gửi **mã kích hoạt** (13.9) → eKYC CCCD + selfie (kiểm tra người thật — liveness).
 - [P0] Bằng lái xe, đăng ký xe, ảnh xe, biển số.
 - [P1] Lý lịch tư pháp: **không bắt buộc** khi đăng ký (tránh rào cản); nộp thì được huy hiệu "Đã xác minh nhân thân ✔" và được ưu tiên đơn giá trị cao.
 - [P0] Tài khoản ngân hàng/ví nhận tiền.
@@ -178,7 +219,7 @@ Thanh tiến trình rõ ràng, mỗi bước có **tên người xác nhận + g
 - [P0] Cài đặt loại xe: xe máy / xe máy điện / xe ba gác (hàng nặng: nước bình, gạo; **không nhận bình gas**). Bật/tắt nhận hàng nặng.
 
 ### 2.3.3. Nhận chuyến (Cổng B)
-- [P0] Lời mời chuyến hiển thị: điểm lấy, điểm giao, **tổng quãng đường**, **thu nhập dự kiến**, hình thức thanh toán (có phải ứng tiền COD không), loại hàng (nặng/dễ vỡ/thuốc), đếm ngược **20 giây**.
+- [P0] Lời mời chuyến hiển thị: điểm lấy, điểm giao, **tổng quãng đường**, **thu nhập dự kiến**, hình thức thanh toán (có thu tiền mặt COD không, bao nhiêu), loại hàng (nặng/dễ vỡ/thuốc), đếm ngược **20 giây**.
 - [P0] **Nhận chuyến** / **Bỏ qua** (bỏ qua không bị phạt nhưng ảnh hưởng nhẹ tới ưu tiên nếu bỏ quá nhiều).
 - [P1] Ghép đơn: nhận thêm 1 đơn cùng quán/cùng hướng (tối đa 2–3 đơn), hệ thống tính lại lộ trình.
 - [P0] Huỷ sau khi nhận: phải nêu lý do; huỷ nhiều → giảm điểm tin cậy.
@@ -188,14 +229,14 @@ Thanh tiến trình rõ ràng, mỗi bước có **tên người xác nhận + g
 ### 2.3.4. Thực hiện chuyến
 - [P0] Dẫn đường (mở Google Maps / bản đồ tích hợp).
 - [P0] Các bước bắt buộc, có kiểm tra vị trí (geofence):
-  1. **Đã đến quán** (chỉ bấm được khi trong bán kính 100 m quán)
+  1. **Đã đến quán** (bấm được khi trong bán kính 100 m quán; ngoài vùng này xem mục GPS yếu bên dưới)
   2. **Đã lấy hàng** — quét QR / nhập mã đơn, kiểm đủ món theo checklist, [tuỳ chọn] chụp ảnh túi hàng đã niêm phong
   3. **Đã đến điểm giao** (geofence 150 m)
   4. **Đã giao** — chụp ảnh giao hàng (bắt buộc nếu "để ở cửa"), nhập PIN (nếu có), thu COD
 - [P0] **GPS yếu (hẻm sâu, chung cư):** cho phép bấm *Đã đến* ngoài vùng geofence kèm **ảnh chụp** tại chỗ; đơn được gắn cờ để hậu kiểm, không chặn shipper.
 - [P0] **Phí chờ tại quán:** món chưa xong sau 10 phút kể từ giờ quán cam kết → shipper được trả phí chờ theo phút (nền tảng trả, ghi vào chỉ số đúng giờ của quán). Chờ > 25 phút → shipper được nhả chuyến không bị trừ điểm.
 - [P0] Gọi ẩn số / chat với khách & quán.
-- [P0] **Không liên lạc được khách**: bấm "Khách không nghe máy" → hệ thống gọi tự động + nhắn tin, chờ 5–10 phút có đếm giờ → CSKH quyết định (để lại bảo vệ, hoàn về quán…); shipper vẫn được trả phí.
+- [P0] **Không liên lạc được khách**: bấm "Khách không nghe máy" → hệ thống gọi tự động + nhắn tin, chờ **10 phút** (cấu hình được) có đếm giờ → CSKH quyết định (để lại bảo vệ, hoàn về quán…); shipper vẫn được trả phí.
 - [P0] **Nút SOS** khẩn cấp: gửi vị trí tới đội an toàn + số người thân.
 
 ### 2.3.5. Thu nhập & Ví
@@ -213,7 +254,7 @@ Thanh tiến trình rõ ràng, mỗi bước có **tên người xác nhận + g
 
 - [P0] **Bản đồ trực tiếp** toàn thành phố: đơn theo màu trạng thái, shipper online, quán đang mở.
 - [P0] **Hàng đợi "Đơn có vấn đề"** (tự động phát hiện):
-  - Quán chưa xác nhận > 2 phút
+  - Quán chưa xác nhận sau 150 giây
   - Không tìm được shipper > 5 phút
   - Shipper đứng yên > 10 phút khi đang giao
   - Giao trễ > 15 phút so với ETA

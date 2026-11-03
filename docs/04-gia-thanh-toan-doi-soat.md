@@ -39,8 +39,8 @@ Mục tiêu: **shipper nhận ≥ 80% phí ship khách trả**.
 
 | Phương thức | Luồng tiền | Ghi chú |
 |---|---|---|
-| **Tiền mặt (COD)** | Khách → Shipper → (Shipper hệ thống: đã trả quán khi lấy hàng / hoặc hệ thống trả quán) | Xem 4.4 |
-| **Ví điện tử** (MoMo, ZaloPay, ShopeePay) | Khách → Tài khoản hệ thống (giữ tiền) → chia khi hoàn thành | Hoàn tiền tự động khi huỷ |
+| **Tiền mặt (COD)** | Khách → Shipper (ghi công nợ COD) → nộp về nền tảng; nền tảng trả quán theo kỳ | Xem 4.4 |
+| **Ví điện tử** (MVP: MoMo; 1.0: ZaloPay, ShopeePay) | Khách → tài khoản chuyên dùng qua cổng thanh toán → chia khi hoàn thành | Hoàn tiền tự động khi huỷ |
 | **VietQR / chuyển khoản** | QR động theo đơn, đối soát qua webhook ngân hàng/đối tác (VD: Casso, PayOS) | Mã đơn trong nội dung CK |
 | **Thẻ** (ATM nội địa, Visa/Master) | Qua cổng VNPay/OnePay, tokenization | Không lưu số thẻ (PCI-DSS do cổng đảm nhiệm) |
 | **Tín dụng hoàn tiền SQT** | Chỉ phát sinh từ hoàn tiền/đền bù, **không nạp, không rút, không chuyển** | Tự động trừ trước nếu khách bật; có hạn dùng 12 tháng |
@@ -78,7 +78,7 @@ Mục tiêu: **shipper nhận ≥ 80% phí ship khách trả**.
 - **Dòng tiền hợp pháp:** tiền khách trả online đi qua **cổng thanh toán/trung gian thanh toán được cấp phép** và tài khoản chuyên dùng; nền tảng **không tự vận hành ví điện tử**. Phương án chia tiền (split payment) của cổng được ưu tiên nếu có.
 - **Thuế với hộ kinh doanh & cá nhân bán hàng:** theo quy định quản lý thuế với hoạt động thương mại điện tử (Nghị định 117/2025/NĐ-CP và văn bản liên quan), sàn có chức năng thanh toán có thể phải **khấu trừ, nộp thay thuế GTGT/TNCN** cho hộ kinh doanh/cá nhân bán hàng trên sàn. Hệ thống cần: lưu mã số thuế/CCCD người bán, tính khấu trừ trên từng kỳ thanh toán, hiển thị rõ trên bảng kê, xuất chứng từ khấu trừ. *(Bắt buộc xác nhận với chuyên gia thuế trước khi vận hành.)*
 - **Thu nhập shipper:** xác định rõ mô hình hợp đồng (đối tác dịch vụ) và nghĩa vụ khấu trừ thuế TNCN theo quy định; có bảng kê năm cho shipper.
-- **Hoá đơn:** xuất hoá đơn điện tử cho phần chiết khấu/phí dịch vụ của nền tảng (theo quy định hoá đơn điện tử hiện hành); hỗ trợ tính thuế TNCN/khấu trừ cho hộ kinh doanh và shipper theo quy định thuế áp dụng cho sàn TMĐT (cần tư vấn pháp lý/kế toán khi triển khai).
+- **Hoá đơn:** xuất hoá đơn điện tử cho phần chiết khấu/phí dịch vụ của nền tảng theo quy định hoá đơn điện tử hiện hành.
 
 ## 4.7. Khuyến mãi & chống lạm dụng
 - Loại: giảm %, giảm tiền, freeship, mua X tặng Y, khách mới, theo ngành, theo khung giờ, theo vùng.

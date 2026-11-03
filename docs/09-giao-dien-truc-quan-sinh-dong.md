@@ -30,7 +30,7 @@ Có bộ màu riêng cho **chế độ tối**; mọi cặp chữ/nền đạt t
 - Font hỗ trợ tiếng Việt đẹp: **Be Vietnam Pro** (thiết kế cho tiếng Việt, dấu rõ ràng).
 - Cỡ chữ tối thiểu 14 sp (khách), **16 sp** (quán, shipper); tôn trọng cỡ chữ hệ thống.
 - Lưới 8 dp; bo góc 16 dp cho thẻ, 999 dp cho nút viên thuốc.
-- Ảnh món tỷ lệ 4:3, tự động làm sáng/cân màu bằng AI (Phần 12) để menu quán nhỏ cũng hấp dẫn.
+- Ảnh món tỷ lệ 4:3; app quán có **khung hướng dẫn chụp** và bộ lọc sáng/cân màu cơ bản để menu quán nhỏ cũng hấp dẫn mà vẫn đúng món thật.
 - Bộ **minh hoạ riêng**: nhân vật shipper "Bé Quanh" (chiếc xe máy có giỏ), dùng cho màn hình trống, lỗi, chờ, chúc mừng.
 
 ## 9.3. Sinh động: Chuyển động & phản hồi (Motion & Micro-interactions)
@@ -79,9 +79,10 @@ Mỗi bước là một **thẻ có avatar người xác nhận**, giờ, và th
 **Khách hàng**
 - **Không bắt đăng ký trước**: xem thoải mái, chỉ hỏi SĐT khi đặt.
 - **Định vị thông minh**: tự nhận "Nhà/Công ty" theo giờ; hỏi xác nhận bằng ghim kéo thả trên bản đồ với ảnh vệ tinh để chỉ đúng cổng/hẻm.
-- **Đặt bằng giọng nói / chat AI**: "Cho mình 2 ly cà phê sữa đá ít đường giao lên văn phòng" → giỏ hàng được điền sẵn, khách chỉ bấm xác nhận.
+- *(1.0 – Tăng trưởng)* **Đặt bằng giọng nói / chat AI**: "Cho mình 2 ly cà phê sữa đá ít đường giao lên văn phòng" → giỏ hàng được điền sẵn, khách chỉ bấm xác nhận.
 - **"Như mọi lần"**: thẻ đầu trang chủ chứa 3 đơn hay đặt, 1 chạm đặt lại.
 - **Nút sticky "Đặt hàng"** luôn hiển thị tổng tiền cuối cùng — không bất ngờ phí.
+- **Ghi chú món bằng chip**: dưới mỗi món trong giỏ là hàng chip bấm chọn (`Không hành` `Ít đá`…) + ô gõ/micro; chip từ sở thích đã lưu hiện sẵn với dấu ✓ nhạt. Chip dị ứng màu đỏ có biểu tượng ⚠.
 - **Hoàn tác (Undo)** 5 giây sau khi xoá món/huỷ thao tác.
 - **Lỗi thân thiện**: "Quán vừa hết Cơm sườn 😢 — thử Cơm sườn bì chả (giá tương tự)?" kèm nút chọn ngay.
 
@@ -89,7 +90,8 @@ Mỗi bước là một **thẻ có avatar người xác nhận**, giờ, và th
 - **Chế độ Đơn giản**: màn hình chỉ có bảng đơn dạng cột (Mới → Đang làm → Chờ lấy → Xong), mỗi đơn là thẻ lớn, **vuốt phải để nhận**, nút "Xong món" to.
 - **Chế độ máy tính bảng / đặt quầy**: hiển thị như bảng bếp (Kitchen Display), chữ to, tự xoay ngang.
 - **Hướng dẫn bằng video ngắn 30 giây** ngay trong app, tiếng Việt, có người thật.
-- **Đọc đơn bằng giọng nói**: "Đơn mới: 2 phở bò tái, 1 trà đá, 95 nghìn" — tay đang làm bếp vẫn nghe được.
+- **Ghi chú nổi bật trên thẻ đơn**: ghi chú từng món in đậm ngay dưới món; dị ứng là dải đỏ trên đầu thẻ, phải vuốt *"Đã đọc"* mới nhận được đơn.
+- **Đọc đơn bằng giọng nói**: "Đơn mới: 2 phở bò tái, một tô không hành, 1 trà đá, 95 nghìn" — tay đang làm bếp vẫn nghe được.
 
 **Shipper**
 - **Vuốt để xác nhận** từng bước (tránh bấm nhầm khi chạy xe), nút lớn ở nửa dưới màn hình.
@@ -112,3 +114,39 @@ Mỗi bước là một **thẻ có avatar người xác nhận**, giờ, và th
 - Đo bằng dữ liệu: thời gian từ mở app → đặt hàng, tỷ lệ rời bỏ ở từng bước checkout, bản đồ nhiệt chạm (heatmap), ghi phiên ẩn danh (có đồng ý).
 - **A/B test** mọi thay đổi lớn của trang chủ/checkout qua feature flag.
 - Mục tiêu: **SUS (System Usability Scale) ≥ 80**, tỷ lệ hoàn tất checkout ≥ 85%.
+
+## 9.9. Khả năng tiếp cận — ai cũng dùng được
+
+> Mục tiêu: **người lớn tuổi, người ít dùng công nghệ, người khuyết tật, người dùng máy yếu/mạng yếu** đều đặt hàng, nhận đơn và giao hàng được. Mỗi mục có mức ưu tiên như Phần 2.
+
+### Ai cũng tiếp cận được kênh đặt hàng
+| Đối tượng | Giải pháp | Ưu tiên |
+|---|---|---|
+| Người không muốn cài app | **Zalo Mini App** và **Web đặt nhanh** (quét QR dán tại quán hoặc mở link) dùng chung tài khoản và API | P1 |
+| Người không dùng smartphone / người cao tuổi | **Đặt hộ** bởi người thân (người nhận khác, chia sẻ link theo dõi); **đặt qua tổng đài**: CSKH tạo đơn thay khách, vẫn qua quán xác nhận như thường | P0 (đặt hộ) · P2 (tổng đài) |
+| Người không có tài khoản ngân hàng / ví | Luôn có **COD** (khi đủ điều kiện) và VietQR quét từ máy người khác | P0 |
+| Người ở hẻm sâu, địa chỉ khó tìm | Ghim bản đồ + ảnh chỉ đường + ghi chú; shipper gọi ẩn số | P0 |
+| Quán chủ lớn tuổi, ít dùng app | Chế độ Đơn giản 3 nút, chuông lớn, **xác nhận qua cuộc gọi IVR bấm phím**, đại sứ khu vực cài đặt tận nơi | P0 |
+
+### Người khuyết tật
+| Nhu cầu | Giải pháp | Ưu tiên |
+|---|---|---|
+| Khiếm thị / thị lực kém | Mọi nút có nhãn cho **TalkBack/VoiceOver**; thứ tự đọc hợp lý; ảnh món có mô tả thay thế; hỗ trợ cỡ chữ hệ thống tới 200% mà không vỡ bố cục; **chế độ chữ to** cho cả app khách | P0 |
+| Mù màu | Trạng thái luôn có **biểu tượng + chữ**, không chỉ màu; bảng màu đã kiểm tra với các dạng mù màu phổ biến | P0 |
+| Khiếm thính | Cài đặt **"Ưu tiên nhắn tin thay gọi điện"** cho khách; với **shipper khiếm thính**, khách và quán được báo trước *"Shipper giao tiếp bằng tin nhắn"* và nút gọi chuyển thành nút nhắn; mọi âm báo đều có rung + hiển thị trên màn hình | P0 (khách) · P1 (shipper) |
+| Khó khăn vận động | Vùng chạm ≥ 48 dp (≥ 56 dp ở app quán/shipper); thao tác vuốt luôn có nút thay thế; không có thao tác giới hạn thời gian quá ngắn (đếm ngược mời chuyến có thể kéo dài theo cài đặt trợ năng) | P0 |
+| Nhạy cảm với chuyển động | Tôn trọng "Giảm chuyển động" của hệ thống; tắt pháo giấy và nhịp đập | P0 |
+| Khó đọc chữ / ít học | Biểu tượng rõ nghĩa, câu ngắn; đọc đơn bằng giọng nói cho quán; nhập bằng giọng nói (1.0) | P0 · P1 |
+
+### Thiết bị & mạng
+- Chạy tốt trên **Android 8+ với 2 GB RAM**; app < 30 MB; chế độ tiết kiệm dữ liệu (ảnh nhỏ, tắt bản đồ trực tiếp, cập nhật định kỳ).
+- Thao tác quan trọng (nhận đơn, nhận chuyến, đã giao) **hoạt động khi mạng chập chờn**: lưu tạm và gửi lại (Phần 5.6); quán còn có IVR làm kênh dự phòng.
+
+### Ngôn ngữ
+- Tiếng Việt là mặc định, văn phong dễ hiểu; nhận dạng giọng nói đủ ba miền (Phần 12.6).
+- **Tiếng Anh** cho khách nước ngoài (P2). Tên món giữ tiếng Việt kèm mô tả ngắn.
+
+### Kiểm chứng
+- Đạt **WCAG 2.1 mức AA** cho app khách, Zalo Mini App, Web đặt nhanh và Admin Console.
+- Mỗi đợt kiểm thử khả dụng (9.8) có ít nhất 1 người lớn tuổi và 1 người dùng trình đọc màn hình; kiểm tra tự động độ tương phản và nhãn trợ năng trong CI.
+- Cài đặt trợ năng lưu theo tài khoản (`PATCH /v1/me/preferences`), đổi máy không mất.

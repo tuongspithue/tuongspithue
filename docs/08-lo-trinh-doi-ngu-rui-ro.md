@@ -7,11 +7,11 @@
 ### Giai đoạn 0 — Chuẩn bị (Tháng 1)
 - Nghiên cứu 1 khu vực thí điểm (VD: 2–3 phường có mật độ dân cư & văn phòng cao).
 - Phỏng vấn 30 quán, 20 shipper, 50 khách → xác thực giả thuyết.
-- Thiết kế UX/UI (Figma) cho 3 app + prototype bấm thử.
+- Thiết kế UX/UI (Figma) cho 3 app (web app khách; app cài đặt quán & shipper) + prototype bấm thử.
 - Thành lập pháp nhân, đăng ký **sàn giao dịch thương mại điện tử** với Bộ Công Thương, hợp đồng mẫu, chính sách bảo mật & điều khoản.
 - Ký hợp đồng cổng thanh toán, SMS/ZNS, eKYC, tổng đài IVR, bản đồ.
 
-### Giai đoạn 1 — MVP (Tháng 2–4) · *"Chạy được, có người thật xác nhận"*
+### Giai đoạn 1 — MVP (Tháng 2–5) · *"Chạy được, có người thật xác nhận"*
 - App khách: Quanh tôi (danh sách + bản đồ), tìm kiếm cơ bản, trang quán, giỏ hàng, COD + 1 ví điện tử + VietQR, **đặt hẹn giờ lấy/giao**, theo dõi đơn realtime với hiệu ứng sinh động cốt lõi, đánh giá, báo sự cố.
 - Đơn hẹn giờ: tab Đơn hẹn cho quán, Chợ chuyến hẹn cho shipper, xác nhận lại trước giờ.
 - Điểm uy tín phiên bản 1 (hoàn thành, đúng giờ, sao Bayes, xác nhận) + cấp độ hiển thị trên thẻ quán/shipper.
@@ -19,21 +19,25 @@
 - App shipper: đăng ký + eKYC, online/offline, **nhận chuyến**, quy trình 4 bước có geofence, ảnh giao hàng, thu nhập, COD.
 - Admin Console (Phần 14, mức MVP): dashboard tổng quan, bản đồ trực tiếp, hàng đợi đơn có vấn đề, hồ sơ 360°, duyệt hồ sơ, gán tay, hoàn tiền, **trung tâm cấu hình phân tầng** có phiên bản & hoàn tác, feature flags, xác thực 2 lớp.
 - Backend: modular monolith (NestJS), PostgreSQL+PostGIS, Redis + BullMQ, WebSocket, outbox, ledger, chế độ vận hành suy giảm.
-- **AI Gateway + tài khoản Groq** dựng sẵn để thử nghiệm nội bộ (chưa phát hành tính năng AI cho người dùng).
+- Phân quyền chức năng từng người dùng, nâng/hạ/khoá cấp có lý do & thời hạn, nhãn cơ bản (Phần 15, mức MVP).
+- **AI Gateway + màn hình "Kết nối AI" trên Admin Console** (Admin nhập key, base URL, model; mặc định Groq) dựng sẵn để thử nghiệm nội bộ (chưa phát hành tính năng AI cho người dùng).
+- Ngành hàng MVP: Đồ ăn, Đồ uống, Tạp hoá, Nước bình & đá, Mẹ & bé (Phần 1.5).
+- Khả năng tiếp cận cơ bản (Phần 9.9): chữ to, tương phản, trình đọc màn hình, chế độ đơn giản cho quán, ưu tiên nhắn tin cho người khiếm thính.
+- *MVP kéo dài 4 tháng (thay vì 3) vì phạm vi đã gồm đơn hẹn giờ, điểm uy tín và trung tâm cấu hình — ưu tiên ổn định hơn tốc độ.*
 - **Mục tiêu ra mắt thí điểm:** 150 quán, 80 shipper, 300 đơn/ngày sau 4 tuần.
 
-### Giai đoạn 2 — Phiên bản 1.0 (Tháng 5–7) · *"Mượt và đáng tin"*
-- Thêm thẻ, tự đến lấy, đơn nhóm, tip, PIN nhận hàng.
+### Giai đoạn 2 — Phiên bản 1.0 (Tháng 6–8) · *"Mượt và đáng tin"*
+- Thêm thẻ & ví khác, tự đến lấy, đơn nhóm, tip, PIN nhận hàng; mở ngành Nhà thuốc, Gas, Hoa & quà, Thú cưng.
 - **Kênh Zalo Mini App** để khách đặt hàng ngay trong Zalo không cần cài app (dùng chung API).
 - Khuyến mãi (quán & nền tảng), quảng cáo lên top, huy hiệu, điểm tin cậy.
 - Yêu cầu mở (gửi nhiều quán, nhận báo giá), Bảng Vàng khu vực, khiếu nại điểm uy tín.
-- AI: OCR menu, mô tả món, gợi ý món thay thế/kèm, tóm tắt đánh giá, bot CSKH, ETA học máy, cảnh báo đơn nguy cơ.
-- OCR menu, máy in nhiệt, nhân viên & phân quyền, đa chi nhánh.
+- AI (chỉ chữ & giọng nói, mặc định Groq, Admin cấu hình key/model): nhập menu từ danh sách chữ, mô tả món, gợi ý món thay thế/kèm, tóm tắt đánh giá, bot CSKH, giọng nói, ETA học máy, cảnh báo đơn nguy cơ.
+- Máy in nhiệt, nhân viên & phân quyền của quán, đa chi nhánh; Web đặt nhanh.
 - Ghép đơn cho shipper, chế độ "Về nhà", thưởng mốc, bảo hiểm.
 - OpenSearch cho tìm kiếm, cao điểm theo H3, chế độ mưa bão.
 - Mở rộng ra toàn quận/thành phố thí điểm.
 
-### Giai đoạn 3 — Tăng trưởng (Tháng 8–12) · *"Khác biệt"*
+### Giai đoạn 3 — Tăng trưởng (Tháng 9–12) · *"Khác biệt"*
 - Gom đơn toà nhà, Shipper quen, Đi chợ hộ, Đặt định kỳ thông minh, Cú Đêm.
 - Trợ lý AI cho quán, gợi ý cá nhân hoá, bản đồ món ngon.
 - Gói thành viên SQT+, điểm thưởng.
@@ -50,7 +54,7 @@
 |---|---|
 | Product Manager | 1 |
 | UX/UI Designer | 1–2 |
-| Mobile (Flutter/RN) | 3 |
+| Mobile (Flutter) | 3 |
 | Backend | 3 (1 chuyên dispatch/geo) |
 | Frontend Web | 1 |
 | QA (manual + automation) | 2 |

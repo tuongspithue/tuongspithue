@@ -1,0 +1,12 @@
+name: sqt_mobile_workspace
+publish_to: none
+environment:
+  sdk: ^3.6.0
+workspace:
+  - packages/sqt_core
+  - packages/sqt_partner
+  - apps/customer
+  - apps/merchant
+  - apps/rider
+dev_dependencies:
+  flutter_lints: ^5.0.0

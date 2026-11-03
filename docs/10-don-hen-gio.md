@@ -9,7 +9,7 @@
 | Tình huống | Hệ thống làm gì |
 |---|---|
 | Khách chủ động chọn **"Hẹn giờ"** ở checkout | Chọn **giờ lấy** (hoặc giờ muốn nhận hàng) |
-| **Đơn ngay chờ lâu**: quán chưa xác nhận sau 90s, hoặc không tìm được shipper sau 3 phút | Hiện gợi ý: *"Quán đang đông/Đang thiếu shipper. Bạn muốn **chuyển sang hẹn giờ** lúc 12:45 (sớm nhất có thể nhận) không?"* — 1 chạm chuyển, giữ nguyên giỏ |
+| **Đơn ngay chờ lâu**: quán chưa xác nhận sau 120 giây, hoặc không tìm được shipper sau 3 phút | Hiện gợi ý: *"Quán đang đông/Đang thiếu shipper. Bạn muốn **chuyển sang hẹn giờ** lúc 12:45 (sớm nhất có thể nhận) không?"* — 1 chạm chuyển, giữ nguyên giỏ |
 | Quán đang đóng cửa | *"Quán mở lúc 6:00 — đặt trước cho 6:30?"* |
 | Khu vực đang mưa bão / cao điểm | Gợi ý hẹn giờ ngoài cao điểm, **phí ship rẻ hơn** |
 | Hàng cần chuẩn bị lâu (bánh kem, cỗ, mâm cúng, hoa) | Bắt buộc hẹn giờ, có thời gian đặt trước tối thiểu do quán quy định |
@@ -26,12 +26,15 @@ Hôm nay  ▸  11:30  11:45  12:00 🔥  12:15  12:30  ...
              ô cam 🔥: cao điểm, có thể khó nhận;
              ô xám: quán đóng/kín lịch)
 ```
-- Hai kiểu hẹn: **"Giờ shipper đến lấy"** (pickup) hoặc **"Giờ tôi nhận hàng"** (delivery) — hệ thống tự quy đổi.
-- Hẹn **sớm nhất 45 phút** kể từ lúc đặt (sớm hơn là đơn ngay), khung 15 phút, tối đa **7 ngày** tới; có **"Đặt định kỳ"** (mỗi ngày/tuần).
+- Ba kiểu hẹn:
+  - **"Giờ lấy hàng tại quán"** — giờ shipper lấy hàng đi (đúng ý *"bao nhiêu giờ lấy"*);
+  - **"Giờ tôi nhận hàng"** — hệ thống tự trừ thời gian di chuyển để ra giờ lấy;
+  - **"Tôi tự đến lấy lúc…"** (bản 1.0) — không cần shipper, chỉ cần quán nhận.
+- Hẹn **sớm nhất 45 phút** kể từ lúc đặt (sớm hơn là đơn ngay), khung 15 phút, tối đa **7 ngày** tới; có **"Đặt định kỳ"** (mỗi ngày/tuần, giai đoạn sau).
 - Hiển thị **xác suất được nhận** của từng khung giờ (do AI dự báo — Phần 12): *"Khả năng cao có quán & shipper nhận ✔"*.
 - Sau khi đặt, đơn hiện thẻ **tím "Hẹn 12:00"** với các trạng thái:
   1. ⏳ *Đang chờ quán nhận* → 2. ✔ *Quán Bà Sáu đã nhận (cam kết chuẩn bị xong 11:55)* → 3. ⏳ *Đang chờ shipper giữ chuyến* → 4. ✔ *Anh Minh đã giữ chuyến* → 5. Đến giờ chạy như đơn thường.
-- Khách có thể **sửa giờ / huỷ miễn phí** đến trước giờ hẹn 30 phút (hoặc trước khi quán bắt đầu làm).
+- Khách có thể **sửa giờ / huỷ miễn phí** cho đến khi quán bắt đầu làm món, và chậm nhất 30 phút trước giờ hẹn (mốc nào đến trước thì áp dụng). Sửa giờ = quán phải nhận lại.
 
 ## 10.3. Hai hình thức gửi đơn hẹn giờ
 
@@ -41,7 +44,8 @@ Khách chọn quán → đơn hiện trên **tab "Đơn hẹn" của quán** đ�
 ### (B) "Yêu cầu mở" — gửi cho nhiều quán quanh khu vực ⭐ *(sáng tạo)*
 Khách mô tả nhu cầu (chọn từ danh mục hoặc gõ/nói tự do), VD: *"2 bình nước 20L + 1 bao đá, lấy lúc 17:00"*.
 - Yêu cầu hiển thị **trực tiếp** cho các quán phù hợp trong bán kính (cùng ngành, đang mở vào giờ đó, đủ uy tín).
-- Quán bấm **"Tôi nhận được"** kèm giá + giờ chuẩn bị → khách thấy **danh sách báo giá** (giá, ★ uy tín, khoảng cách) và chọn 1, hoặc bật **"Tự chọn quán uy tín nhất báo giá đầu tiên"**.
+- Quán bấm **"Tôi nhận được"** kèm giá + giờ chuẩn bị → khách thấy **danh sách báo giá** (giá, ★ uy tín, khoảng cách) và chọn 1, hoặc bật **"Tự chọn giúp tôi"**: chọn báo giá đầu tiên từ quán cấp Vàng trở lên trong mức giá tối đa khách đặt.
+- Báo giá của quán chính là **Cổng A** (quán đã cam kết giá & giờ). Sau khi khách chọn, khách thanh toán (online hoặc COD theo điều kiện 10.7) và đơn chạy tiếp như đơn hẹn thường. Yêu cầu mở chỉ dùng cho đơn hẹn (≥ 45 phút).
 - Hết hạn nhận báo giá (mặc định 15 phút hoặc 1/3 thời gian còn lại đến giờ hẹn) → nếu không có quán nào, báo khách và gợi ý giờ khác.
 
 ## 10.4. Bảng đơn hẹn giờ của QUÁN (realtime)
@@ -76,7 +80,7 @@ Tab **"Chuyến hẹn 🟣"** trong app tài xế — danh sách/bản đồ cá
 └──────────────────────────────────────────────────┘
 Lọc: [Hôm nay] [Trên đường về nhà] [Gần tôi] [Thu nhập cao]
 ```
-- **Ai thấy chuyến**: shipper đủ điều kiện (loại xe, hạn mức COD, **uy tín ≥ ngưỡng của khu vực**). Shipper **uy tín cao được thấy sớm hơn** (VD: hạng Vàng thấy ngay, Bạc sau 5 phút, Đồng sau 10 phút) — phần thưởng thực chất cho uy tín (Phần 11).
+- **Ai thấy chuyến**: shipper đủ điều kiện (loại xe, hạn mức COD, **uy tín ≥ ngưỡng của khu vực**). Shipper **uy tín cao được thấy sớm hơn** (VD: Kim cương & Vàng thấy ngay, Bạc sau 5 phút, Đồng & Tân binh sau 10 phút; tính theo **cấp hiệu lực**, đã gồm điều chỉnh của Admin ở Phần 15) — phần thưởng thực chất cho uy tín (Phần 11).
 - Với quán **tự giao**: chuyến hẹn hiện cho shipper của quán trước; hết hạn mới mở ra chợ hệ thống (nếu quán bật dự phòng).
 - **Giữ chuyến = cam kết**. Giới hạn số chuyến hẹn giữ đồng thời theo hạng uy tín (Tân binh 🌱 & Đồng: 2, Bạc: 4, Vàng & Kim cương: 6; *Cần cải thiện*: không giữ chuyến hẹn) và không trùng khung giờ không khả thi (hệ thống kiểm tra lộ trình).
 - Nếu **chưa ai giữ** khi còn 60 phút → tăng thưởng tự động; còn 30 phút → chuyển sang **điều phối chủ động** như đơn ngay (mời trực tiếp theo vòng, Phần 3). Còn 15 phút → Ops can thiệp.
@@ -100,6 +104,10 @@ stateDiagram-v2
     HEN_SHIPPER_DA_GIU --> HEN_TREN_CHO_CHUYEN: Shipper nhả chuyến
     HEN_SHIPPER_DA_GIU --> HEN_SAN_SANG: T−30 quán ✔ & T−20 shipper ✔
     HEN_SAN_SANG --> SHIPPER_DA_NHAN: Đến giờ → chạy như đơn thường
+    HEN_SHIPPER_DA_GIU --> CAN_CAN_THIEP: Quán không xác nhận lại T−30 (sau IVR)
+    HEN_SHIPPER_DA_GIU --> DANG_TIM_SHIPPER: Shipper không xác nhận T−20
+    HEN_CHO_QUAN_NHAN --> DA_HUY: Khách huỷ
+    HEN_QUAN_DA_NHAN --> DA_HUY: Khách huỷ (theo 10.2)
     DANG_TIM_SHIPPER --> SHIPPER_DA_NHAN
 ```
 Sau `SHIPPER_DA_NHAN`, đơn đi tiếp theo máy trạng thái chuẩn ở Phần 3.

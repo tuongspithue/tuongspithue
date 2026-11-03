@@ -1,0 +1,77 @@
+import { Controller, Get, Global, Inject, Module, OnApplicationShutdown } from '@nestjs/common';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { JwtModule } from '@nestjs/jwt';
+import { Pool } from 'pg';
+import { AdminModule } from './admin/admin';
+import { AuthModule } from './auth/auth';
+import { AuthGuard, Public } from './common/auth';
+import { ErrorFilter } from './common/errors';
+import { APP_CONFIG, AppConfig, loadConfig } from './config';
+import { DATABASE, Database } from './database/database';
+import { OrdersModule } from './orders/orders.module';
+import { StoresModule } from './stores/stores';
+import { ConfigCenterModule } from './config-center/config-center.module';
+import { PushModule } from './push/push';
+import { UploadsModule } from './uploads/uploads';
+
+@Global()
+@Module({
+  providers: [
+    { provide: APP_CONFIG, useFactory: () => loadConfig() },
+    {
+      provide: DATABASE,
+      inject: [APP_CONFIG],
+      useFactory: (config: AppConfig) => new Database(new Pool({ connectionString: config.databaseUrl, max: 20 })),
+    },
+  ],
+  exports: [APP_CONFIG, DATABASE],
+})
+class CoreModule implements OnApplicationShutdown {
+  constructor(@Inject(DATABASE) private readonly db: Database) {}
+  onApplicationShutdown() {
+    return this.db.close();
+  }
+}
+
+@Controller()
+class HealthController {
+  constructor(@Inject(DATABASE) private readonly db: Database) {}
+
+  /** Trang gốc: báo API đang chạy, để người mở nhầm địa chỉ API trên trình duyệt không tưởng là lỗi. */
+  @Public()
+  @Get()
+  root() {
+    return { name: 'Ship Quanh Tôi API', status: 'ok', note: 'Đây là máy chủ dữ liệu cho web app và các app, không phải trang để xem. Kiểm tra: /health' };
+  }
+
+  @Public()
+  @Get('health')
+  async health() {
+    await this.db.query('SELECT 1');
+    return { status: 'ok' };
+  }
+}
+
+@Module({
+  imports: [
+    CoreModule,
+    JwtModule.registerAsync({
+      global: true,
+      inject: [APP_CONFIG],
+      useFactory: (config: AppConfig) => ({ secret: config.jwtSecret, signOptions: { expiresIn: config.jwtTtlSeconds } }),
+    }),
+    ConfigCenterModule,
+    AuthModule,
+    StoresModule,
+    OrdersModule,
+    AdminModule,
+    PushModule,
+    UploadsModule,
+  ],
+  controllers: [HealthController],
+  providers: [
+    { provide: APP_GUARD, useClass: AuthGuard },
+    { provide: APP_FILTER, useClass: ErrorFilter },
+  ],
+})
+export class AppModule {}

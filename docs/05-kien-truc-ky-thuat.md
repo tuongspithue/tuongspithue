@@ -8,22 +8,22 @@ Mục tiêu: **chuyên nghiệp, ổn định, mở rộng được**, nhưng **
 
 | Lớp | Công nghệ | Lý do |
 |---|---|---|
-| App di động (3 app) | **Flutter** (chốt) — một codebase iOS/Android | 1 đội làm 3 app; hiệu năng tốt trên Android giá rẻ, hoạt hình mượt (Lottie/Rive); chia sẻ thư viện UI, bản đồ, realtime |
+| App (3 app) | **Flutter** (chốt) — một codebase: **khách = web app** (không bắt cài); **quán & shipper = app cài đặt** Android (iOS sau) có dịch vụ chạy nền kêu chuông | 1 đội làm 3 app; hiệu năng tốt trên Android giá rẻ, hoạt hình mượt (Lottie/Rive); chia sẻ thư viện UI, bản đồ, realtime |
 | Web quản trị quán / Ops / Admin | **Next.js (React) + TypeScript**, UI kit (shadcn/ui, Ant Design) | Nhanh, SEO cho trang quán công khai |
 | Backend API | **NestJS (TypeScript)** (chốt cho MVP) · **Go** cho Dispatch/Location khi tách dịch vụ | Một ngôn ngữ với web (TypeScript) → đội nhỏ làm nhanh; Go chỉ dùng khi tải đòi hỏi |
 | CSDL chính | **PostgreSQL 16 + PostGIS** | Giao dịch ACID cho đơn & tiền; truy vấn không gian "quanh tôi" |
 | Cache / khoá / hàng đợi nhẹ | **Redis** (GEO, Streams, distributed lock) | Vị trí shipper realtime, rate limit, phiên |
-| Message bus & job hẹn giờ | **MVP: Outbox (PostgreSQL) + Redis Streams + BullMQ** · **Kafka** khi > 100.000 đơn/ngày | Ít thành phần vận hành hơn ở giai đoạn đầu = ổn định hơn với đội nhỏ |
+| Message bus & job hẹn giờ | **MVP: Outbox + bảng việc hẹn giờ trên PostgreSQL**; Redis Streams/BullMQ khi cần · **Kafka** khi > 100.000 đơn/ngày | Ít thành phần vận hành hơn ở giai đoạn đầu = ổn định hơn với đội nhỏ |
 | Tìm kiếm | **MVP: PostGIS + `unaccent` + `pg_trgm`** · **OpenSearch** từ bản 1.0 (analyzer tiếng Việt, bỏ dấu, embedding) | Tránh vận hành cụm tìm kiếm khi dữ liệu còn nhỏ |
 | Realtime | **WebSocket** (Socket.IO / Centrifugo) | Theo dõi đơn, vị trí shipper |
 | Bản đồ & định tuyến | Google Maps Platform / **Goong.io** (bản đồ VN) / tự host **OSRM/Valhalla** | Tính ETA, khoảng cách đường đi; tự host để giảm chi phí khi lớn |
 | Chia lưới không gian | **Uber H3** | Hệ số cao điểm, bản đồ nhiệt theo ô |
 | Lưu file | S3-compatible (AWS S3 / Viettel/VNG Cloud Object Storage) + CDN | Ảnh món, ảnh giao hàng, CCCD (mã hoá) |
-| Push | Firebase Cloud Messaging + APNs | |
-| SMS/OTP/ZNS | Nhà cung cấp SMS brandname + Zalo ZNS | |
-| IVR / số ẩn | Tổng đài cloud (Stringee, VNPT, Twilio…) | Gọi xác nhận quán, gọi ẩn số |
+| Push | Khách: **Web Push (VAPID)** miễn phí · Quán/shipper: **dịch vụ chạy nền (foreground service)** hỏi máy chủ mỗi 10 giây + thông báo toàn màn hình kêu lặp lại; FCM/APNs khi cần | Không mất phí, không cần Firebase |
+| SMS/Zalo/Gọi | **Mở app trên máy người dùng** (`tel:`, `sms:`, `zalo.me`) — không tích hợp dịch vụ trả phí | Đăng nhập không cần OTP: xem 13.9 (khách tên + SĐT; đối tác dùng mã kích hoạt Admin cấp) |
+| Gọi quán khi chưa xác nhận | Điều phối viên bấm gọi từ Admin Console | Thay IVR; không dùng số ẩn — SĐT chỉ lộ cho các bên của đơn khi đơn đang chạy |
 | eKYC | Nhà cung cấp eKYC VN (FPT.AI, VNPT eKYC…) | OCR CCCD, so khớp khuôn mặt, liveness |
-| AI | **Groq** (LLM + nhận dạng giọng nói) qua AI Gateway nội bộ, có nhà cung cấp dự phòng | Phản hồi rất nhanh — xem Phần 12 |
+| AI | **Mặc định Groq** (LLM + nhận dạng giọng nói) qua AI Gateway nội bộ; **key, base URL, model do Admin nhập** trên Admin Console; thêm được nhà cung cấp dự phòng tương thích OpenAI | Phản hồi rất nhanh; đổi nhà cung cấp không cần sửa code — xem Phần 12.8 |
 | Hạ tầng | **MVP: dịch vụ được quản lý** (PostgreSQL/Redis managed có bản sao & backup tự động, chạy container managed) · **Kubernetes** khi có ≥ 2 SRE; Terraform | Giảm rủi ro vận hành; ưu tiên cloud có vùng dữ liệu tại Việt Nam cho dữ liệu cá nhân |
 | CI/CD | GitHub Actions → build image → ArgoCD | |
 | Giám sát | Prometheus + Grafana, Loki (log), Tempo/Jaeger (trace), Sentry (lỗi app), PagerDuty/Opsgenie | |
@@ -37,7 +37,7 @@ flowchart LR
       A2[App Đối Tác Quán]
       A3[App Tài Xế]
       W1[Web Quán]
-      W2[Web Ops/Admin]
+      W2[Admin Console]
     end
 
     A1 & A2 & A3 & W1 & W2 --> GW[API Gateway / BFF<br/>Auth, rate-limit, versioning]
@@ -79,7 +79,7 @@ flowchart LR
 
 | Module | Trách nhiệm | Dữ liệu sở hữu |
 |---|---|---|
-| **Identity & KYC** | OTP, JWT/refresh token, vai trò, eKYC, thiết bị | users, devices, kyc_records, roles |
+| **Identity & KYC** | Đăng nhập khách (tên + SĐT) & mã kích hoạt đối tác, JWT có phiên bản, vai trò, eKYC, thiết bị | users, devices, kyc_records, roles |
 | **Catalog** | Quán, chi nhánh, menu, tuỳ chọn, giờ mở cửa, tồn kho | merchants, stores, menu_items, modifiers, store_hours |
 | **Discovery** | "Quanh tôi", tìm kiếm, xếp hạng, gợi ý | index OpenSearch (đọc từ Catalog qua event) |
 | **Order** | Giỏ hàng, checkout, **máy trạng thái**, Cổng A | carts, orders, order_items, order_events |
@@ -91,6 +91,9 @@ flowchart LR
 | **Notification** | Template, kênh, retry, IVR | notifications, ivr_calls |
 | **Review & Trust** | Đánh giá, điểm tin cậy, cờ gian lận | reviews, trust_scores, fraud_flags |
 | **Support** | Ticket, sự cố, bồi hoàn, audit | tickets, incidents, audit_logs |
+| **Config & Rule Engine** | Cấu hình phân tầng, feature flags, luật tự động (Phần 14) | config_definitions, config_values, automation_rules |
+| **Entitlement** | Quyền chức năng, điều chỉnh cấp & ưu tiên của từng người dùng (Phần 15) | entitlement_*, tier_overrides, priority_adjustments, labels |
+| **AI Gateway** | Gọi Groq, dự phòng, cache, che dữ liệu cá nhân (Phần 12) | ai_logs |
 
 ## 5.4. Luồng realtime vị trí shipper
 1. App tài xế gửi GPS **mỗi 4s khi đang có chuyến**, **mỗi 15–30s khi rảnh** (tiết kiệm pin), gom lô khi mạng yếu.
@@ -114,10 +117,10 @@ flowchart LR
 ## 5.6. Độ tin cậy & tính nhất quán
 - **Transactional Outbox**: ghi thay đổi đơn + bản ghi `outbox` trong cùng 1 transaction → worker đẩy lên event bus (Redis Streams ở MVP, Kafka khi lớn) → đảm bảo không mất sự kiện.
 - **Idempotency** cho mọi API ghi và mọi consumer (bảng `processed_events`).
-- **Saga** cho luồng thanh toán–đơn: giữ tiền → tạo đơn → (huỷ) hoàn tiền bù trừ.
+- **Saga** cho luồng thanh toán–đơn: thu tiền → tạo đơn → (bị từ chối/huỷ) hoàn tiền bù trừ.
 - **Retry có backoff + dead-letter queue** cho thông báo, webhook thanh toán.
-- **Circuit breaker** & timeout cho dịch vụ bên ngoài (bản đồ, SMS, cổng thanh toán); có nhà cung cấp dự phòng cho SMS/OTP và bản đồ.
-- **Bộ hẹn giờ SLA** (Cổng A, Cổng B, giao trễ) chạy bằng **delayed job** bền vững (**BullMQ trên Redis có bật lưu trữ AOF**, kèm job quét đối chiếu mỗi phút từ PostgreSQL để không job nào bị mất) — không dùng `setTimeout` trong RAM.
+- **Circuit breaker** & timeout cho dịch vụ bên ngoài (bản đồ, AI, cổng thanh toán); có nhà cung cấp dự phòng cho AI và bản đồ.
+- **Bộ hẹn giờ SLA** (Cổng A, Cổng B, giao trễ) chạy bằng **delayed job** bền vững: MVP dùng **bảng `scheduled_jobs` trên PostgreSQL**, worker lấy việc bằng `FOR UPDATE SKIP LOCKED` (việc nằm trong CSDL nên không mất khi khởi động lại, chạy nhiều worker song song an toàn, không thêm thành phần vận hành); chuyển sang **BullMQ** khi tải lớn — không dùng `setTimeout` trong RAM.
 - Hoạt động **khi mất kết nối**: app quán/shipper lưu hàng đợi thao tác cục bộ, gửi lại với cùng Idempotency-Key.
 
 ## 5.7. Hiệu năng & quy mô (mục tiêu thiết kế)
@@ -134,7 +137,7 @@ flowchart LR
 | RPO / RTO | RPO ≤ 5 phút, RTO ≤ 30 phút |
 
 ## 5.8. Bảo mật
-- Xác thực: OTP → **JWT truy cập ngắn hạn (15 phút) + refresh token xoay vòng**, gắn thiết bị; đăng xuất thiết bị từ xa.
+- Xác thực (13.9): khách nhập tên + SĐT → token chỉ có quyền khách, gắn với máy; đối tác nhập **mã kích hoạt** Admin cấp → token có phiên bản, Admin đăng xuất được mọi máy từ xa. Quyền nạp lại từ CSDL ở mỗi yêu cầu.
 - Phân quyền: RBAC + kiểm tra **quyền theo tài nguyên** (nhân viên quán chỉ thấy đơn quán mình; shipper chỉ thấy địa chỉ chi tiết khách **sau khi nhận chuyến** và **ẩn sau khi hoàn thành 2 giờ**).
 - **Số điện thoại ẩn** giữa các bên; chat lọc SĐT/thông tin nhạy cảm.
 - Mã hoá: TLS 1.2+ toàn bộ; mã hoá lúc lưu (ảnh CCCD, tài khoản ngân hàng bằng KMS, trường nhạy cảm mã hoá cấp cột).
@@ -164,7 +167,7 @@ Mục tiêu: **không bao giờ "sập toàn bộ"** — mỗi sự cố chỉ l
 | Sự cố | Chế độ suy giảm |
 |---|---|
 | Cổng thanh toán online lỗi | Tạm ẩn phương thức đó, **chỉ COD/VietQR**; đơn đang chờ thanh toán được đối chiếu lại khi cổng hoạt động |
-| Dịch vụ SMS/OTP lỗi | Chuyển nhà cung cấp dự phòng → Zalo ZNS → OTP qua cuộc gọi; phiên đăng nhập cũ vẫn dùng được |
+| Admin không kịp cấp mã cho đối tác mới | Không ảnh hưởng đối tác đang hoạt động (phiên giữ 180 ngày); có nhiều tài khoản Admin/Ops cấp mã được |
 | Bản đồ/định tuyến lỗi | Chuyển nhà cung cấp dự phòng → ước tính khoảng cách đường chim bay × 1,3; phí ship tính theo bảng bậc cố định |
 | Điều phối (dispatch) lỗi | Đơn chuyển sang **bảng chuyến mở** (shipper trong khu tự chọn như chợ chuyến hẹn) + Ops gán tay; quán tự giao không bị ảnh hưởng |
 | Realtime (WebSocket) lỗi | App tự chuyển sang hỏi định kỳ 10 giây + push |

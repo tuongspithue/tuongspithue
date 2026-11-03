@@ -1,0 +1,63 @@
+# Triển khai thử trên một máy chủ (VPS) có Docker. Xem docs/16-huong-dan-thu-nghiem.md.
+#   cp infra/.env.prod.example infra/.env.prod   # điền tên miền, mật khẩu, khoá
+#   docker compose -f infra/docker-compose.prod.yml --env-file infra/.env.prod up -d --build
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sqt
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: sqt
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sqt -d sqt"]
+      interval: 5s
+      retries: 20
+
+  api:
+    build: { context: .., dockerfile: infra/docker/api.Dockerfile }
+    restart: unless-stopped
+    depends_on: { db: { condition: service_healthy } }
+    environment:
+      DATABASE_URL: postgres://sqt:${DB_PASSWORD}@db:5432/sqt
+      JWT_SECRET: ${JWT_SECRET}
+      AI_KEY_ENCRYPTION_KEY: ${AI_KEY_ENCRYPTION_KEY}
+      ADMIN_PHONES: ${ADMIN_PHONES}
+      TEST_PHASE: ${TEST_PHASE}
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY}
+      VAPID_SUBJECT: ${VAPID_SUBJECT}
+      CORS_ORIGINS: https://${DOMAIN_APP},https://${DOMAIN_ADMIN}
+      PUBLIC_API_URL: https://${DOMAIN_API}
+      UPLOAD_DIR: /data/uploads
+    volumes: [uploads:/data/uploads]
+
+  admin:
+    build:
+      context: ..
+      dockerfile: infra/docker/admin.Dockerfile
+      args: { API_URL: "https://${DOMAIN_API}" }
+    restart: unless-stopped
+    depends_on: [api]
+
+  web:
+    build:
+      context: ..
+      dockerfile: infra/docker/web.Dockerfile
+      args: { API_URL: "https://${DOMAIN_API}" }
+    restart: unless-stopped
+    depends_on: [api, admin]
+    ports: ["80:80", "443:443"]
+    environment:
+      ACME_EMAIL: ${ACME_EMAIL}
+      DOMAIN_APP: ${DOMAIN_APP}
+      DOMAIN_ADMIN: ${DOMAIN_ADMIN}
+      DOMAIN_API: ${DOMAIN_API}
+    volumes: [caddy_data:/data, caddy_config:/config]
+
+volumes:
+  pgdata:
+  uploads:
+  caddy_data:
+  caddy_config:

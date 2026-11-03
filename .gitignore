@@ -1,0 +1,18 @@
+node_modules/
+dist/
+coverage/
+.env
+*.log
+.DS_Store
+.next/
+*.tsbuildinfo
+# Flutter / Dart
+.dart_tool/
+mobile/**/build/
+.flutter-plugins
+.flutter-plugins-dependencies
+pubspec_overrides.yaml
+infra/.env.prod
+
+# Chạy thử Codespaces: bí mật, nhật ký, ảnh tải lên
+.devcontainer/local/

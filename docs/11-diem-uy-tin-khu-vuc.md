@@ -33,10 +33,12 @@
 | Tốc độ xác nhận | 10% | Thời gian trung vị từ đơn tới → nhận |
 | Chuẩn bị đúng giờ | 15% | % đơn sẵn sàng đúng thời gian quán cam kết |
 | Chất lượng món (đánh giá khách) | 25% | Sao Bayes + nhãn ("ngon", "đúng mô tả") |
-| Chính xác đơn hàng | 15% | % đơn không bị báo thiếu/sai món |
+| Chính xác đơn hàng | 15% | % đơn không bị báo thiếu/sai món **hoặc làm sai ghi chú của khách** |
 | Giữ cam kết đơn hẹn | 10% | % đơn hẹn đã nhận được làm đúng giờ, xác nhận lại T−30 |
 | Đánh giá của shipper | 5% | Đóng gói, sẵn sàng khi tới, thái độ |
 | Khiếu nại có căn cứ | trừ điểm | Vệ sinh, giá chênh, thái độ |
+
+**Đánh giá của nền tảng** (phiếu kiểm tra thực địa, khách bí mật — Phần 15.3): khi đối tác có phiếu còn hiệu lực, thành phần này chiếm tối đa 15% và **các trọng số khác co lại theo tỷ lệ** để tổng vẫn là 100%.
 
 **Tính toán:** mỗi chỉ số được chuẩn hoá về 0–100 theo **phân vị trong khu vực** (ô H3 cấp 7 ≈ 5 km², hoặc quận), rồi cộng có trọng số, làm mượt theo thời gian:
 ```
@@ -76,7 +78,7 @@ Huy hiệu chuyên biệt (bên cạnh cấp): ⚡ *Xác nhận siêu tốc*, �
 | **Yêu cầu mở** | Chỉ quán ≥ ngưỡng được báo giá; báo giá xếp theo uy tín |
 | **Ghép shipper – quán** | Quán Vàng ưu tiên shipper Vàng giờ cao điểm (trải nghiệm đồng đều) |
 | **Thu nhập & chiết khấu** | Shipper: thưởng hệ số theo cấp; Quán: giảm chiết khấu 1–2% cho Kim cương/Vàng |
-| **Quyền COD / đơn giá trị cao** | Shipper & khách cần cấp tối thiểu |
+| **Quyền COD / đơn giá trị cao** | Shipper cần cấp tối thiểu; khách cần đủ điều kiện số đơn thành công (khách không có cấp) |
 | **Khách hàng** | Khách **không bị xếp hạng hay chấm sao**; chỉ có chỉ số đơn giản, công khai với chính khách: số đơn hoàn thành, số lần bỏ đơn COD. Quán/shipper thấy dạng *"✔ 25 đơn thành công"* — đủ để tự tin nhận đơn hẹn/COD lớn |
 
 ## 11.6. "Bảng Vàng Khu Vực" ⭐ (sáng tạo)
@@ -97,6 +99,8 @@ Huy hiệu chuyên biệt (bên cạnh cấp): ⚡ *Xác nhận siêu tốc*, �
  💡 Gợi ý AI: Bật "Về nhà" sau 20h để giảm chuyến xa, tăng đúng giờ.
  Còn 4 điểm nữa để lên 💎 Kim cương!       [Xem lịch sử thay đổi]
 ```
+
+> **Admin điều chỉnh:** ngoài điểm tự động, Admin có thể thêm phiếu đánh giá chủ động (thành phần "Đánh giá của nền tảng", trọng số tối đa 15%), nâng/hạ/khoá cấp, gắn nhãn và điều chỉnh ưu tiên theo tác vụ — xem [Phần 15](15-phan-quyen-xep-loai-uu-tien.md).
 
 ## 11.8. Bổ sung kỹ thuật
 ```sql

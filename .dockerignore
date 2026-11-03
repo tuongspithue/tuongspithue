@@ -1,0 +1,8 @@
+**/node_modules
+**/dist
+**/.next
+**/.dart_tool
+mobile/**/build
+.git
+infra/.env.prod
+**/*.log
